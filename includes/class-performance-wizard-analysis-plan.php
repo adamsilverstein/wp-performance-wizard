@@ -23,53 +23,27 @@ class Performance_Wizard_Analysis_Plan {
 	private $description;
 
 	/**
-	 * The steps to be used by the AI agent when analyzing the performance of a WordPress site.
+	 * The data sources to be used by the AI agent when analyzing the performance of a WordPress site.
 	 * 
 	 * @var array
 	 */
-	private $steps;
+	private $sources = array (
+		'class-performance-wizard-data-source-lighthouse.php',
+	);
 
-	// Constructor
-
-	/**
-	 * Create a new instance of the Performance_Wizard_Analysis_Plan class.
-	 * 
-	 * @param string $name The name of the analysis plan.
-	 * @param string $description The description of the analysis plan.
-	 * @param array $steps The steps to be used by the AI agent when analyzing the performance of a WordPress site.
-	 */
-	public function __construct( $name, $description, $steps ) {
-		$this->name = $name;
-		$this->description = $description;
-		$this->steps = $steps;
-	}
-
-	// Methods
+	private $user_prompts = array(
+		'Welcome to the Performance Wizard. I will analyze the performance of your WordPress site.',
+		'The analysis will follow a series of steps and I will report on each step as I progress.',
+	);
 
 	/**
-	 * Get the name of the analysis plan.
-	 * 
-	 * @return string The name of the analysis plan.
+	 * The primary prompt is used to set up the LLM, instructing it on its goals, behaviour and the steps it will use.
 	 */
-	public function get_name() {
-		return $this->name;
-	}
-
-	/**
-	 * Get the description of the analysis plan.
-	 * 
-	 * @return string The description of the analysis plan.
-	 */
-	public function get_description() {
-		return $this->description;
-	}
-
-	/**
-	 * Get the steps to be used by the AI agent when analyzing the performance of a WordPress site.
-	 * 
-	 * @return array The steps to be used by the AI agent when analyzing the performance of a WordPress site.
-	 */
-	public function get_steps() {
-		return $this->steps;
-	}
+	private $primary_prompt = "You will play the role of a web performance expert. You will receive a sries of data points about
+	the website you are analyzing. For each data point, you will provide a summary of the information received and how it reflects 
+	on the perfomance of the site. For each step, you will offer reccomendations for hoe the performsance might be improved.
+	You will rememeber the results of each step and at the end of the process, you will provide an overall summary and set of recommendations
+	for how the site performance might be improved. You will assist the user in making thrdse changes, then repeat the performance 
+	analysis steps, comparing the new results with the previous results."
+ 
 }
