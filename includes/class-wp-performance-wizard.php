@@ -18,6 +18,9 @@ class WP_Performance_Wizard {
 	 *  - The CSS of a front end page load for the home page, an archive page and a single post page.
 	 *  - The JavaScript of a front end page load for the home page, an archive page and a single post page.
 	 *
+	 * plugintests.com
+	 * hive.com
+	 *
 	 *  Potential additional meta-data
 	 *  - A list of the site's cron jobs.
 	 *  - A list of the site's autoloaded options.
@@ -39,6 +42,17 @@ class WP_Performance_Wizard {
 	private $data_sources = array();
 
 	// Constructor
+	/**
+	 * Set up the plugin, bootstrapping required classes.
+	 */
+	public function __construct() {
+		error_log( 'including files' );
 
-	// Methods
+		// Load all required files.
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
+
+		// Load the wp-admin page.
+		new Performance_Wizard_Admin_Page();
+	}
+
 }

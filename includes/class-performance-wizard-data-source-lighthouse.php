@@ -43,11 +43,6 @@
 		*/
 		private $cache;
 
-		/**
-		* The cache length for this data source.
-		*/
-		private $cache_length = 3600;
-
 		// Constructor
 
 		// Methods

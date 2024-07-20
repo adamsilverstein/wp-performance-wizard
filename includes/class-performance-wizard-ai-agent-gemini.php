@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * A class that enables connections to Gemini AI.
  */
@@ -13,21 +13,21 @@
 
 	 /**
 	  * The name of the AI agent.
-	  * 
+	  *
 	  * @var string
 	  */
 	 private $name = "Gemini";
 
 	 /**
 	  * The description of the AI agent.
-	  * 
+	  *
 	  * @var string
 	  */
 	 private $description = "Gemini is a is a generative artificial intelligence chatbot developed by Google.";
 
 	 /**
 	  * The prompt to use when passing the data to the AI agent.
-	  * 
+	  *
 	  * @var string
 	  */
 	 private $prompt;
@@ -38,8 +38,10 @@
 
 	 /**
 	  * Call the API of the AI agent.
+	  *
+	  * @return string The response from the API.
 	  */
-	 public function call_api() {
+	 public function send_prompt() {
 
 	}
 
