@@ -14,6 +14,7 @@ class Performance_Wizard_Rest_API {
 	 */
 	function __construct( $wizard ) {
 		$this->wizard = $wizard;
+		$this->add_endpoint();
 	}
 
 	/**
@@ -26,7 +27,7 @@ class Performance_Wizard_Rest_API {
 		add_action( 'rest_api_init', function () {
 			// Register the command route, requiring admin access to use.
 			register_rest_route( 'performance-wizard/v1', '/command/', array(
-				'methods'             => 'POST',
+				'methods'             => array( 'POST', 'GET' ),
 				'callback'            => array( $this, 'handle_command' ),
 				'permission_callback' => function () {
 					return current_user_can( 'manage_options' );
@@ -46,16 +47,16 @@ class Performance_Wizard_Rest_API {
 
 		switch ( $command ) {
 			case '_get_next_action_':
-				$response = $this->wizard->get_next_action();
+				$response = $this->wizard->get_analysis_plan()->get_next_action();
 				break;
 			case '_start_':
-				$response = $this->wizard->start();
+				$response = $this->wizard->get_analysis_plan()->start();
 				break;
-			case '_run_next_action_':
-				$response = $this->wizard->run_next_action();
+			case '_start_':
+				$response = $this->wizard->get_analysis_plan()->run_next_action();
 				break;
 			default:
-				$response = $this->wizard->prompt( $command );
+				$response = $this->wizard->get_analysis_plan()->prompt( $command );
 		}
 
 		return new WP_REST_Response( $response, 200 );

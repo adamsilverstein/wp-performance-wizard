@@ -5,7 +5,6 @@
 class Performance_Wizard_Admin_Page {
 	// Construct the class by adding the primary callback.
 	public function __construct() {
-		error_log( 'add callback' );
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 	}
@@ -68,13 +67,13 @@ class Performance_Wizard_Admin_Page {
 
 
 		// Enqueue the terminal script.
-		wp_enqueue_script( 'performance-wizard-terminal', plugin_dir_url( __FILE__ ) . 'js/jquery.terminal' . $suffix . '.js', array( 'jquery' ), '1.0.0', array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( 'performance-wizard-terminal', plugin_dir_url( __FILE__ ) . 'js/jquery.terminal' . $suffix . '.js', array( 'jquery', 'wp-api-fetch' ), '1.0.0', array( 'strategy' => 'defer' ) );
 
 		// Enqueue the terminal styles.
 		wp_enqueue_style( 'performance-wizard-terminal', plugin_dir_url( __FILE__ ) . 'css/jquery.terminal' . $suffix . '.css', array(), '1.0.0' );
 
 		// Enqueue the bootstrap script.
-		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'performance-wizard-terminal' ), WP_PERFORMANCE_WIZARD_VERSION + $timestamp_version, array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'performance-wizard-terminal' ), WP_PERFORMANCE_WIZARD_VERSION . $timestamp_version, array( 'strategy' => 'defer' ) );
 
 	}
 

@@ -12,13 +12,6 @@
 	 private $api_key;
 
 	 /**
-	  * The name of the AI agent.
-	  *
-	  * @var string
-	  */
-	 private $name = "Gemini";
-
-	 /**
 	  * The description of the AI agent.
 	  *
 	  * @var string
@@ -43,6 +36,28 @@
 	  */
 	 public function send_prompt() {
 
+	}
+
+	/**
+	 * Set the API key.
+	 */
+	public function set_api_key( $api_key ) {
+		$this->api_key = $api_key;
+	}
+
+	/**
+	 * Get the API key.
+	 */
+	public function get_api_key() {
+		return $this->api_key;
+	}
+
+	/**
+	 * Construct the agent.
+	 */
+	function __construct() {
+		// Set the name.
+		$this->name = 'Gemini';
 	}
 
  }

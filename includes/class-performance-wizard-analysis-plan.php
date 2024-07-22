@@ -3,10 +3,12 @@
  * A class that encapulates the strategy to be used by the AI agent when
  * analyzing the performance of a WordPress site. Describes the steps the agernt will use
  * and the prompts it will use to gather data.
+ *
+ * Includes functions matching the rest api endpoints: one to start the process, one to
+ * retrieve the next step, and one to run the next step.
  */
 
 class Performance_Wizard_Analysis_Plan {
-	// Properties
 
 	/**
 	 * The name of the analysis plan.
@@ -23,6 +25,16 @@ class Performance_Wizard_Analysis_Plan {
 	private $description;
 
 	/**
+	 * Track the current step in the analysis process.
+	 */
+	private $current_step = 0;
+
+	/**
+	 * Track the steps the plan will follow.
+	 */
+	private $steps = array();
+
+	/**
 	 * The data sources to be used by the AI agent when analyzing the performance of a WordPress site.
 	 *
 	 * @var array
@@ -33,14 +45,14 @@ class Performance_Wizard_Analysis_Plan {
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
+
+
 	/**
-	 * An array of agents available to use for this analysis plan.
-	 *
-	 * @var array
+	 * Get the current step.
 	 */
-	private $agents = array (
-		'Performance_Wizard_AI_Agent_Gemini' => 'class-performance-wizard-ai-agent-gemini.php',
-	);
+	private function get_current_step_count() {
+		return $this->current_step;
+	}
 
 	/**
 	 * The prompts to use when interacting with the user.
@@ -62,7 +74,124 @@ class Performance_Wizard_Analysis_Plan {
 	on the performance of the site. For each step, you will offer recommendations for how the performance might be improved.
 	You will remember the results of each step and at the end of the process, you will provide an overall summary and set of recommendations
 	for how the site performance might be improved. You will assist the user in making threse changes, then repeat the performance
-	analysis steps, comparing the new results with the previous results."
+	analysis steps, comparing the new results with the previous results.";
+
+	/**
+	 * Construct the class, setting up the plan.
+	 */
+	function __construct() {
+		$this->set_up_plan();
+	}
+
+	/**
+	 * Set up the plan.
+	 *
+	 * Each step of of the plan will be constructed of the following data:
+	 * - A title for the step
+	 * - A user_prompt to show to the user
+	 * - A data source to use for the step
+	 */
+	public function set_up_plan() {
+		$steps = array();
+
+		// The first step is to introduce the user to the process.
+		$steps[] = array(
+			'title'       => 'Introduction',
+			'user_prompt' => 'Welcome to the Performance Wizard. I will analyze the performance of your WordPress site.',
+		);
+
+		// Next, add a step for each data source.
+
+		// Finally, add the wrap up step.
+		$steps[] = array(
+			'title'       => 'Wrap Up',
+			'user_prompt' => 'I have analyzed the performance of your WordPress site. Here are my recommendations.',
+		);
+
+
+		$this->steps = $steps;
+	}
+
+
+	/**
+	 * Get the next action in the analysis process.
+	 */
+	public function get_next_action() {
+		return $this->steps[ $this->current_step ];
+	}
+
+	/**
+	 * Start the process.
+	 *
+	 */
+	public function start() {
+	}
+
+	/**
+	 * Run the next action in the analysis process.
+	 * Also increments the current step.
+	 *
+	 * @return mixed The result of the action.
+	 */
+	public function run_next_action() {
+		if ( empty( $this->steps[ $this->current_step ] ) ) {
+			return 'No more steps to run.';
+		}
+		$action = $this->steps[ $this->current_step ];
+		$this->current_step++;
+		return run_action( $action );
+	}
+
+	/**
+	 * Run an action in the analysis process.
+	 */
+	private function run_action( $action ) {
+		// Connect to the AI agent.
+
+
+		// Send the prompt to the agent.
+		$agent->prompt( $action['user_prompt'] );
+
+		// Get the data from the data source.
+		// @todo this can run async
+		$data = $data_source->get_data();
+
+		// Get the prompt to use when passing the data to the AI agent.
+		$prompt = $data_source->get_prompt();
+
+		// Send the prompt to the AI agent.
+
+		// Get the plaintext description of how to process the data.
+		$description = $data_source->get_description();
+
+		// Send the plaintext description of how to process the data to the AI agent.
+
+		// Get the shape of the data returned from the data source.
+		$data_shape = $data_source->get_data_shape();
+
+		// Send the shape of the data returned from the data source to the AI agent.
+
+		// Get the description of a strategy that can be used to analyze this data source.
+		$analysis_strategy = $data_source->get_analysis_strategy();
+
+		// Send the description of a strategy that can be used to analyze this data source to the AI agent.
+
+		// Ask the agent for its analysis so far
+
+		// Return the result of the action.
+		return 'OK';
+
+	}
+
+	/**
+	 * Pass a prompt to the agent.
+	 *
+	 * @param string $prompt The prompt to pass to the agent.
+	 *
+	 */
+	public function prompt( $prompt ) {
+		return 'OK';
+	}
 
 
 	/**
@@ -76,9 +205,11 @@ class Performance_Wizard_Analysis_Plan {
 		$agent->set_api_key( 'YOUR_API_KEY' );
 
 
-
+		// Send the welcome message to the user
 
 		// Send the initial prompt to the agent explaining the process.
+
+		// Send the hello message
 
 		// Collect the data sources and feed each of them to the agent.
 		foreach ( $this->data_sources as $source_name => $data_source ) {
