@@ -25,12 +25,21 @@ jQuery( function( $ ) {
 		// @todo strings should be localized.
 		terminal.echo( '[[b;green;]Running analysis...]' );
 
-		// Get a description of the next step.
-		const nextStep = await getPerfomanceWizardNextStep();
-		echoStep( nextStep );
-
-
-
+		// Get a description of the next step. Continue until the final step.
+		const complete = false;
+		while ( ! complete ) {
+			const nextStep = await getPerfomanceWizardNextStep();
+			echoStep( nextStep.user_prompt );
+			switch ( nextStep.action ) {
+				case 'complete':
+					complete = true;
+					break;
+				case 'run_action':
+					$results = await runPerfomanceWizardNextStep();
+					break;
+			}
+		}
+		terminal.echo( '[[b;green;]Analysis complete...]' );
 	}
 
 	/**
@@ -53,11 +62,11 @@ jQuery( function( $ ) {
 	 */
 	function getPerfomanceWizardNextStep() {
 		// User= the REST API to get the next step.
-		const queryParams = { 'action': 'get-next-step' };
+		const queryParams = { 'command': '_get_next_action_' };
 		return wp.apiFetch( {
 			path: '/performance-wizard/v1/command/',
-			method: 'GET',
-			queryParams
+			method: 'POST',
+			data: queryParams
 		} );
 
 
