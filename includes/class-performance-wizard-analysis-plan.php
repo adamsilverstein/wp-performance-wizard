@@ -25,11 +25,6 @@ class Performance_Wizard_Analysis_Plan {
 	private $description;
 
 	/**
-	 * Track the current step in the analysis process.
-	 */
-	private $current_step = 0;
-
-	/**
 	 * Track the steps the plan will follow.
 	 */
 	private $steps = array();
@@ -46,13 +41,6 @@ class Performance_Wizard_Analysis_Plan {
 	);
 
 
-
-	/**
-	 * Get the current step.
-	 */
-	private function get_current_step_count() {
-		return $this->current_step;
-	}
 
 	/**
 	 * The prompts to use when interacting with the user.
@@ -153,9 +141,12 @@ class Performance_Wizard_Analysis_Plan {
 
 	/**
 	 * Get the next action in the analysis process.
+	 *
+	 * @param int $step The current step in the process.
 	 */
-	public function get_next_action() {
-		return $this->steps[ $this->current_step ];
+	public function get_next_action( $step ) {
+		$step = $this->steps[ $step ];
+		return $step;
 	}
 
 	/**
@@ -167,17 +158,17 @@ class Performance_Wizard_Analysis_Plan {
 
 	/**
 	 * Run the next action in the analysis process.
-	 * Also increments the current step.
 	 *
+	 * @param int $step The current step in the process.
+=	 *
 	 * @return mixed The result of the action.
 	 */
-	public function run_next_action() {
-		if ( empty( $this->steps[ $this->current_step ] ) ) {
+	public function run_action( $step ) {
+		if ( empty( $this->steps[ $step ] ) ) {
 			return 'No more steps to run.';
 		}
-		$action = $this->steps[ $this->current_step ];
-		$this->current_step++;
-		return $this->run_action( $action );
+		$action = $this->steps[ $step ];
+		return $this->do_run_action( $action );
 	}
 
 	/**
@@ -198,7 +189,7 @@ class Performance_Wizard_Analysis_Plan {
 	/**
 	 * Run an action in the analysis process.
 	 */
-	private function run_action( $action ) {
+	private function do_run_action( $action ) {
 
 		$data_source = $action['source'];
 		$conversation = [];

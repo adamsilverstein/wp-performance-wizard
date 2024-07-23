@@ -40,20 +40,23 @@ class Performance_Wizard_Rest_API {
 	 * Handle a command sent to the Rest API 'command' endpoint.
 	 *
 	 * Takes commands including 'get_next_action', 'start' and
-	 * 'run_next_action' and returns a response.
+	 * 'run_action' and returns a response.
 	 */
 	public function handle_command( $request ) {
 		$command = $request->get_param( 'command' );
+		$step = $request->get_param( 'step' );
+		$step = $step ? intval( $step ) : 0;
 		error_log( 'Command: ' . $command );
+		error_log( 'Step: ' . $step );
 		switch ( $command ) {
 			case '_get_next_action_':
-				$response = $this->wizard->get_analysis_plan()->get_next_action();
+				$response = $this->wizard->get_analysis_plan()->get_next_action( $step );
 				break;
 			case '_start_':
 				$response = $this->wizard->get_analysis_plan()->start();
 				break;
-			case '_start_':
-				$response = $this->wizard->get_analysis_plan()->run_next_action();
+			case 'run_action':
+				$response = $this->wizard->get_analysis_plan()->run_action( $step );
 				break;
 			default:
 				$response = $this->wizard->get_analysis_plan()->prompt( $command );

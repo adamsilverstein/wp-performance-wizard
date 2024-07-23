@@ -27,15 +27,24 @@ jQuery( function( $ ) {
 
 		// Get a description of the next step. Continue until the final step.
 		const complete = false;
-		while ( ! complete ) {
-			const nextStep = await getPerfomanceWizardNextStep();
+		const maxSteps = 25;
+		let step = 0;
+		while ( ! complete && step <= maxSteps ) {
+			const nextStep = await getPerfomanceWizardNextStep( step );
 			echoStep( nextStep.user_prompt );
 			switch ( nextStep.action ) {
 				case 'complete':
 					complete = true;
 					break;
 				case 'run_action':
-					$results = await runPerfomanceWizardNextStep();
+					results = await runPerfomanceWizardNextStep( step );
+					console.log( results );
+					terminal.echo( '[[b;white;]Analysis...]' );
+
+					step++;
+					break;
+				case 'continue':
+					step++;
 					break;
 			}
 		}
@@ -59,16 +68,39 @@ jQuery( function( $ ) {
 	 * Get the next step in the performance wizard.
 	 * The endpoint is set up with
 	 * register_rest_route( 'performance-wizard/v1', '/command/'...
+	 *
+	 * @param {int} step The current step in the wizard.
 	 */
-	function getPerfomanceWizardNextStep() {
+	function getPerfomanceWizardNextStep( step ) {
 		// User= the REST API to get the next step.
-		const queryParams = { 'command': '_get_next_action_' };
+		const params = {
+			'command': '_get_next_action_',
+			'step'   : step
+		};
 		return wp.apiFetch( {
-			path: '/performance-wizard/v1/command/',
+			path  : '/performance-wizard/v1/command/',
 			method: 'POST',
-			data: queryParams
+			data  : params
 		} );
+	}
 
-
+	/**
+	 * Run the next step in the performance wizard.
+	 * The endpoint is set up with
+	 * register_rest_route( 'performance-wizard/v1', '/command/'...
+	 *
+	 * @param {int} step The current step in the wizard.
+	 */
+	function runPerfomanceWizardNextStep( step ) {
+		// User= the REST API to run the next step.
+		const params = {
+			'command': '_run_action_',
+			'step'   : step
+		};
+		return wp.apiFetch( {
+			path  : '/performance-wizard/v1/command/',
+			method: 'POST',
+			data  : params
+		} );
 	}
 } );
