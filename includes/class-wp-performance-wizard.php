@@ -52,38 +52,39 @@ class WP_Performance_Wizard {
 	 */
 	private $ai_agent;
 
-
-
-	// Constructor
 	/**
 	 * Set up the plugin, bootstrapping required classes.
 	 */
 	public function __construct() {
-		error_log( 'including files' );
-
-		// Load all required files.
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
+		$this->load_required_files();
 
 		// Load the AI Agent.
 		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini();
-		$api_key        = $this->get_api_key( $this->ai_agent->name );
+		$api_key        = $this->get_api_key( $this->ai_agent->get_name() );
 		$this->ai_agent->set_api_key( $api_key );
 
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
 
 		// Load the Analysis plan
-		$this->analysis_plan = new Performance_Wizard_Analysis_Plan();
-
-
+		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
 		// Load the wp-admin page.
 		new Performance_Wizard_Admin_Page();
 	}
+
+	/**
+	 * Load the required files for the plugin.
+	 */
+	private function load_required_files() {
+		// Load all required files.
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
+	}
+
 
 	/**
 	 * Function to get the api key for a specific AI agent.
@@ -91,10 +92,11 @@ class WP_Performance_Wizard {
 	 * // Key is stored in a JSON file with the key "apikey"
 	 */
 	public function get_api_key( $agent_name ) {
+		if ( empty( $agent_name ) ) {
+			return '';
+		}
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
-		error_log( 'filename: ' . $filename );
 		$keydata  = json_decode( file_get_contents( $filename ) );
-		error_log( 'keydata: ' . print_r( $keydata, true ) );
 		return $keydata->apikey;
 	}
 	/**

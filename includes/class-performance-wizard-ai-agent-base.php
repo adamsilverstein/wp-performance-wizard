@@ -8,9 +8,6 @@
  */
 
 class Performance_Wizard_AI_Agent_Base {
-
-
-
 		/**
 		 * The private API key.
 		 */

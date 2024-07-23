@@ -31,6 +31,13 @@ class Performance_Wizard_Data_Source_Base {
 	private $prompt;
 
 	/**
+	 * The prompt to the user explaining this data source. Falls back to prompt.
+	 *
+	 * @var string
+	 */
+	private $user_prompt;
+
+	/**
 	 * A plain text description of the shape of the data returned from the data source.
 	 */
 	private $data_shape;
@@ -91,6 +98,17 @@ class Performance_Wizard_Data_Source_Base {
 	}
 
 	/**
+	 * Get the prompt for the user. Users user_prompt, falling back to prompt if empty.
+	 */
+	public function get_user_prompt() {
+		$user_prompt = $this->user_prompt;
+		if ( empty( $user_prompt ) ) {
+			$user_prompt = $this->prompt;
+		}
+		return $user_prompt;
+	}
+
+	/**
 	 * Get the shape of the data returned from the data source.
 	 */
 	public function get_data_shape() {
@@ -117,6 +135,5 @@ class Performance_Wizard_Data_Source_Base {
 	public function get_analysis_strategy() {
 		return $this->analysis_strategy;
 	}
-
 
 }

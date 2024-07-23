@@ -69,17 +69,43 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var string
 	 */
-	private $primary_prompt = "You will play the role of a web performance expert. You will receive a series of data points about
+	private $primary_prompt = 'You will play the role of a web performance expert. You will receive a series of data points about
 	the website you are analyzing. For each data point, you will provide a summary of the information received and how it reflects
 	on the performance of the site. For each step, you will offer recommendations for how the performance might be improved.
 	You will remember the results of each step and at the end of the process, you will provide an overall summary and set of recommendations
 	for how the site performance might be improved. You will assist the user in making threse changes, then repeat the performance
-	analysis steps, comparing the new results with the previous results.";
+	analysis steps, comparing the new results with the previous results.';
+
+	/**
+	 * The prompt to send before each data point analysis,
+	 *
+	 * @var string
+	 */
+	private $data_point_prompt = 'You will now analyze a data point.';
+
+	/**
+	 * The prompt to send after each data point analysis.
+	 *
+	 * @var string
+	 */
+	private $data_point_summary_prompt = 'Please provide a summary of the information received and how it reflects on the performance of the site.';
+
+
+
+	/**
+	 * Keep a handle on the base wizard class.
+	 *
+	 * @var Performance_Wizard
+	 */
+	private $wizard;
 
 	/**
 	 * Construct the class, setting up the plan.
 	 */
-	function __construct() {
+	function __construct( $wizard ) {
+		$this->wizard = $wizard;
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-data-source-base.php';
+
 		$this->set_up_plan();
 	}
 
@@ -97,17 +123,29 @@ class Performance_Wizard_Analysis_Plan {
 		// The first step is to introduce the user to the process.
 		$steps[] = array(
 			'title'       => 'Introduction',
-			'user_prompt' => 'Welcome to the Performance Wizard. I will analyze the performance of your WordPress site.',
+			'user_prompt' => 'The Performance Wizard will analyze the performance of your WordPress site.',
+			'action'      => 'continue',
 		);
 
 		// Next, add a step for each data source.
+		foreach ( $this->data_sources as $source_name => $data_source ) {
+			include_once plugin_dir_path( __FILE__ ) . $data_source;
+			$source = new $source_name();
+			$steps[] = array(
+				'title'       => $source->get_name(),
+				'user_prompt' => $source->get_user_prompt(),
+				'source'      => $source,
+				'action'      => 'run_action',
+			);
+		}
 
 		// Finally, add the wrap up step.
 		$steps[] = array(
 			'title'       => 'Wrap Up',
 			'user_prompt' => 'I have analyzed the performance of your WordPress site. Here are my recommendations.',
+			'source'      => null,
+			'action'      => 'complete',
 		);
-
 
 		$this->steps = $steps;
 	}
@@ -139,48 +177,70 @@ class Performance_Wizard_Analysis_Plan {
 		}
 		$action = $this->steps[ $this->current_step ];
 		$this->current_step++;
-		return run_action( $action );
+		return $this->run_action( $action );
+	}
+
+	/**
+	 * Sent a prompt, adding it to the conversation.
+	 *
+	 * @param string $prompt       The prompt to send.
+	 * @param array  $conversation The conversation to add the prompt to.
+	 *
+	 * @return array The updated conversation.
+	 */
+	private function send_prompt_with_conversation( $prompt, $conversation ) {
+		$conversation += '>Q: ' . $prompt;
+		$response = $this->wizard->get_ai_agent()->send_prompt( $prompt );
+		$conversation += '>A: ' . $response;
+		return $conversation;
 	}
 
 	/**
 	 * Run an action in the analysis process.
 	 */
 	private function run_action( $action ) {
-		// Connect to the AI agent.
 
+		$data_source = $action['source'];
+		$conversation = [];
 
-		// Send the prompt to the agent.
-		$agent->prompt( $action['user_prompt'] );
-
-		// Get the data from the data source.
-		// @todo this can run async
-		$data = $data_source->get_data();
+		// Send the before data analysis prompt.
+		$prompt = $this->data_point_prompt;
+		$this->send_prompt_with_conversation( $prompt, $conversation );
 
 		// Get the prompt to use when passing the data to the AI agent.
 		$prompt = $data_source->get_prompt();
+		$this->send_prompt_with_conversation( $prompt, $conversation );
 
-		// Send the prompt to the AI agent.
+		// Send the data to the AI agent.
+		// @todo this can run async
+		$prompt = $data_source->get_data();
+		$this->send_prompt_with_conversation( $prompt, $conversation );
 
 		// Get the plaintext description of how to process the data.
-		$description = $data_source->get_description();
-
-		// Send the plaintext description of how to process the data to the AI agent.
+		$prompt = $data_source->get_description();
+		$this->send_prompt_with_conversation( $prompt, $conversation );
 
 		// Get the shape of the data returned from the data source.
 		$data_shape = $data_source->get_data_shape();
 
-		// Send the shape of the data returned from the data source to the AI agent.
+		if ( ! empty( $data_shape ) ) {
+			$prompt = 'Data shape: ' . $data_shape;
+			$this->send_prompt_with_conversation( $prompt, $conversation );
+		}
 
 		// Get the description of a strategy that can be used to analyze this data source.
 		$analysis_strategy = $data_source->get_analysis_strategy();
 
-		// Send the description of a strategy that can be used to analyze this data source to the AI agent.
+		if ( ! empty( $analysis_strategy ) ) {
+			$prompt = 'Analysis strategy: ' . $analysis_strategy;
+			$this->send_prompt_with_conversation( $prompt, $conversation );
+		}
 
-		// Ask the agent for its analysis so far
+		// Send the post data analysis prompt.
+		$prompt = $this->data_point_summary_prompt;
+		$this->send_prompt_with_conversation( $prompt, $conversation );
 
-		// Return the result of the action.
-		return 'OK';
-
+		return $conversation;
 	}
 
 	/**
