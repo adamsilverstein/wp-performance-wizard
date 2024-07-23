@@ -31,21 +31,12 @@
 		*
 		* @var string
 		*/
-		private $prompt = "This data source provides the Lighthouse data for the site ${website}.";
+		private $prompt = "This data source provides the Lighthouse data for the site.";
 
 		/**
 		 * The description of a strategy that can be used to analyze this data source.
 		 */
-		private $analysis_strategy  = "The data returned is a PageSpeed Insights run against the website ${website} as described here: https://developers.google.com/speed/docs/insights/v5/reference/pagespeedapi/runpagespeed#response. Only the performance category is run. The results include the `lighthouseResult` object which is a Lighthouse Results Object (LHR), documented here: https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md. The object structure for the audits is described here: https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md#audits. The audits themselves are open source audits run against the page and available for review here: https://github.com/GoogleChrome/lighthouse/tree/main/core/audits. The Lighthouse audits can indicate top opportunities for performance and provide an overall ";
-
-		/**
-		* The cache for data retrieved from the data source.
-		*/
-		private $cache;
-
-		// Constructor
-
-		// Methods
+		private $analysis_strategy  = "The data returned is a PageSpeed Insights run against the website as described here: https://developers.google.com/speed/docs/insights/v5/reference/pagespeedapi/runpagespeed#response. Only the performance category is run. The results include the `lighthouseResult` object which is a Lighthouse Results Object (LHR), documented here: https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md. The object structure for the audits is described here: https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md#audits. The audits themselves are open source audits run against the page and available for review here: https://github.com/GoogleChrome/lighthouse/tree/main/core/audits. The Lighthouse audits can indicate top opportunities for performance and provide an overall ";
 
 		/**
 		* Get the data from the data source.
@@ -56,37 +47,5 @@
 			// To be implemented by subclasses.
 		}
 
-		/**
-		* Get the name of the data source.
-		*
-		* @return string The name of the data source.
-		*/
-		public function get_name() {
-			return $this->name;
-		}
 
-		/**
-		* Get the description of the data source.
-		*
-		* @return string The description of the data source.
-		*/
-		public function get_description() {
-			return $this->description;
-		}
-
-		/**
-		* Get the prompt to use when passing the data to the AI agent.
-		*
-		* @return string The prompt to use when passing the data to the AI agent.
-		*/
-		public function get_prompt() {
-			return $this->prompt;
-		}
-
-		/**
-		* Get the shape of the data returned from the data source.
-		*
-		* @return string The shape of the data returned from the data source.
-		*/
-		public function get
  }
