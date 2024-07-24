@@ -118,7 +118,7 @@ class Performance_Wizard_Analysis_Plan {
 		// Next, add a step for each data source.
 		foreach ( $this->data_sources as $source_name => $data_source ) {
 		include_once plugin_dir_path( __FILE__ ) . $data_source;
-			$source = new $source_name();
+			$source = new $source_name( $this->wizard );
 			$steps[] = array(
 				'title'       => $source->get_name(),
 				'user_prompt' => $source->get_user_prompt(),
@@ -182,10 +182,12 @@ class Performance_Wizard_Analysis_Plan {
 	 */
 	private function send_prompt_with_conversation( $prompt, &$conversation ) {
 		$response = $this->wizard->get_ai_agent()->send_prompt( $prompt );
-		array_push( $conversation,
+		$q_and_a = array (
 			'>Q: ' . $prompt,
-			'>A: ' . $response
+			'>A: ' . $response,
 		);
+		error_log( json_encode( $q_and_a, JSON_PRETTY_PRINT ) );
+		array_push( $conversation, $q_and_[0], $q_and_a[1] );
 	}
 
 	/**
@@ -200,32 +202,29 @@ class Performance_Wizard_Analysis_Plan {
 		$prompt = $this->data_point_prompt;
 		$this->send_prompt_with_conversation( $prompt, $conversation );
 
-		// Get the prompt to use when passing the data to the AI agent.
 		$prompt = $data_source->get_prompt();
-		$this->send_prompt_with_conversation( $prompt, $conversation );
-
-		// Send the data to the AI agent.
-		// @todo this can run async
-		$prompt = $data_source->get_data();
-		$this->send_prompt_with_conversation( $prompt, $conversation );
-
-		// Get the plaintext description of how to process the data.
-		$prompt = $data_source->get_description();
-		$this->send_prompt_with_conversation( $prompt, $conversation );
-
-		// Get the shape of the data returned from the data source.
-		$data_shape = $data_source->get_data_shape();
-
-		if ( ! empty( $data_shape ) ) {
-			$prompt = 'Data shape: ' . $data_shape;
+		if ( ! empty( $prompt ) ) {
 			$this->send_prompt_with_conversation( $prompt, $conversation );
 		}
 
-		// Get the description of a strategy that can be used to analyze this data source.
-		$analysis_strategy = $data_source->get_analysis_strategy();
+		$description = $data_source->get_description();
+		if ( ! empty( $description ) ) {
+				$this->send_prompt_with_conversation( $description, $conversation );
+		}
+		// Send the data to the AI agent.
+		// @todo this can run async
+		$data = $data_source->get_data();
+		if ( ! empty( $data ) ) {
+			$prompt .= 'Here is the lighthouse data: ' . json_encode( $data ) . "\n";
+			// truncate the $prompt at 1024 characters.
+			$prompt = substr( $prompt, 0, 1024 );
 
-		if ( ! empty( $analysis_strategy ) ) {
-			$prompt = 'Analysis strategy: ' . $analysis_strategy;
+			$data_shape = $data_source->get_data_shape();
+			$analysis_strategy = $data_source->get_analysis_strategy();
+			$prompt = '';
+			$prompt .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "\n";
+			$prompt .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "\n";
+
 			$this->send_prompt_with_conversation( $prompt, $conversation );
 		}
 
@@ -235,22 +234,4 @@ class Performance_Wizard_Analysis_Plan {
 
 		return $conversation;
 	}
-
-	/**
-	 * Pass a prompt to the agent.
-	 *
-	 * @param string $prompt The prompt to pass to the agent.
-	 *
-	 */
-	public function prompt( $prompt ) {
-		return 'OK';
-	}
-
-
-		// Send the wrap up prompt to the agent asking it to synthesize all of the data points.
-
-		// Ask the agent for its final analysis.
-
-
-
 }

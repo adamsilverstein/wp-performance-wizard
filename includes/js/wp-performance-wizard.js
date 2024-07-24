@@ -41,6 +41,19 @@ jQuery( function( $ ) {
 					console.log( results );
 					terminal.echo( '[[b;white;]Analysis...]' );
 
+					// Iterate thru all of the results returned in the response
+					for( const resultIndex in results ) {
+						const result = results[ resultIndex ];
+						// If the results start with "Q: ", then it is a question. Remove that part and display the question in yellow.
+						if ( result.startsWith( '>Q: ' ) ) {
+							terminal.echo( '[[b;yellow;]' + result.replace( '>Q: ', '' ) + ']' );
+						}
+						// Similarly, results starting with ">A: " are answers. Remove that part and display the answer in white.
+						else if ( result.startsWith( '>A: ' ) ) {
+							terminal.echo( '[[b;white;]' + result.replace( '>A: ', '' ) + ']' );
+						}
+					};
+
 					step++;
 					break;
 				case 'continue':

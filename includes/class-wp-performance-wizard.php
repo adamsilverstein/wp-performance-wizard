@@ -126,3 +126,17 @@ class WP_Performance_Wizard {
 	}
 
 }
+
+/**
+ * Get the site URL for the AI agent.
+ */
+function wp_performance_wizard_get_site_url() {
+	$site_url = get_site_url();
+	/**
+	 * Filter the site URL used for performance wizard analysis
+	 *
+	 * @param string $site_url The site URL.
+	 * @return string The filtered site URL.
+	 */
+	return apply_filters( 'wp_performance_wizard_site_url', $site_url );
+}

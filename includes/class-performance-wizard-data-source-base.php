@@ -6,8 +6,18 @@
  * and a prompt to use when passing the data to the AI agent.
  */
 
-abstract class Performance_Wizard_Data_Source_Base {
-	// Properties
+class Performance_Wizard_Data_Source_Base {
+
+	/**
+	 * Construct.
+	 */
+	function __constructor() {
+	}
+
+	/**
+	 * The performance wizard object
+	 */
+	protected $wizard;
 
 	/**
 	 * The name of the data source.
@@ -72,21 +82,19 @@ abstract class Performance_Wizard_Data_Source_Base {
 
 
 	/**
-	 * Get the description of the data source.
-	 *
-	 * @return string The description of the data source.
-	 */
-	public function get_description() {
-		return $this->description;
-	}
-
-	/**
 	 * Get the prompt to use when passing the data to the AI agent.
 	 *
 	 * @return string The prompt to use when passing the data to the AI agent.
 	 */
 	public function get_prompt() {
 		return $this->prompt;
+	}
+
+	/**
+	 * Set the prompt to use when passing the data to the AI agent.
+	 */
+	public function set_prompt( $prompt ) {
+		$this->prompt = $prompt;
 	}
 
 	/**
@@ -111,10 +119,24 @@ abstract class Performance_Wizard_Data_Source_Base {
 	}
 
 	/**
+	 * Set the name of the data source.
+	 */
+	public function set_name( $name ) {
+		$this->name = $name;
+	}
+
+	/**
 	 * Get the shape of the data returned from the data source.
 	 */
 	public function get_data_shape() {
 		return $this->data_shape;
+	}
+
+	/**
+	 * Get the description of the data source.
+	 */
+	public function get_description() {
+		return $this->description;
 	}
 
 	/**
@@ -136,6 +158,43 @@ abstract class Performance_Wizard_Data_Source_Base {
 	 */
 	public function get_analysis_strategy() {
 		return $this->analysis_strategy;
+	}
+
+	/**
+	 * Set the analysis strategy.
+	 */
+	public function set_analysiss_strategy( $analysis_strategy ) {
+		$this->analysis_strategy = $analysis_strategy;
+	}
+
+	/**
+	 * Set the analysis strategy.
+	 */
+	public function set_analysis_strategy( $analysis_strategy ) {
+		$this->analysis_strategy = $analysis_strategy;
+	}
+
+	/**
+	 * Set the description for the data source.
+	 */
+	public function set_description( $description ) {
+		$this->description = $description;
+	}
+
+	/**
+	 * Get the wizard object.
+	 */
+	public function get_wizard() {
+		return $this->wizard;
+	}
+
+	/**
+	 * Basic constructor for the data source.
+	 *
+	 * @param Performance_Wizard $wizard The performance wizard object.
+	 */
+	public function __construct( $wizard) {
+		$this->wizard = $wizard;
 	}
 
 }
