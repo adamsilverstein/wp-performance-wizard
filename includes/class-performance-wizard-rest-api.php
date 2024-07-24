@@ -55,7 +55,7 @@ class Performance_Wizard_Rest_API {
 			case '_start_':
 				$response = $this->wizard->get_analysis_plan()->start();
 				break;
-			case 'run_action':
+			case '_run_action_':
 				$response = $this->wizard->get_analysis_plan()->run_action( $step );
 				break;
 			default:

@@ -31,7 +31,7 @@ jQuery( function( $ ) {
 		let step = 0;
 		while ( ! complete && step <= maxSteps ) {
 			const nextStep = await getPerfomanceWizardNextStep( step );
-			echoStep( nextStep.user_prompt );
+			echoStep( nextStep.user_prompt, nextStep.title );
 			switch ( nextStep.action ) {
 				case 'complete':
 					complete = true;
@@ -54,11 +54,11 @@ jQuery( function( $ ) {
 	/**
 	 * Echo out the next step, or an error if there is one.
 	 */
-	function echoStep( nextStep ) {
+	function echoStep( nextStep, title = 'Next step') {
 		if ( 'error' === nextStep || 'undefined' === nextStep ) {
 			terminal.echo( '[[b;red;]Error: Unable to get the next step. Please try again.]' );
 		} else {
-			terminal.echo( '[[b;yellow;]Next step: ' + nextStep + ']' );
+			terminal.echo( '[[b;yellow;]' + title + ': ' + nextStep + ']' );
 		}
 
 	}

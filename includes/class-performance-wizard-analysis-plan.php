@@ -117,7 +117,7 @@ class Performance_Wizard_Analysis_Plan {
 
 		// Next, add a step for each data source.
 		foreach ( $this->data_sources as $source_name => $data_source ) {
-			include_once plugin_dir_path( __FILE__ ) . $data_source;
+		include_once plugin_dir_path( __FILE__ ) . $data_source;
 			$source = new $source_name();
 			$steps[] = array(
 				'title'       => $source->get_name(),
@@ -126,6 +126,7 @@ class Performance_Wizard_Analysis_Plan {
 				'action'      => 'run_action',
 			);
 		}
+		error_log( json_encode( $steps, JSON_PRETTY_PRINT ) );
 
 		// Finally, add the wrap up step.
 		$steps[] = array(
@@ -180,9 +181,11 @@ class Performance_Wizard_Analysis_Plan {
 	 * @return array The updated conversation.
 	 */
 	private function send_prompt_with_conversation( $prompt, $conversation ) {
-		$conversation += '>Q: ' . $prompt;
 		$response = $this->wizard->get_ai_agent()->send_prompt( $prompt );
-		$conversation += '>A: ' . $response;
+		array_push( $conversation,
+			'>Q: ' . $prompt,
+			'>A: ' . $response
+		);
 		return $conversation;
 	}
 
@@ -245,65 +248,10 @@ class Performance_Wizard_Analysis_Plan {
 	}
 
 
-	/**
-	 * Run the analysis process.
-	 */
-	public function run_analysis() {
-
-		// Connect to the AI agent.
-		include_once plugin_dir_path( __FILE__ ) . $this->agents['Performance_Wizard_AI_Agent_Gemini'];
-		$agent = new Performance_Wizard_AI_Agent_Gemini();
-		$agent->set_api_key( 'YOUR_API_KEY' );
-
-
-		// Send the welcome message to the user
-
-		// Send the initial prompt to the agent explaining the process.
-
-		// Send the hello message
-
-		// Collect the data sources and feed each of them to the agent.
-		foreach ( $this->data_sources as $source_name => $data_source ) {
-
-			// Load the data source and set it up.
-
-			// Data_source is the path inside the plugin to the data source class file.
-			include_once plugin_dir_path( __FILE__ ) . $data_source;
-
-			$source = new $source_name();
-
-			// Get the data from the data source.
-			// @todo this can run async
-			$data = $data_source->get_data();
-
-			// Get the prompt to use when passing the data to the AI agent.
-			$prompt = $data_source->get_prompt();
-
-			// Send the prompt to the AI agent.
-
-			// Get the plaintext description of how to process the data.
-			$description = $data_source->get_description();
-
-			// Send the plaintext description of how to process the data to the AI agent.
-
-			// Get the shape of the data returned from the data source.
-			$data_shape = $data_source->get_data_shape();
-
-			// Send the shape of the data returned from the data source to the AI agent.
-
-			// Get the description of a strategy that can be used to analyze this data source.
-			$analysis_strategy = $data_source->get_analysis_strategy();
-
-			// Send the description of a strategy that can be used to analyze this data source to the AI agent.
-
-			// Ask the agent for its analysis so far
-
-		}
-
 		// Send the wrap up prompt to the agent asking it to synthesize all of the data points.
 
 		// Ask the agent for its final analysis.
 
-	}
+
 
 }

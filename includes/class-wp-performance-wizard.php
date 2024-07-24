@@ -56,7 +56,17 @@ class WP_Performance_Wizard {
 	 * Set up the plugin, bootstrapping required classes.
 	 */
 	public function __construct() {
+
+		// only initiate the plugin on the Tools->Performance Wizard page.
+		if ( ! wp_is_json_request() && ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) ) {
+			return;
+		}
+
 		$this->load_required_files();
+
+		// Load the wp-admin page.
+		new Performance_Wizard_Admin_Page();
+
 
 		// Load the AI Agent.
 		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini();
@@ -66,11 +76,11 @@ class WP_Performance_Wizard {
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
 
+
 		// Load the Analysis plan
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
-		// Load the wp-admin page.
-		new Performance_Wizard_Admin_Page();
+
 	}
 
 	/**
@@ -108,5 +118,11 @@ class WP_Performance_Wizard {
 		return $this->analysis_plan;
 	}
 
+	/**
+	 * Get the ai agent.
+	 */
+	public function get_ai_agent() {
+		return $this->ai_agent;
+	}
 
 }

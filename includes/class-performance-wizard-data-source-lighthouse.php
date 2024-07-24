@@ -47,5 +47,26 @@
 			// To be implemented by subclasses.
 		}
 
+		/**
+		 * Get the name of the data source.
+		 *
+		 * @return string The name of the data source.
+		 */
+		public function get_name() {
+			return $this->name;
+		}
+
+		/**
+		 * Get the prompt for the user. Users user_prompt, falling back to prompt if empty.
+		 */
+		public function get_user_prompt() {
+			$user_prompt = $this->user_prompt;
+			if ( empty( $user_prompt ) ) {
+				$user_prompt = $this->prompt;
+			}
+			return $user_prompt;
+		}
+
+
 
  }

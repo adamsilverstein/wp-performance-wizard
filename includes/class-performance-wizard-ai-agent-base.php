@@ -72,22 +72,6 @@ class Performance_Wizard_AI_Agent_Base {
 			return $this->prompt;
 		}
 
-		/**
-		 * Set the API key.
-		 */
-		public function set_api_key( $api_key ) {
-			$this->api_key = $api_key;
-		}
-
-		/**
-		 * Get the API key.
-		 */
-		public function get_api_key() {
-			return $this->api_key;
-		}
-
-
-
 
 
 	}

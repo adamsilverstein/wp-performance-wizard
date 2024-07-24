@@ -6,7 +6,7 @@
  * and a prompt to use when passing the data to the AI agent.
  */
 
-class Performance_Wizard_Data_Source_Base {
+abstract class Performance_Wizard_Data_Source_Base {
 	// Properties
 
 	/**
@@ -70,14 +70,6 @@ class Performance_Wizard_Data_Source_Base {
 		// To be implemented by subclasses.
 	}
 
-	/**
-	 * Get the name of the data source.
-	 *
-	 * @return string The name of the data source.
-	 */
-	public function get_name() {
-		return $this->name;
-	}
 
 	/**
 	 * Get the description of the data source.
@@ -106,6 +98,16 @@ class Performance_Wizard_Data_Source_Base {
 			$user_prompt = $this->prompt;
 		}
 		return $user_prompt;
+	}
+
+
+	/**
+	 * Get the name of the data source.
+	 *
+	 * @return string The name of the data source.
+	 */
+	public function get_name() {
+		return $this->name;
 	}
 
 	/**

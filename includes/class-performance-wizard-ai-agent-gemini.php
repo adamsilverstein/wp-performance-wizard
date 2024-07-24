@@ -40,7 +40,7 @@
 	public function send_prompt( $prompt ) {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest
-		$api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5:generateContent';
+		$api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 		$query_params = array(
 			'key' => $this->api_key,
 		);
@@ -48,9 +48,7 @@
 		$data = array(
 			'contents' => array(
 				'parts' => array(
-					array(
-						'text' => $prompt,
-					),
+					'text' => $prompt,
 				),
 			),
 		);
@@ -59,15 +57,23 @@
 			add_query_arg( $query_params, $api_base ),
 			array(
 				'body'    => wp_json_encode( $data ),
+				'method'  => 'POST',
+				'timeout' => 45,
 				'headers' => array(
 					'Content-Type' => 'application/json',
 				),
 			)
 		);
 
-		return $response;
+		// Check for errors, then return the response paraeters.
+		if ( is_wp_error( $response ) ) {
+			return 'Error: ' . $response->get_error_message();
+		}
 
+		$response_body = wp_remote_retrieve_body( $response );
+		$response_data = json_decode( $response_body, true );
 
+		return $response_data['candidates'][0]['content']['parts'][0]['text'];
 	}
 
 	/**
@@ -83,6 +89,22 @@
 	public function get_api_key() {
 		return $this->api_key;
 	}
+
+	/**
+	 * Get the name of the agent.
+	 */
+	public function get_name() {
+		return $this->name;
+	}
+
+	/**
+	 * Get the agent prompt.
+	 */
+	public function get_prompt() {
+		return $this->prompt;
+	}
+
+
 
 	/**
 	 * Construct the agent.
