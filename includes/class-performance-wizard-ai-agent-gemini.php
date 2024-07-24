@@ -33,11 +33,11 @@
 	/**
 	 * A method for calling the API of the AI agent.
 	 *
-	 * @param string $prompt The prompt to pass to the agent.
+	 * @param array $prompts The prompts to pass to the agent.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompt( $prompt ) {
+	public function send_prompt( $prompts ) {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest
 		$api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
@@ -45,11 +45,17 @@
 			'key' => $this->api_key,
 		);
 
+		$parts = array();
+		foreach ( $prompts as $prompt ) {
+			$parts[] = array(
+				'role' => 'user',
+				'text' => $prompt,
+			);
+		}
+
 		$data = array(
 			'contents' => array(
-				'parts' => array(
-					'text' => $prompt,
-				),
+				'parts' => $parts,
 			),
 		);
 

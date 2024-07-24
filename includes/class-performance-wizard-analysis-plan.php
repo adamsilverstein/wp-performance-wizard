@@ -198,6 +198,30 @@ class Performance_Wizard_Analysis_Plan {
 		$data_source = $action['source'];
 		$conversation = [];
 
+		/*
+		 * All of these promopts need to be combined into a single request to theAPI.
+		 *
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": { "text": "TEXT1" }
+    },
+    {
+      "role": "model",
+      "parts": { "text": "What a great question!" }
+    },
+    {
+      "role": "user",
+      "parts": { "text": "TEXT2" }
+    }
+  ],
+  "generation_config": {
+    "temperature": TEMPERATURE
+  }
+}
+*/
+
 		// Send the before data analysis prompt.
 		$prompt = $this->data_point_prompt;
 		$this->send_prompt_with_conversation( $prompt, $conversation );
@@ -215,9 +239,9 @@ class Performance_Wizard_Analysis_Plan {
 		// @todo this can run async
 		$data = $data_source->get_data();
 		if ( ! empty( $data ) ) {
-			$prompt .= 'Here is the lighthouse data: ' . json_encode( $data ) . "\n";
-			// truncate the $prompt at 1024 characters.
-			$prompt = substr( $prompt, 0, 1024 );
+			$prompt .= 'Here is the data: ' . json_encode( $data ) . "\n";
+			// truncate the $prompt at 10k characters.
+			$prompt = substr( $prompt, 0, 1024 * 10 );
 
 			$data_shape = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
