@@ -97,13 +97,6 @@
 		return $this->name;
 	}
 
-	/**
-	 * Get the agent prompt.
-	 */
-	public function get_prompt() {
-		return $this->prompt;
-	}
-
 
 
 	/**

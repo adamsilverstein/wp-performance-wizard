@@ -67,6 +67,14 @@
 			return $user_prompt;
 		}
 
+		/**
+		 * Get the prompt.
+		 */
+		public function get_prompt() {
+			return $this->prompt;
+		}
+
+
 
 
  }

@@ -180,13 +180,12 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @return array The updated conversation.
 	 */
-	private function send_prompt_with_conversation( $prompt, $conversation ) {
+	private function send_prompt_with_conversation( $prompt, &$conversation ) {
 		$response = $this->wizard->get_ai_agent()->send_prompt( $prompt );
 		array_push( $conversation,
 			'>Q: ' . $prompt,
 			'>A: ' . $response
 		);
-		return $conversation;
 	}
 
 	/**
