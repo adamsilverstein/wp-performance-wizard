@@ -56,6 +56,22 @@
 			'text' => implode( "\n", $prompts ),
 		);
 
+		/**
+		 * Include the full conversation history for context.
+		 *
+		 * "contents": [
+		 * {"role":"user",
+		 *  "parts":[{
+		 *    "text": "Hello cat."}]},
+		 * {"role": "model",
+		 *  "parts":[{
+		 *    "text": "Meow? 😻 \n"}]},
+		 * {"role": "user",
+		 *  "parts":[{
+		 *    "text": "What is your name? What do like to drink?"}]}
+		 * ]
+		 */
+
 		$data = array(
 			'contents' => array(
 				'parts' => $parts,
