@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: WP Performance Wizard.
+ * Plugin Name: WP Performance Wizard
  * Plugin URI: https://github.com/adamsilverstein/wp-performance-wizard
  * Description: A plugin that uses AI to help you optimize your WordPress site for performance.
  * Version: 1.0.0
@@ -10,10 +10,12 @@
  * Text Domain: wp-performance-wizard
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  * Requires at least: 6.0
- * Requires PHP: 7.0 
- * 
+ * Requires PHP: 7.0
+ *
  * @package wp-performance-wizard
  */
+
+define ( 'WP_PERFORMANCE_WIZARD_VERSION', '1.0.0' );
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,3 +24,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load the plugin.
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-performance-wizard.php';
+$pw = new WP_Performance_Wizard();
