@@ -113,14 +113,6 @@ class Performance_Wizard_Analysis_Plan {
 			'action'      => 'continue',
 		);
 
-		// Then give the primary prompt that defines how the agent will behave.
-		$steps[] = array(
-			'title'       => 'How to behave',
-			'user_prompt' => $this->primary_prompt,
-			'action'      => 'continue',
-		);
-
-
 		// Next, add a step for each data source.
 		foreach ( $this->data_sources as $source_name => $data_source ) {
 		include_once plugin_dir_path( __FILE__ ) . $data_source;
@@ -134,10 +126,18 @@ class Performance_Wizard_Analysis_Plan {
 		}
 		error_log( json_encode( $steps, JSON_PRETTY_PRINT ) );
 
-		// Finally, add the wrap up step.
+		// Finally, add the wrap up steps.
+		$steps[] = array(
+			'title'       => 'Summarize Results',
+			'user_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site.',
+			'source'      => null,
+			'action'      => 'prompt',
+		);
+
+
 		$steps[] = array(
 			'title'       => 'Wrap Up',
-			'user_prompt' => 'I have analyzed the performance of your WordPress site. Here are my recommendations.',
+			'user_prompt' => 'That is the end of the analysis.',
 			'source'      => null,
 			'action'      => 'complete',
 		);

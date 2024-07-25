@@ -56,6 +56,12 @@ jQuery( function( $ ) {
 
 					step++;
 					break;
+				case 'prompt':
+					step++
+					terminal.echo( '[[b;yellow;]' + nextStep.user_prompt  + ']' );
+					results = await runPerfomanceWizardPrompt( nextStep.user_prompt );
+					terminal.echo( '[[b;white;]' + results + ']' );
+					break;
 				case 'continue':
 					step++;
 					break;
@@ -109,6 +115,24 @@ jQuery( function( $ ) {
 		const params = {
 			'command': '_run_action_',
 			'step'   : step
+		};
+		return wp.apiFetch( {
+			path  : '/performance-wizard/v1/command/',
+			method: 'POST',
+			data  : params
+		} );
+	}
+
+	/**
+	 * Function to send a prompt.
+	 *
+	 * @param {string} prompt The prompt to send.
+	 */
+	function runPerfomanceWizardPrompt( prompt ) {
+		// User= the REST API to send the prompt.
+		const params = {
+			'command': '_prompt_',
+			'prompt' : prompt
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',
