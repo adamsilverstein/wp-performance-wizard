@@ -42,7 +42,6 @@ class Performance_Wizard_Admin_Page {
 
 		// Add the terminal.
 		echo '<div id="performance-wizard-terminal"></div>';
-
 	}
 
 	/**

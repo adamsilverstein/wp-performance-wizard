@@ -23,14 +23,19 @@
 		$active_theme   = wp_get_theme();
 		$active_plugins = get_option( 'active_plugins' );
 
+		// bootstrap wp-admin/includes/plugin.php so we can use it to get plugin data.
+		require_once ( ABSPATH . 'wp-admin/includes/plugin.php' );
+
 		$plugins_data = array();
 		foreach ( $active_plugins as $plugin ) {
-			$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
+			$plugin_file = WP_PLUGIN_DIR . '/' . $plugin;
+			$plugin_data = get_plugin_data( $plugin_file );
 			$plugins_data[] = array(
 				'name'        => $plugin_data['Name'],
 				'version'     => $plugin_data['Version'],
 				'author'      => $plugin_data['Author'],
 				'description' => $plugin_data['Description'],
+				'PluginURI'   => $plugin_data['PluginURI'],
 			);
 		}
 		$theme_data = array(
@@ -47,7 +52,7 @@
 		// Log the themes and plugins data to be returned.
 		error_log( 'Themes and Plugins data: ' . wp_json_encode( $to_return, JSON_PRETTY_PRINT ) );
 
-		return $to_return;
+		return wp_json_encode( $to_return );
 	}
 
  }

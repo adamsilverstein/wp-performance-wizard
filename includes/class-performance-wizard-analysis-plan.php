@@ -40,8 +40,6 @@ class Performance_Wizard_Analysis_Plan {
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
-
-
 	/**
 	 * The prompts to use when interacting with the user.
 	 *
