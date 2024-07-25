@@ -37,11 +37,11 @@ class Performance_Wizard_AI_Agent_Base {
 		/**
 		 * A method for calling the API of the AI agent.
 		 *
-		 * @param string $prompt The prompt to pass to the agent.
+		 * @param array $prompts The prompts to pass to the agent.
 		 *
 		 * @return string The response from the API.
 		 */
-		public function send_prompt( $prompt ) {
+		public function send_prompts( $prompts ) {
 			// To be implemented by subclasses.
 		}
 

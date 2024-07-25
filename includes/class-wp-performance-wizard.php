@@ -57,16 +57,17 @@ class WP_Performance_Wizard {
 	 */
 	public function __construct() {
 
-		// only initiate the plugin on the Tools->Performance Wizard page.
-		if ( ! wp_is_json_request() && ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) ) {
+
+		// Load the wp-admin page.
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
+		new Performance_Wizard_Admin_Page();
+
+		// We only need the admin page menu, unless we are on the admin page.
+		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) {
 			return;
 		}
 
 		$this->load_required_files();
-
-		// Load the wp-admin page.
-		new Performance_Wizard_Admin_Page();
-
 
 		// Load the AI Agent.
 		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini();
@@ -79,8 +80,6 @@ class WP_Performance_Wizard {
 
 		// Load the Analysis plan
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
-
-
 	}
 
 	/**
@@ -88,7 +87,6 @@ class WP_Performance_Wizard {
 	 */
 	private function load_required_files() {
 		// Load all required files.
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';

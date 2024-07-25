@@ -31,13 +31,20 @@
 	private $name;
 
 	/**
+	 * A method to send a single prompt to the agent.
+	 */
+	public function send_prompt( $prompt ) {
+		return $this->send_prompts( array( $prompt ) );
+	}
+
+	/**
 	 * A method for calling the API of the AI agent.
 	 *
 	 * @param array $prompts The prompts to pass to the agent.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompt( $prompts ) {
+	public function send_prompts( $prompts ) {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest
 		$api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
@@ -45,20 +52,17 @@
 			'key' => $this->api_key,
 		);
 
-		$parts = array();
-		foreach ( $prompts as $prompt ) {
-			$parts[] = array(
-				'role' => 'user',
-				'text' => $prompt,
-			);
-		}
+		$parts = array(
+			'text' => implode( "\n", $prompts ),
+		);
 
 		$data = array(
 			'contents' => array(
 				'parts' => $parts,
+				'role'  => 'user',
 			),
 		);
-
+		error_log( 'Data: ' . wp_json_encode( $data ) );
 		$response = wp_remote_post(
 			add_query_arg( $query_params, $api_base ),
 			array(
@@ -71,9 +75,9 @@
 			)
 		);
 
-		// Check for errors, then return the response paraeters.
-		if ( is_wp_error( $response ) ) {
-			return 'Error: ' . $response->get_error_message();
+		// Check for errors, then return the response parameters.
+		if ( 200 !== $response['response']['code'] ) {
+			return $response['response']['message'];
 		}
 
 		$response_body = wp_remote_retrieve_body( $response );

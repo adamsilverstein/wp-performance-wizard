@@ -51,7 +51,8 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 
 			// Remove binary image blobs starting with "data:image/*"".
 			// User a regex to replace all instances of the pattern. Replace with a placeholder.
-			$results = preg_replace( '/data:image\/[^;]+;base64,[^"]+/', '{{removed}}', $results );
+			$results = preg_replace( '/(data:image\/[^"]*)/', 'BINARY_DATA_REMOVED', $results );
+
 
 			// Log the results.
 			error_log( 'Lighthouse data: ' . $results );

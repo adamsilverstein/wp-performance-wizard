@@ -39,10 +39,15 @@
 			'author'      => $active_theme->get( 'Author' ),
 			'description' => $active_theme->get( 'Description' ),
 		);
-		return array(
+		$to_return = array(
 			'active_theme'   => $theme_data,
 			'active_plugins' => $plugins_data,
 		);
+
+		// Log the themes and plugins data to be returned.
+		error_log( 'Themes and Plugins data: ' . wp_json_encode( $to_return, JSON_PRETTY_PRINT ) );
+
+		return $to_return;
 	}
 
  }

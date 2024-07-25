@@ -61,7 +61,7 @@ class Performance_Wizard_Analysis_Plan {
 	the website you are analyzing. For each data point, you will provide a summary of the information received and how it reflects
 	on the performance of the site. For each step, you will offer recommendations for how the performance might be improved.
 	You will remember the results of each step and at the end of the process, you will provide an overall summary and set of recommendations
-	for how the site performance might be improved. You will assist the user in making threse changes, then repeat the performance
+	for how the site performance might be improved. You will assist the user in making these changes, then repeat the performance
 	analysis steps, comparing the new results with the previous results.';
 
 	/**
@@ -69,14 +69,14 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var string
 	 */
-	private $data_point_prompt = 'You will now analyze a data point.';
+	private $data_point_prompt = 'You will now analyze a data point. Remember the analysis for this data point so you can refer to it in future steps.';
 
 	/**
 	 * The prompt to send after each data point analysis.
 	 *
 	 * @var string
 	 */
-	private $data_point_summary_prompt = 'Please provide a summary of the information received and how it reflects on the performance of the site.';
+	private $data_point_summary_prompt = 'Analyze the data, while also consider analysis from previous steps, then please provide a summary of the information received and how it reflects on the performance of the site. ';
 
 
 
@@ -114,6 +114,14 @@ class Performance_Wizard_Analysis_Plan {
 			'user_prompt' => 'The Performance Wizard will analyze the performance of your WordPress site.',
 			'action'      => 'continue',
 		);
+
+		// Then give the primary prompt that defines how the agent will behave.
+		$steps[] = array(
+			'title'       => 'How to behave',
+			'user_prompt' => $this->primary_prompt,
+			'action'      => 'continue',
+		);
+
 
 		// Next, add a step for each data source.
 		foreach ( $this->data_sources as $source_name => $data_source ) {
@@ -175,19 +183,19 @@ class Performance_Wizard_Analysis_Plan {
 	/**
 	 * Sent a prompt, adding it to the conversation.
 	 *
-	 * @param string $prompts      The prompt to send.
-	 * @param array  $conversation The conversation to add the prompt to.
+	 * @param array $prompts          The prompt to send.
+	 * @param array $conversation     The conversation to add the prompt to.
+	 * @param array $prompts_for_user The prompts to show to the user.
 	 *
-	 * @return array The updated conversation.
 	 */
-	private function send_prompts_with_conversation( $prompts, &$conversation ) {
+	private function send_prompts_with_conversation( $prompts, &$conversation, $prompts_for_user ) {
 		$response = $this->wizard->get_ai_agent()->send_prompts( $prompts );
 		$q_and_a = array (
-			'>Q: ' . implode( ',', $prompts ),
+			'>Q: ' . implode( "\n", $prompts_for_user ),
 			'>A: ' . $response,
 		);
 		error_log( json_encode( $q_and_a, JSON_PRETTY_PRINT ) );
-		array_push( $conversation, $q_and_[0], $q_and_a[1] );
+		array_push( $conversation, $q_and_a[0], $q_and_a[1] );
 	}
 
 	/**
@@ -200,41 +208,49 @@ class Performance_Wizard_Analysis_Plan {
 
 		// All of these prompts need to be combined into a single request to theAPI.
 		$prompts = [];
+		$prompts_for_user = [];
 
 
 		// Send the before data analysis prompt.
 		$prompt = $this->data_point_prompt;
 		array_push( $prompts, $prompt );
+		array_push( $prompts_for_user, $prompt );
 
 		$prompt = $data_source->get_prompt();
 		if ( ! empty( $prompt ) ) {
 			array_push( $prompts, $prompt );
+			array_push( $prompts_for_user, $prompt );
 		}
+
 
 		$description = $data_source->get_description();
 		if ( ! empty( $description ) ) {
-			array_push( $prompts, $prompt );
+			array_push( $prompts, $description );
+			array_push( $prompts_for_user, $description );
 		}
 		// Send the data to the AI agent.
 		// @todo this can run async
 		$data = $data_source->get_data();
 		if ( ! empty( $data ) ) {
 			$prompt = '';
-			$prompt .= 'Here is the data: ' . json_encode( $data ) . "\n";
+			$prompt .= 'Here is the data: ' . $data . "\n";
 			// truncate the $prompt at 10k characters.
-			$prompt = substr( $prompt, 0, 1024 * 10 );
+			//$prompt = substr( $prompt, 0, 1024 * 10 );
 			$data_shape = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
 			$prompt .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "\n";
 			$prompt .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "\n";
 			array_push( $prompts, $prompt );
+			array_push( $prompts_for_user, 'DATA' );
+
 		}
 
 		// Send the post data analysis prompt.
 		$prompt = $this->data_point_summary_prompt;
 		array_push( $prompts, $prompt );
+		array_push( $prompts_for_user, $prompt );
 
-		$this->send_prompts_with_conversation( $prompts, $conversation );
+		$this->send_prompts_with_conversation( $prompts, $conversation, $prompts_for_user );
 
 		return $conversation;
 	}
