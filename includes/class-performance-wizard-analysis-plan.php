@@ -55,7 +55,7 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var string
 	 */
-	private $primary_prompt = 'You will play the role of a web performance expert. You will receive a series of data points about
+	private $system_instructions = 'You will play the role of a web performance expert. You will receive a series of data points about
 	the website you are analyzing. For each data point, you will provide a summary of the information received and how it reflects
 	on the performance of the site. For each step, you will offer recommendations for how the performance might be improved.
 	You will remember the results of each step and at the end of the process, you will provide an overall summary and set of recommendations
@@ -91,7 +91,7 @@ class Performance_Wizard_Analysis_Plan {
 	function __construct( $wizard ) {
 		$this->wizard = $wizard;
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-data-source-base.php';
-
+		$this->set_system_instructions( $system_instructions );
 		$this->set_up_plan();
 	}
 

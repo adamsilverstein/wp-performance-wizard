@@ -61,6 +61,11 @@
 				'parts' => $parts,
 				'role'  => 'user',
 			),
+			'system_instructions' => array(
+				'parts' => array(
+					'text' => $this->get_wizard->system_prompt,
+				),
+			)
 		);
 		error_log( 'Data: ' . wp_json_encode( $data ) );
 		$response = wp_remote_post(
