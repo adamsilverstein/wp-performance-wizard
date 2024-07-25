@@ -175,15 +175,15 @@ class Performance_Wizard_Analysis_Plan {
 	/**
 	 * Sent a prompt, adding it to the conversation.
 	 *
-	 * @param string $prompt       The prompt to send.
+	 * @param string $prompts      The prompt to send.
 	 * @param array  $conversation The conversation to add the prompt to.
 	 *
 	 * @return array The updated conversation.
 	 */
-	private function send_prompt_with_conversation( $prompt, &$conversation ) {
-		$response = $this->wizard->get_ai_agent()->send_prompt( $prompt );
+	private function send_prompts_with_conversation( $prompts, &$conversation ) {
+		$response = $this->wizard->get_ai_agent()->send_prompts( $prompts );
 		$q_and_a = array (
-			'>Q: ' . $prompt,
+			'>Q: ' . implode( ',', $prompts ),
 			'>A: ' . $response,
 		);
 		error_log( json_encode( $q_and_a, JSON_PRETTY_PRINT ) );
@@ -198,64 +198,46 @@ class Performance_Wizard_Analysis_Plan {
 		$data_source = $action['source'];
 		$conversation = [];
 
-		/*
-		 * All of these promopts need to be combined into a single request to theAPI.
-		 *
-{
-  "contents": [
-    {
-      "role": "user",
-      "parts": { "text": "TEXT1" }
-    },
-    {
-      "role": "model",
-      "parts": { "text": "What a great question!" }
-    },
-    {
-      "role": "user",
-      "parts": { "text": "TEXT2" }
-    }
-  ],
-  "generation_config": {
-    "temperature": TEMPERATURE
-  }
-}
-*/
+		// All of these prompts need to be combined into a single request to theAPI.
+		$prompts = [];
+
 
 		// Send the before data analysis prompt.
 		$prompt = $this->data_point_prompt;
-		$this->send_prompt_with_conversation( $prompt, $conversation );
+		array_push( $prompts, $prompt );
 
 		$prompt = $data_source->get_prompt();
 		if ( ! empty( $prompt ) ) {
-			$this->send_prompt_with_conversation( $prompt, $conversation );
+			array_push( $prompts, $prompt );
 		}
 
 		$description = $data_source->get_description();
 		if ( ! empty( $description ) ) {
-				$this->send_prompt_with_conversation( $description, $conversation );
+			array_push( $prompts, $prompt );
 		}
 		// Send the data to the AI agent.
 		// @todo this can run async
 		$data = $data_source->get_data();
 		if ( ! empty( $data ) ) {
+			$prompt = '';
 			$prompt .= 'Here is the data: ' . json_encode( $data ) . "\n";
 			// truncate the $prompt at 10k characters.
 			$prompt = substr( $prompt, 0, 1024 * 10 );
-
 			$data_shape = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt = '';
 			$prompt .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "\n";
 			$prompt .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "\n";
-
-			$this->send_prompt_with_conversation( $prompt, $conversation );
+			array_push( $prompts, $prompt );
 		}
 
 		// Send the post data analysis prompt.
 		$prompt = $this->data_point_summary_prompt;
-		$this->send_prompt_with_conversation( $prompt, $conversation );
+		array_push( $prompts, $prompt );
+
+		$this->send_prompts_with_conversation( $prompts, $conversation );
 
 		return $conversation;
 	}
+
+
 }
