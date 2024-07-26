@@ -191,7 +191,7 @@ class Performance_Wizard_Data_Source_Base {
 	/**
 	 * Basic constructor for the data source.
 	 *
-	 * @param Performance_Wizard $wizard The performance wizard object.
+	 * @param WP_Performance_Wizard $wizard The performance wizard object.
 	 */
 	public function __construct( $wizard) {
 		$this->wizard = $wizard;

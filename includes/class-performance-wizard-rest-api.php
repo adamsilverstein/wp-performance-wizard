@@ -58,8 +58,10 @@ class Performance_Wizard_Rest_API {
 			case '_run_action_':
 				$response = $this->wizard->get_analysis_plan()->run_action( $step );
 				break;
-			default:
-				$response = $this->wizard->get_analysis_plan()->prompt( $command );
+			case '_prompt_':
+				$prompt         = $request->get_param( 'prompt' );
+				$previous_steps = get_option( $this->wizard->get_option_name(), array() );
+				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps );
 		}
 
 		return new WP_REST_Response( $response, 200 );
