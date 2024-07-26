@@ -15,7 +15,7 @@
  * @package wp-performance-wizard
  */
 
-define ( 'WP_PERFORMANCE_WIZARD_VERSION', '1.0.0' );
+define( 'WP_PERFORMANCE_WIZARD_VERSION', '1.0.0' );
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {

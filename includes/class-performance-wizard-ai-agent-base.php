@@ -48,51 +48,48 @@ class Performance_Wizard_AI_Agent_Base {
 		 *
 		 * @return string The response from the API.
 		 */
-		public function send_prompts( $prompts, $current_step, $previous_steps ) {
-			// To be implemented by subclasses.
-		}
+	public function send_prompts( array $prompts, int $current_step, array $previous_steps ): string {
+		// To be implemented by subclasses.
+	}
 
 		/**
 		 * Get the systemInstructions for the AI agent.
 		 */
-		public function get_system_instructions() {
-			return $this->system_instructions;
-		}
+	public function get_system_instructions() {
+		return $this->system_instructions;
+	}
 
 		/**
 		 * Set the systemInstructions for the AI agent.
 		 */
-		public function set_system_instructions( $system_instructions ) {
-			$this->system_instructions = $system_instructions;
-		}
+	public function set_system_instructions( $system_instructions ): void {
+		$this->system_instructions = $system_instructions;
+	}
 
 		/**
 		 * Get the name of the AI agent.
 		 *
 		 * @return string The name of the AI agent.
 		 */
-		public function get_name() {
-			return $this->name;
-		}
+	public function get_name(): string {
+		return $this->name;
+	}
 
 		/**
 		 * Get the description of the AI agent.
 		 *
 		 * @return string The description of the AI agent.
 		 */
-		public function get_description() {
-			return $this->description;
-		}
+	public function get_description(): string {
+		return $this->description;
+	}
 
 		/**
 		 * Get the prompt to use when passing the data to the AI agent.
 		 *
 		 * @return string The prompt to use when passing the data to the AI agent.
 		 */
-		public function get_prompt() {
-			return $this->prompt;
-		}
-
-
-
+	public function get_prompt(): string {
+		return $this->prompt;
 	}
+}

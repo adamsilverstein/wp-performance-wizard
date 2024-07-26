@@ -11,7 +11,7 @@ class Performance_Wizard_Data_Source_Base {
 	/**
 	 * Construct.
 	 */
-	function __constructor() {
+	function __constructor(): void {
 	}
 
 	/**
@@ -86,14 +86,14 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @return string The prompt to use when passing the data to the AI agent.
 	 */
-	public function get_prompt() {
+	public function get_prompt(): string {
 		return $this->prompt;
 	}
 
 	/**
 	 * Set the prompt to use when passing the data to the AI agent.
 	 */
-	public function set_prompt( $prompt ) {
+	public function set_prompt( $prompt ): void {
 		$this->prompt = $prompt;
 	}
 
@@ -114,14 +114,14 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @return string The name of the data source.
 	 */
-	public function get_name() {
+	public function get_name(): string {
 		return $this->name;
 	}
 
 	/**
 	 * Set the name of the data source.
 	 */
-	public function set_name( $name ) {
+	public function set_name( $name ): void {
 		$this->name = $name;
 	}
 
@@ -163,21 +163,21 @@ class Performance_Wizard_Data_Source_Base {
 	/**
 	 * Set the analysis strategy.
 	 */
-	public function set_analysiss_strategy( $analysis_strategy ) {
+	public function set_analysiss_strategy( $analysis_strategy ): void {
 		$this->analysis_strategy = $analysis_strategy;
 	}
 
 	/**
 	 * Set the analysis strategy.
 	 */
-	public function set_analysis_strategy( $analysis_strategy ) {
+	public function set_analysis_strategy( $analysis_strategy ): void {
 		$this->analysis_strategy = $analysis_strategy;
 	}
 
 	/**
 	 * Set the description for the data source.
 	 */
-	public function set_description( $description ) {
+	public function set_description( $description ): void {
 		$this->description = $description;
 	}
 
@@ -193,8 +193,7 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @param WP_Performance_Wizard $wizard The performance wizard object.
 	 */
-	public function __construct( $wizard) {
+	public function __construct( WP_Performance_Wizard $wizard ) {
 		$this->wizard = $wizard;
 	}
-
 }

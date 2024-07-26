@@ -38,12 +38,11 @@ class WP_Performance_Wizard {
 	 *  - Performance recommendations for WordPress sites from best practices guides from Google's web.dev, the WordPress developers handbook, 10up's best practices and other sources.
 	 *
 	 * The data sources will be fed into the AI as part of a series of prompts to help it make its recommendations.
-	 *
-	 *
 	 */
 
 	/**
 	 * The analysis plan.
+	 *
 	 * @var Performance_Wizard_Analysis_Plan
 	 */
 	private $analysis_plan;
@@ -79,7 +78,6 @@ class WP_Performance_Wizard {
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
 
-
 		// Load the Analysis plan
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 	}
@@ -87,7 +85,7 @@ class WP_Performance_Wizard {
 	/**
 	 * Load the required files for the plugin.
 	 */
-	private function load_required_files() {
+	private function load_required_files(): void {
 		// Load all required files.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
@@ -111,10 +109,8 @@ class WP_Performance_Wizard {
 	}
 	/**
 	 * Get the analysis plan class.
-	 *
-	 * @return Performance_Wizard_Analysis_Plan
 	 */
-	public function get_analysis_plan() {
+	public function get_analysis_plan(): Performance_Wizard_Analysis_Plan {
 		return $this->analysis_plan;
 	}
 
@@ -131,7 +127,6 @@ class WP_Performance_Wizard {
 	public function get_option_name() {
 		return $this->option_name;
 	}
-
 }
 
 /**

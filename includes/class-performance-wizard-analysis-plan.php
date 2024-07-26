@@ -25,9 +25,9 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var array
 	 */
-	private $data_sources = array (
-		'Performance_Wizard_Data_Source_Lighthouse'         => 'class-performance-wizard-data-source-lighthouse.php',
-		'Performance_Wizard_Data_Source_HTML'               => 'class-performance-wizard-data-source-html.php',
+	private $data_sources = array(
+		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
+		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
@@ -88,7 +88,7 @@ class Performance_Wizard_Analysis_Plan {
 	 * - A user_prompt to show to the user
 	 * - A data source to use for the step
 	 */
-	public function set_up_plan() {
+	public function set_up_plan(): void {
 		$steps = array();
 
 		// The first step is to introduce the user to the process.
@@ -100,8 +100,8 @@ class Performance_Wizard_Analysis_Plan {
 
 		// Next, add a step for each data source.
 		foreach ( $this->data_sources as $source_name => $data_source ) {
-		include_once plugin_dir_path( __FILE__ ) . $data_source;
-			$source = new $source_name( $this->wizard );
+			include_once plugin_dir_path( __FILE__ ) . $data_source;
+			$source  = new $source_name( $this->wizard );
 			$steps[] = array(
 				'title'       => $source->get_name(),
 				'user_prompt' => $source->get_user_prompt(),
@@ -119,7 +119,6 @@ class Performance_Wizard_Analysis_Plan {
 			'action'      => 'prompt',
 		);
 
-
 		$steps[] = array(
 			'title'       => 'Wrap Up',
 			'user_prompt' => 'That is the end of the analysis.',
@@ -136,26 +135,25 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @param int $step The current step in the process.
 	 */
-	public function get_next_action( $step ) {
+	public function get_next_action( int $step ) {
 		$step = $this->steps[ $step ];
 		return $step;
 	}
 
 	/**
 	 * Start the process.
-	 *
 	 */
-	public function start() {
+	public function start(): void {
 	}
 
 	/**
 	 * Run the next action in the analysis process.
 	 *
 	 * @param int $step The current step in the process.
-=	 *
+=    *
 	 * @return mixed The result of the action.
 	 */
-	public function run_action( $step ) {
+	public function run_action( int $step ) {
 		$this->current_step = $step;
 		if ( empty( $this->steps[ $step ] ) ) {
 			return 'No more steps to run.';
@@ -170,12 +168,11 @@ class Performance_Wizard_Analysis_Plan {
 	 * @param array $prompts          The prompt to send.
 	 * @param array $conversation     The conversation to add the prompt to.
 	 * @param array $prompts_for_user The prompts to show to the user.
-	 *
 	 */
-	private function send_prompts_with_conversation( $prompts, &$conversation, $prompts_for_user ) {
+	private function send_prompts_with_conversation( array $prompts, array &$conversation, array $prompts_for_user ) {
 		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
-		$response = $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
-		$q_and_a = array (
+		$response       = $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
+		$q_and_a        = array(
 			'>Q: ' . implode( PHP_EOL, $prompts_for_user ),
 			'>A: ' . $response,
 		);
@@ -189,13 +186,12 @@ class Performance_Wizard_Analysis_Plan {
 	 */
 	private function do_run_action( $action ) {
 
-		$data_source = $action['source'];
-		$conversation = [];
+		$data_source  = $action['source'];
+		$conversation = array();
 
 		// All of these prompts need to be combined into a single request to theAPI.
-		$prompts = [];
-		$prompts_for_user = [];
-
+		$prompts          = array();
+		$prompts_for_user = array();
 
 		// Send the before data analysis prompt.
 		$prompt = $this->data_point_prompt;
@@ -208,7 +204,6 @@ class Performance_Wizard_Analysis_Plan {
 			array_push( $prompts_for_user, $prompt );
 		}
 
-
 		$description = $data_source->get_description();
 		if ( ! empty( $description ) ) {
 			array_push( $prompts, $description );
@@ -217,14 +212,14 @@ class Performance_Wizard_Analysis_Plan {
 		// Send the data to the AI agent.
 		$data = $data_source->get_data();
 		if ( ! empty( $data ) ) {
-			$prompt = '';
+			$prompt  = '';
 			$prompt .= 'Here is the data: ' . $data . PHP_EOL;
 			// truncate the $prompt at 10k characters.
-			//$prompt = substr( $prompt, 0, 1024 * 10 );
-			$data_shape = $data_source->get_data_shape();
+			// $prompt = substr( $prompt, 0, 1024 * 10 );
+			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
-			$prompt .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
+			$prompt           .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
+			$prompt           .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, 'DATA' );
 		}
@@ -248,15 +243,13 @@ class Performance_Wizard_Analysis_Plan {
 	 * @param string $prompts   The prompts to store.
 	 * @param string $response  The response to store.
 	 */
-	private function store_prompts_and_response( $prompts, $response ) {
-		$option_name = $this->wizard->get_option_name();
-		$steps = get_option( $option_name, array() );
+	private function store_prompts_and_response( string $prompts, string $response ): void {
+		$option_name                  = $this->wizard->get_option_name();
+		$steps                        = get_option( $option_name, array() );
 		$steps[ $this->current_step ] = array(
 			'prompts'  => $prompts,
 			'response' => $response,
 		);
 		update_option( $option_name, $steps );
 	}
-
-
 }

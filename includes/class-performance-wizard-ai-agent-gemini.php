@@ -3,7 +3,7 @@
  * A class that enables connections to Gemini AI.
  */
 
- class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Base {
+class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Base {
 		// Properties
 
 		/**
@@ -13,26 +13,26 @@
 
 		/**
 		 * The private API key.
-		*/
+		 */
 		private $api_key;
 
 		/**
 		 * The description of the AI agent.
-		*
-		* @var string
-		*/
-		private $description = "Gemini is a is a generative artificial intelligence chatbot developed by Google.";
+		 *
+		 * @var string
+		 */
+		private $description = 'Gemini is a is a generative artificial intelligence chatbot developed by Google.';
 
 		/**
 		 * The prompt to use when passing the data to the AI agent.
-		*
-		* @var string
-		*/
+		 *
+		 * @var string
+		 */
 	private $prompt;
 
 	/**
 	 * The name of the agent.
-	*/
+	 */
 	private $name;
 
 	/**
@@ -41,9 +41,8 @@
 	 * @param array    $prompt         The prompt to pass to the agent.
 	 * @param int      $current_step   The current step in the process.
 	 * @param string[] $previous_steps The previous steps in the process.
-
 	 */
-	public function send_prompt( $prompt, $current_step, $previous_steps ) {
+	public function send_prompt( array $prompt, int $current_step, array $previous_steps ) {
 		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps );
 	}
 
@@ -56,10 +55,10 @@
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompts( $prompts, $current_step, $previous_steps ) {
+	public function send_prompts( array $prompts, int $current_step, array $previous_steps ): string {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest
-		$api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+		$api_base     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 		$query_params = array(
 			'key' => $this->api_key,
 		);
@@ -83,35 +82,45 @@
 		 *    "text": "What is your name? What do like to drink?"}]}
 		 * ]
 		 */
-		$contents = array();
+		$contents  = array();
 		$max_steps = $current_step;
-		for( $i = 1; $i < $max_steps; $i++ ) {
+		for ( $i = 1; $i < $max_steps; $i++ ) {
 			$step = $previous_steps[ $i ];
 			if ( ! empty( $step['prompts'] ) ) {
-				array_push( $contents, array(
-					'parts' => array(
-						'text' => $step['prompts'],
-					),
-					'role'  => 'user',
-				) );
+				array_push(
+					$contents,
+					array(
+						'parts' => array(
+							'text' => $step['prompts'],
+						),
+						'role'  => 'user',
+					)
+				);
 			}
-			if ( ! empty ( $step['response'] )) {
-				array_push( $contents, array(
-					'parts' => array(
-						'text' => $step['response'],
-					),
-					'role'  => 'model',
-				) );
+			if ( ! empty( $step['response'] ) ) {
+				array_push(
+					$contents,
+					array(
+						'parts' => array(
+							'text' => $step['response'],
+						),
+						'role'  => 'model',
+					)
+				);
 			}
-		 }
+		}
 
-		array_push( $contents, array(
-			'parts' => $parts,
-			'role'  => 'user',
-		) );
+		array_push(
+			$contents,
+			array(
+				'parts' => $parts,
+				'role'  => 'user',
+			)
+		);
 		$data = array(
 			'contents' => $contents,
-			/*'system_instructions' => array(
+			/*
+			'system_instructions' => array(
 				'parts' => array(
 					'text' => $this->get_system_instructions(),
 				),
@@ -127,9 +136,9 @@
 				'role'  => 'user',
 			),
 		);
-*/
+		*/
 		error_log( 'Data: ' . wp_json_encode( $data ) );
-		//error_log( 'Data: ' . wp_json_encode( $data2 ) );
+		// error_log( 'Data: ' . wp_json_encode( $data2 ) );
 		$response = wp_remote_post(
 			add_query_arg( $query_params, $api_base ),
 			array(
@@ -156,7 +165,7 @@
 	/**
 	 * Set the API key.
 	 */
-	public function set_api_key( $api_key ) {
+	public function set_api_key( $api_key ): void {
 		$this->api_key = $api_key;
 	}
 
@@ -181,10 +190,9 @@
 	 *
 	 * @param WP_Performance_Wizard $wizard The performance wizard.
 	 */
-	function __construct( $wizard ) {
+	function __construct( WP_Performance_Wizard $wizard ) {
 		// Set the name.
 		$this->name   = 'Gemini';
 		$this->wizard = $wizard;
 	}
-
 }

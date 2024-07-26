@@ -20,20 +20,25 @@ class Performance_Wizard_Rest_API {
 	/**
 	 * Add a command endpoint for the performance wizard.
 	 * This endpoint will accept a command and return a response.
-	 *
-	 * @return void
 	 */
-	public function add_endpoint() {
-		add_action( 'rest_api_init', function () {
-			// Register the command route, requiring admin access to use.
-			register_rest_route( 'performance-wizard/v1', '/command/', array(
-				'methods'             => array( 'POST' ),
-				'callback'            => array( $this, 'handle_command' ),
-				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
-				},
-			) );
-		} );
+	public function add_endpoint(): void {
+		add_action(
+			'rest_api_init',
+			function (): void {
+				// Register the command route, requiring admin access to use.
+				register_rest_route(
+					'performance-wizard/v1',
+					'/command/',
+					array(
+						'methods'             => array( 'POST' ),
+						'callback'            => array( $this, 'handle_command' ),
+						'permission_callback' => static function () {
+							return current_user_can( 'manage_options' );
+						},
+					)
+				);
+			}
+		);
 	}
 
 	/**
@@ -44,8 +49,8 @@ class Performance_Wizard_Rest_API {
 	 */
 	public function handle_command( $request ) {
 		$command = $request->get_param( 'command' );
-		$step = $request->get_param( 'step' );
-		$step = $step ? intval( $step ) : 0;
+		$step    = $request->get_param( 'step' );
+		$step    = $step ? intval( $step ) : 0;
 		error_log( 'Command: ' . $command );
 		error_log( 'Step: ' . $step );
 		switch ( $command ) {
@@ -66,5 +71,4 @@ class Performance_Wizard_Rest_API {
 
 		return new WP_REST_Response( $response, 200 );
 	}
-
 }
