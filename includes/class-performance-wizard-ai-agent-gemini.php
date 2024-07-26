@@ -7,6 +7,11 @@
 		// Properties
 
 		/**
+		 * A reference to the performance wizard.
+		 */
+		private $wizard;
+
+		/**
 		 * The private API key.
 		*/
 		private $api_key;
@@ -32,19 +37,26 @@
 
 	/**
 	 * A method to send a single prompt to the agent.
+	 *
+	 * @param array    $prompt         The prompt to pass to the agent.
+	 * @param int      $current_step   The current step in the process.
+	 * @param string[] $previous_steps The previous steps in the process.
+
 	 */
-	public function send_prompt( $prompt ) {
-		return $this->send_prompts( array( $prompt ) );
+	public function send_prompt( $prompt, $current_step, $previous_steps ) {
+		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps );
 	}
 
 	/**
 	 * A method for calling the API of the AI agent.
 	 *
-	 * @param array $prompts The prompts to pass to the agent.
+	 * @param array    $prompts        The prompts to pass to the agent.
+	 * @param int      $current_step   The current step in the process.
+	 * @param string[] $previous_steps The previous steps in the process.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompts( $prompts ) {
+	public function send_prompts( $prompts, $current_step, $previous_steps ) {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest
 		$api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
@@ -53,7 +65,7 @@
 		);
 
 		$parts = array(
-			'text' => implode( "\n", $prompts ),
+			'text' => implode( PHP_EOL, $prompts ),
 		);
 
 		/**
@@ -71,19 +83,53 @@
 		 *    "text": "What is your name? What do like to drink?"}]}
 		 * ]
 		 */
+		$contents = array();
+		$max_steps = $current_step;
+		for( $i = 1; $i < $max_steps; $i++ ) {
+			$step = $previous_steps[ $i ];
+			if ( ! empty( $step['prompts'] ) ) {
+				array_push( $contents, array(
+					'parts' => array(
+						'text' => $step['prompts'],
+					),
+					'role'  => 'user',
+				) );
+			}
+			if ( ! empty ( $step['response'] )) {
+				array_push( $contents, array(
+					'parts' => array(
+						'text' => $step['response'],
+					),
+					'role'  => 'model',
+				) );
+			}
+		 }
 
+		array_push( $contents, array(
+			'parts' => $parts,
+			'role'  => 'user',
+		) );
 		$data = array(
+			'contents' => $contents,
+			/*'system_instructions' => array(
+				'parts' => array(
+					'text' => $this->get_system_instructions(),
+				),
+			)*/
+		);
+
+		/*
+		Working
+
+		$data2 = array(
 			'contents' => array(
 				'parts' => $parts,
 				'role'  => 'user',
 			),
-			'system_instructions' => array(
-				'parts' => array(
-					'text' => $this->get_wizard->system_prompt,
-				),
-			)
 		);
+*/
 		error_log( 'Data: ' . wp_json_encode( $data ) );
+		//error_log( 'Data: ' . wp_json_encode( $data2 ) );
 		$response = wp_remote_post(
 			add_query_arg( $query_params, $api_base ),
 			array(
@@ -132,10 +178,13 @@
 
 	/**
 	 * Construct the agent.
+	 *
+	 * @param WP_Performance_Wizard $wizard The performance wizard.
 	 */
-	function __construct() {
+	function __construct( $wizard ) {
 		// Set the name.
-		$this->name = 'Gemini';
+		$this->name   = 'Gemini';
+		$this->wizard = $wizard;
 	}
 
 }

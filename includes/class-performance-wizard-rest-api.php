@@ -59,8 +59,9 @@ class Performance_Wizard_Rest_API {
 				$response = $this->wizard->get_analysis_plan()->run_action( $step );
 				break;
 			case '_prompt_':
-				$prompt = $request->get_param( 'prompt' );
-				$response = $this->wizard->get_ai_agent()->send_prompt( $prompt );
+				$prompt         = $request->get_param( 'prompt' );
+				$previous_steps = get_option( $this->wizard->get_option_name(), array() );
+				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps );
 		}
 
 		return new WP_REST_Response( $response, 200 );

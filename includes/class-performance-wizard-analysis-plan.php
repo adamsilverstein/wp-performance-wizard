@@ -11,18 +11,9 @@
 class Performance_Wizard_Analysis_Plan {
 
 	/**
-	 * The name of the analysis plan.
-	 *
-	 * @var string
+	 * The current step in the process.
 	 */
-	private $name;
-
-	/**
-	 * The description of the analysis plan.
-	 *
-	 * @var string
-	 */
-	private $description;
+	private $current_step = 0;
 
 	/**
 	 * Track the steps the plan will follow.
@@ -38,16 +29,6 @@ class Performance_Wizard_Analysis_Plan {
 		'Performance_Wizard_Data_Source_Lighthouse'         => 'class-performance-wizard-data-source-lighthouse.php',
 		'Performance_Wizard_Data_Source_HTML'               => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
-	);
-
-	/**
-	 * The prompts to use when interacting with the user.
-	 *
-	 * @var array
-	 */
-	private $user_prompts = array(
-		'Welcome to the Performance Wizard. I will analyze the performance of your WordPress site.',
-		'The analysis will follow a series of steps and I will report on each step as I progress.',
 	);
 
 	/**
@@ -76,14 +57,19 @@ class Performance_Wizard_Analysis_Plan {
 	 */
 	private $data_point_summary_prompt = 'Analyze the data, while also consider analysis from previous steps, then please provide a summary of the information received and how it reflects on the performance of the site. ';
 
-
-
 	/**
 	 * Keep a handle on the base wizard class.
 	 *
-	 * @var Performance_Wizard
+	 * @var WP_Performance_Wizard
 	 */
 	private $wizard;
+
+	/**
+	 * Helper to get the current step.
+	 */
+	public function get_current_step() {
+		return $this->current_step;
+	}
 
 	/**
 	 * Construct the class, setting up the plan.
@@ -91,7 +77,6 @@ class Performance_Wizard_Analysis_Plan {
 	function __construct( $wizard ) {
 		$this->wizard = $wizard;
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-data-source-base.php';
-		$this->set_system_instructions( $system_instructions );
 		$this->set_up_plan();
 	}
 
@@ -171,6 +156,7 @@ class Performance_Wizard_Analysis_Plan {
 	 * @return mixed The result of the action.
 	 */
 	public function run_action( $step ) {
+		$this->current_step = $step;
 		if ( empty( $this->steps[ $step ] ) ) {
 			return 'No more steps to run.';
 		}
@@ -187,13 +173,15 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 */
 	private function send_prompts_with_conversation( $prompts, &$conversation, $prompts_for_user ) {
-		$response = $this->wizard->get_ai_agent()->send_prompts( $prompts );
+		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
+		$response = $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
 		$q_and_a = array (
-			'>Q: ' . implode( "\n", $prompts_for_user ),
+			'>Q: ' . implode( PHP_EOL, $prompts_for_user ),
 			'>A: ' . $response,
 		);
 		error_log( json_encode( $q_and_a, JSON_PRETTY_PRINT ) );
 		array_push( $conversation, $q_and_a[0], $q_and_a[1] );
+		return $response;
 	}
 
 	/**
@@ -227,20 +215,18 @@ class Performance_Wizard_Analysis_Plan {
 			array_push( $prompts_for_user, $description );
 		}
 		// Send the data to the AI agent.
-		// @todo this can run async
 		$data = $data_source->get_data();
 		if ( ! empty( $data ) ) {
 			$prompt = '';
-			$prompt .= 'Here is the data: ' . $data . "\n";
+			$prompt .= 'Here is the data: ' . $data . PHP_EOL;
 			// truncate the $prompt at 10k characters.
 			//$prompt = substr( $prompt, 0, 1024 * 10 );
 			$data_shape = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "\n";
-			$prompt .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "\n";
+			$prompt .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
+			$prompt .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, 'DATA' );
-
 		}
 
 		// Send the post data analysis prompt.
@@ -248,9 +234,28 @@ class Performance_Wizard_Analysis_Plan {
 		array_push( $prompts, $prompt );
 		array_push( $prompts_for_user, $prompt );
 
-		$this->send_prompts_with_conversation( $prompts, $conversation, $prompts_for_user );
+		$response = $this->send_prompts_with_conversation( $prompts, $conversation, $prompts_for_user );
+
+		// Store the prompt and response for subsequent steps.
+		$this->store_prompts_and_response( implode( PHP_EOL, $prompts ), $response );
 
 		return $conversation;
+	}
+
+	/**
+	 * Store the prompt and response for future visits.
+	 *
+	 * @param string $prompts   The prompts to store.
+	 * @param string $response  The response to store.
+	 */
+	private function store_prompts_and_response( $prompts, $response ) {
+		$option_name = $this->wizard->get_option_name();
+		$steps = get_option( $option_name, array() );
+		$steps[ $this->current_step ] = array(
+			'prompts'  => $prompts,
+			'response' => $response,
+		);
+		update_option( $option_name, $steps );
 	}
 
 

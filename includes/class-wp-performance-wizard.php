@@ -5,7 +5,10 @@
  * @package wp-performance-wizard
  */
 class WP_Performance_Wizard {
-	// Properties
+	/**
+	 * The name of the option to store previous step data.
+	 */
+	private $option_name = 'performance_wizard_analysis_plan_steps';
 
 	/**
 	 * The data sources are the data that the AI uses to make its recommendations.
@@ -57,7 +60,6 @@ class WP_Performance_Wizard {
 	 */
 	public function __construct() {
 
-
 		// Load the wp-admin page.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
 		new Performance_Wizard_Admin_Page();
@@ -70,7 +72,7 @@ class WP_Performance_Wizard {
 		$this->load_required_files();
 
 		// Load the AI Agent.
-		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini();
+		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
 		$api_key        = $this->get_api_key( $this->ai_agent->get_name() );
 		$this->ai_agent->set_api_key( $api_key );
 
@@ -121,6 +123,13 @@ class WP_Performance_Wizard {
 	 */
 	public function get_ai_agent() {
 		return $this->ai_agent;
+	}
+
+	/**
+	 * Get the option name.
+	 */
+	public function get_option_name() {
+		return $this->option_name;
 	}
 
 }

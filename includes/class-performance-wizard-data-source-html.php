@@ -25,19 +25,28 @@ class Performance_Wizard_Data_Source_HTML extends Performance_Wizard_Data_Source
 		$site_url       = wp_performance_wizard_get_site_url();
 		$home_page      = wp_remote_get( $site_url );
 		$home_page_body = wp_remote_retrieve_body( $home_page );
+		if ( is_wp_error( $home_page_body ) ) {
+			$home_page_body = 'error';
+		}
 
 		// Get the most recent post.
 		$posts                 = get_posts( array( 'numberposts' => 1 ) );
 		$most_recent_post      = wp_remote_get( get_permalink( $posts[0]->ID ) );
 		$most_recent_post_body = wp_remote_retrieve_body( $most_recent_post );
+		if ( is_wp_error( $most_recent_post_body ) ) {
+			$most_recent_post_body = '';
+		}
 
 		$archive_page      = wp_remote_get( get_post_type_archive_link( 'post' ) );
 		$archive_page_body = wp_remote_retrieve_body( $archive_page );
+		if ( is_wp_error( $archive_page_body ) ) {
+			$archive_page_body = '';
+		}
 
 		$to_return = array(
-			'home_page'        => is_wp_error( $home_page_body ) ? 'error' : $home_page_body,
-			'most_recent_post' => is_wp_error( $most_recent_post_body ) ? 'error' : $most_recent_post_body,
-			'archive_page'     => is_wp_error( $archive_page_body ) ? 'error' : $archive_page_body,
+			'home_page'        => $home_page_body,
+			'most_recent_post' => $most_recent_post_body,
+			'archive_page'     => $archive_page_body,
 		);
 
 		// Log the html data to be returned.

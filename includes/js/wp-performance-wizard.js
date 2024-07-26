@@ -59,7 +59,7 @@ jQuery( function( $ ) {
 				case 'prompt':
 					step++
 					terminal.echo( '[[b;yellow;]' + nextStep.user_prompt  + ']' );
-					results = await runPerfomanceWizardPrompt( nextStep.user_prompt );
+					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
 					terminal.echo( '[[b;white;]' + results + ']' );
 					break;
 				case 'continue':
@@ -127,12 +127,14 @@ jQuery( function( $ ) {
 	 * Function to send a prompt.
 	 *
 	 * @param {string} prompt The prompt to send.
+	 * @param {int} step The current step in the wizard.
 	 */
-	function runPerfomanceWizardPrompt( prompt ) {
+	function runPerfomanceWizardPrompt( prompt, step ) {
 		// User= the REST API to send the prompt.
 		const params = {
 			'command': '_prompt_',
-			'prompt' : prompt
+			'prompt' : prompt,
+			'step'   : step
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',
