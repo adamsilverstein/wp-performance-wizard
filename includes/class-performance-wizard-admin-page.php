@@ -1,9 +1,17 @@
 <?php
 /**
  * Add a Admin page to wp-admin under Tools->Performance Wizard.
+ *
+ * @package wp-performance-wizard
+ */
+
+/**
+ * The Admin page class.
  */
 class Performance_Wizard_Admin_Page {
-	// Construct the class by adding the primary callback.
+	/**
+	 * Construct the class by adding the primary callback.
+	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
@@ -13,11 +21,11 @@ class Performance_Wizard_Admin_Page {
 	 * Add the menu to wp-admin.
 	 */
 	public function add_menu(): void {
-		error_log( 'add submenu page' );
+
 		add_submenu_page(
 			'tools.php',
-			__( 'Performance Wizard', 'performance-wizard' ),
-			__( 'Performance Wizard', 'performance-wizard' ),
+			__( 'Performance Wizard', 'wp-performance-wizard' ),
+			__( 'Performance Wizard', 'wp-performance-wizard' ),
 			'manage_options',
 			'wp-performance-wizard',
 			array( $this, 'render_page' )
@@ -29,7 +37,7 @@ class Performance_Wizard_Admin_Page {
 	 * monitor and interact with the AI agent.
 	 */
 	public function render_page(): void {
-		error_log( 'render_page' );
+
 		// Check if the user has the correct permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -46,15 +54,14 @@ class Performance_Wizard_Admin_Page {
 	 * Enqueue the scripts and styles.
 	 */
 	public function admin_enqueue_scripts(): void {
-		error_log( 'admin_enqueue_scripts' );
 
 		// Only enqueue scripts on the Performance Wizard page.
-		if ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) {
+		if ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
 		// Force refresh with a timestamp version.
-		$timestamp_version = '';// time();
+		$timestamp_version = '';
 
 		// use the '.min' extension, unless WP_DEBUG is enabled.
 		$suffix = '.min';

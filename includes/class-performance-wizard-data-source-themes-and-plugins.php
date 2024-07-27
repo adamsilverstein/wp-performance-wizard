@@ -1,14 +1,19 @@
 <?php
 /**
  * A class describing the Themes and Plugins data source.
+ *
+ * @package wp-performance-wizard
  */
 
+/**
+ * Define the theme and plugins data source class.
+ */
 class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wizard_Data_Source_Base {
 
 	/**
 	 * Construct the class, setting key variables
 	 */
-	function __construct() {
+	public function __construct() {
 		parent::__constructor();
 		$this->set_name( 'Themes and Plugins' );
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
@@ -18,8 +23,10 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 
 	/**
 	 * Get the active theme and plugins data and return in a structured data object.
+	 *
+	 * @return string JSON encoded string of the active theme and plugins data.
 	 */
-	public function get_data() {
+	public function get_data(): string {
 		$active_theme   = wp_get_theme();
 		$active_plugins = get_option( 'active_plugins' );
 
@@ -48,9 +55,6 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 			'active_theme'   => $theme_data,
 			'active_plugins' => $plugins_data,
 		);
-
-		// Log the themes and plugins data to be returned.
-		error_log( 'Themes and Plugins data: ' . wp_json_encode( $to_return, JSON_PRETTY_PRINT ) );
 
 		return wp_json_encode( $to_return );
 	}

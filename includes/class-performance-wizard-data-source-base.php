@@ -1,21 +1,22 @@
 <?php
 /**
- * A base class for performsnce wizard data sources.
+ * A base class for performance wizard data sources.
  *
  * Each data source has attributes that describe the source, a method to get the data
  * and a prompt to use when passing the data to the AI agent.
+ *
+ * @package wp-performance-wizard
  */
 
+/**
+ * Yje base class.
+ */
 class Performance_Wizard_Data_Source_Base {
 
 	/**
-	 * Construct.
-	 */
-	function __constructor(): void {
-	}
-
-	/**
 	 * The performance wizard object
+	 *
+	 * @var WP_Performance_Wizard
 	 */
 	protected $wizard;
 
@@ -49,27 +50,17 @@ class Performance_Wizard_Data_Source_Base {
 
 	/**
 	 * A plain text description of the shape of the data returned from the data source.
+	 *
+	 * @var string
 	 */
 	private $data_shape;
 
 	/**
-	 * The cache for data retrieved from the data source.
-	 */
-	private $cache;
-
-	/**
-	 * The cache length for this data source.
-	 */
-	private $cache_length;
-
-	/**
 	 * The description of a strategy that can be used to analyze this data source.
+	 *
+	 * @var string
 	 */
 	private $analysis_strategy;
-
-	// Constructor
-
-	// Methods
 
 	/**
 	 * Get the data from the data source.
@@ -92,15 +83,19 @@ class Performance_Wizard_Data_Source_Base {
 
 	/**
 	 * Set the prompt to use when passing the data to the AI agent.
+	 *
+	 * @param string $prompt The prompt to use when passing the data to the AI agent.
 	 */
-	public function set_prompt( $prompt ): void {
+	public function set_prompt( string $prompt ): void {
 		$this->prompt = $prompt;
 	}
 
 	/**
 	 * Get the prompt for the user. Users user_prompt, falling back to prompt if empty.
+	 *
+	 * @return string The prompt for the user.
 	 */
-	public function get_user_prompt() {
+	public function get_user_prompt(): string {
 		$user_prompt = $this->user_prompt;
 		if ( empty( $user_prompt ) ) {
 			$user_prompt = $this->prompt;
@@ -120,71 +115,64 @@ class Performance_Wizard_Data_Source_Base {
 
 	/**
 	 * Set the name of the data source.
+	 *
+	 * @param string $name The name of the data source.
 	 */
-	public function set_name( $name ): void {
+	public function set_name( string $name ): void {
 		$this->name = $name;
 	}
 
 	/**
 	 * Get the shape of the data returned from the data source.
+	 *
+	 * @return string The shape of the data returned from the data source.
 	 */
-	public function get_data_shape() {
+	public function get_data_shape(): string {
 		return $this->data_shape;
 	}
 
 	/**
 	 * Get the description of the data source.
+	 *
+	 * @return string The description of the data source.
 	 */
-	public function get_description() {
+	public function get_description(): string {
 		return $this->description;
 	}
 
 	/**
-	 * Get the cache for data retrieved from the data source.
-	 */
-	public function get_cache() {
-		return $this->cache;
-	}
-
-	/**
-	 * Get the cache length for this data source.
-	 */
-	public function get_cache_length() {
-		return $this->cache_length;
-	}
-
-	/**
 	 * Get the description of a strategy that can be used to analyze this data source.
+	 *
+	 * @return string The analysis strategy.
 	 */
-	public function get_analysis_strategy() {
+	public function get_analysis_strategy(): string {
 		return $this->analysis_strategy;
 	}
 
 	/**
 	 * Set the analysis strategy.
+	 *
+	 * @param string $analysis_strategy The analysis strategy.
 	 */
-	public function set_analysiss_strategy( $analysis_strategy ): void {
-		$this->analysis_strategy = $analysis_strategy;
-	}
-
-	/**
-	 * Set the analysis strategy.
-	 */
-	public function set_analysis_strategy( $analysis_strategy ): void {
+	public function set_analysis_strategy( string $analysis_strategy ): void {
 		$this->analysis_strategy = $analysis_strategy;
 	}
 
 	/**
 	 * Set the description for the data source.
+	 *
+	 * @param string $description The description for the data source.
 	 */
-	public function set_description( $description ): void {
+	public function set_description( string $description ): void {
 		$this->description = $description;
 	}
 
 	/**
 	 * Get the wizard object.
+	 *
+	 * @return WP_Performance_Wizard The performance wizard object.
 	 */
-	public function get_wizard() {
+	public function get_wizard(): WP_Performance_Wizard {
 		return $this->wizard;
 	}
 
