@@ -1,12 +1,11 @@
 {
-    "name": "adamjs/wp-performance-wizard",
+    "name": "adamsilverstein/wp-performance-wizard",
     "description": "A plugin that uses AI to help you optimize your WordPress site for performance.",
     "type": "project",
     "license": "GPLv2 or later",
     "authors": [
         {
             "name": "Adam Silverstein",
-            "email": "adamjs@google.com"
         }
     ],
 
