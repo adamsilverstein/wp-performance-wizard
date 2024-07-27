@@ -12,13 +12,13 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	/**
 	 * A method to send a single prompt to the agent.
 	 *
-	 * @param array    $prompt         The prompt to pass to the agent.
+	 * @param string   $prompt         The prompt to pass to the agent.
 	 * @param int      $current_step   The current step in the process.
 	 * @param string[] $previous_steps The previous steps in the process.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompt( array $prompt, int $current_step, array $previous_steps ): string {
+	public function send_prompt( string $prompt, int $current_step, array $previous_steps ): string {
 		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps );
 	}
 

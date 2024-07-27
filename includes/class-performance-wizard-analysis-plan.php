@@ -156,8 +156,11 @@ class Performance_Wizard_Analysis_Plan {
 
 	/**
 	 * Start the process.
+	 *
+	 * @return string The result of the action.
 	 */
-	public function start(): void {
+	public function start(): string {
+		return '';
 	}
 
 	/**
