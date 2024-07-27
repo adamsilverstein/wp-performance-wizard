@@ -4,9 +4,15 @@
  *
  * @package wp-performance-wizard
  */
+
+/**
+ * The main class for the plugin.
+ */
 class WP_Performance_Wizard {
 	/**
 	 * The name of the option to store previous step data.
+	 *
+	 * @var string
 	 */
 	private $option_name = 'performance_wizard_analysis_plan_steps';
 
@@ -38,12 +44,11 @@ class WP_Performance_Wizard {
 	 *  - Performance recommendations for WordPress sites from best practices guides from Google's web.dev, the WordPress developers handbook, 10up's best practices and other sources.
 	 *
 	 * The data sources will be fed into the AI as part of a series of prompts to help it make its recommendations.
-	 *
-	 *
 	 */
 
 	/**
 	 * The analysis plan.
+	 *
 	 * @var Performance_Wizard_Analysis_Plan
 	 */
 	private $analysis_plan;
@@ -51,7 +56,7 @@ class WP_Performance_Wizard {
 	/**
 	 * The AI Agent.
 	 *
-	 * @var Performance_Wizard_AI_Agent
+	 * @var Performance_Wizard_AI_Agent_Base
 	 */
 	private $ai_agent;
 
@@ -65,7 +70,9 @@ class WP_Performance_Wizard {
 		new Performance_Wizard_Admin_Page();
 
 		// We only need the admin page menu, unless we are on the admin page.
-		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) {
+		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
+
+		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
@@ -79,15 +86,14 @@ class WP_Performance_Wizard {
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
 
-
-		// Load the Analysis plan
+		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 	}
 
 	/**
 	 * Load the required files for the plugin.
 	 */
-	private function load_required_files() {
+	private function load_required_files(): void {
 		// Load all required files.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
@@ -99,9 +105,13 @@ class WP_Performance_Wizard {
 	/**
 	 * Function to get the api key for a specific AI agent.
 	 *
-	 * // Key is stored in a JSON file with the key "apikey"
+	 * The key is stored in a JSON file with the key "apikey"
+	 *
+	 * @param string $agent_name The name of the agent to get the key for.
+	 *
+	 * @return string The API key.
 	 */
-	public function get_api_key( $agent_name ) {
+	public function get_api_key( string $agent_name ): string {
 		if ( empty( $agent_name ) ) {
 			return '';
 		}
@@ -112,38 +122,27 @@ class WP_Performance_Wizard {
 	/**
 	 * Get the analysis plan class.
 	 *
-	 * @return Performance_Wizard_Analysis_Plan
+	 * @return Performance_Wizard_Analysis_Plan The analysis plan.
 	 */
-	public function get_analysis_plan() {
+	public function get_analysis_plan(): Performance_Wizard_Analysis_Plan {
 		return $this->analysis_plan;
 	}
 
 	/**
 	 * Get the ai agent.
+	 *
+	 * @return Performance_Wizard_AI_Agent_Base The AI agent.
 	 */
-	public function get_ai_agent() {
+	public function get_ai_agent(): Performance_Wizard_AI_Agent_Base {
 		return $this->ai_agent;
 	}
 
 	/**
 	 * Get the option name.
+	 *
+	 * @return string The option name.
 	 */
-	public function get_option_name() {
+	public function get_option_name(): string {
 		return $this->option_name;
 	}
-
-}
-
-/**
- * Get the site URL for the AI agent.
- */
-function wp_performance_wizard_get_site_url() {
-	$site_url = get_site_url();
-	/**
-	 * Filter the site URL used for performance wizard analysis
-	 *
-	 * @param string $site_url The site URL.
-	 * @return string The filtered site URL.
-	 */
-	return apply_filters( 'wp_performance_wizard_site_url', $site_url );
 }

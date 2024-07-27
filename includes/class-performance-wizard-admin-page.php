@@ -1,9 +1,17 @@
 <?php
 /**
  * Add a Admin page to wp-admin under Tools->Performance Wizard.
+ *
+ * @package wp-performance-wizard
+ */
+
+/**
+ * The Admin page class.
  */
 class Performance_Wizard_Admin_Page {
-	// Construct the class by adding the primary callback.
+	/**
+	 * Construct the class by adding the primary callback.
+	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
@@ -11,15 +19,13 @@ class Performance_Wizard_Admin_Page {
 
 	/**
 	 * Add the menu to wp-admin.
-	 *
-	 * @return void
 	 */
-	public function add_menu() {
-		error_log( 'add submenu page' );
+	public function add_menu(): void {
+
 		add_submenu_page(
 			'tools.php',
-			__( 'Performance Wizard', 'performance-wizard' ),
-			__( 'Performance Wizard', 'performance-wizard' ),
+			__( 'Performance Wizard', 'wp-performance-wizard' ),
+			__( 'Performance Wizard', 'wp-performance-wizard' ),
 			'manage_options',
 			'wp-performance-wizard',
 			array( $this, 'render_page' )
@@ -30,8 +36,8 @@ class Performance_Wizard_Admin_Page {
 	 * Render the Admin page. This will show an interactive terminals where users can
 	 * monitor and interact with the AI agent.
 	 */
-	public function render_page() {
-		error_log( 'render_page' );
+	public function render_page(): void {
+
 		// Check if the user has the correct permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -47,23 +53,21 @@ class Performance_Wizard_Admin_Page {
 	/**
 	 * Enqueue the scripts and styles.
 	 */
-	public function admin_enqueue_scripts() {
-		error_log( 'admin_enqueue_scripts' );
+	public function admin_enqueue_scripts(): void {
 
 		// Only enqueue scripts on the Performance Wizard page.
-		if ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) {
+		if ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
 		// Force refresh with a timestamp version.
-		$timestamp_version = "";//time();
+		$timestamp_version = '';
 
 		// use the '.min' extension, unless WP_DEBUG is enabled.
 		$suffix = '.min';
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			$suffix = '';
 		}
-
 
 		// Enqueue the terminal script.
 		wp_enqueue_script( 'performance-wizard-terminal', plugin_dir_url( __FILE__ ) . 'js/jquery.terminal' . $suffix . '.js', array( 'jquery', 'wp-api-fetch' ), '1.0.0', array( 'strategy' => 'defer' ) );
@@ -72,8 +76,6 @@ class Performance_Wizard_Admin_Page {
 		wp_enqueue_style( 'performance-wizard-terminal', plugin_dir_url( __FILE__ ) . 'css/jquery.terminal' . $suffix . '.css', array(), '1.0.0' );
 
 		// Enqueue the bootstrap script.
-		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'performance-wizard-terminal' ), WP_PERFORMANCE_WIZARD_VERSION . $timestamp_version, array( 'strategy' => 'defer' ) );
-
+		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'performance-wizard-terminal' ), '1.0.0' . $timestamp_version, array( 'strategy' => 'defer' ) );
 	}
-
 }

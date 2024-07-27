@@ -1,21 +1,22 @@
 <?php
 /**
- * A base class for performsnce wizard data sources.
+ * A base class for performance wizard data sources.
  *
  * Each data source has attributes that describe the source, a method to get the data
  * and a prompt to use when passing the data to the AI agent.
+ *
+ * @package wp-performance-wizard
  */
 
+/**
+ * Yje base class.
+ */
 class Performance_Wizard_Data_Source_Base {
 
 	/**
-	 * Construct.
-	 */
-	function __constructor() {
-	}
-
-	/**
 	 * The performance wizard object
+	 *
+	 * @var WP_Performance_Wizard
 	 */
 	protected $wizard;
 
@@ -49,27 +50,17 @@ class Performance_Wizard_Data_Source_Base {
 
 	/**
 	 * A plain text description of the shape of the data returned from the data source.
+	 *
+	 * @var string
 	 */
 	private $data_shape;
 
 	/**
-	 * The cache for data retrieved from the data source.
-	 */
-	private $cache;
-
-	/**
-	 * The cache length for this data source.
-	 */
-	private $cache_length;
-
-	/**
 	 * The description of a strategy that can be used to analyze this data source.
+	 *
+	 * @var string
 	 */
 	private $analysis_strategy;
-
-	// Constructor
-
-	// Methods
 
 	/**
 	 * Get the data from the data source.
@@ -86,21 +77,34 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @return string The prompt to use when passing the data to the AI agent.
 	 */
-	public function get_prompt() {
+	public function get_prompt(): string {
 		return $this->prompt;
 	}
 
 	/**
 	 * Set the prompt to use when passing the data to the AI agent.
+	 *
+	 * @param string $prompt The prompt to use when passing the data to the AI agent.
 	 */
-	public function set_prompt( $prompt ) {
+	public function set_prompt( string $prompt ): void {
 		$this->prompt = $prompt;
 	}
 
 	/**
-	 * Get the prompt for the user. Users user_prompt, falling back to prompt if empty.
+	 * Set the user_prompt.
+	 *
+	 * @param string $user_prompt The prompt to use when passing the data to the user.
 	 */
-	public function get_user_prompt() {
+	public function set_user_prompt( string $user_prompt ): void {
+		$this->user_prompt = $user_prompt;
+	}
+
+	/**
+	 * Get the prompt for the user. Users user_prompt, falling back to prompt if empty.
+	 *
+	 * @return string The prompt for the user.
+	 */
+	public function get_user_prompt(): string {
 		$user_prompt = $this->user_prompt;
 		if ( empty( $user_prompt ) ) {
 			$user_prompt = $this->prompt;
@@ -114,77 +118,79 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @return string The name of the data source.
 	 */
-	public function get_name() {
+	public function get_name(): string {
 		return $this->name;
 	}
 
 	/**
 	 * Set the name of the data source.
+	 *
+	 * @param string $name The name of the data source.
 	 */
-	public function set_name( $name ) {
+	public function set_name( string $name ): void {
 		$this->name = $name;
 	}
 
 	/**
 	 * Get the shape of the data returned from the data source.
+	 *
+	 * @return string The shape of the data returned from the data source.
 	 */
-	public function get_data_shape() {
+	public function get_data_shape(): string {
 		return $this->data_shape;
 	}
 
 	/**
-	 * Get the description of the data source.
+	 * Set the shape of the data returned from the data source.
+	 *
+	 * @param string $data_shape The shape of the data returned from the data source.
 	 */
-	public function get_description() {
+	public function set_data_shape( string $data_shape ): void {
+		$this->data_shape = $data_shape;
+	}
+
+	/**
+	 * Get the description of the data source.
+	 *
+	 * @return string The description of the data source.
+	 */
+	public function get_description(): string {
 		return $this->description;
 	}
 
 	/**
-	 * Get the cache for data retrieved from the data source.
-	 */
-	public function get_cache() {
-		return $this->cache;
-	}
-
-	/**
-	 * Get the cache length for this data source.
-	 */
-	public function get_cache_length() {
-		return $this->cache_length;
-	}
-
-	/**
 	 * Get the description of a strategy that can be used to analyze this data source.
+	 *
+	 * @return string The analysis strategy.
 	 */
-	public function get_analysis_strategy() {
+	public function get_analysis_strategy(): string {
 		return $this->analysis_strategy;
 	}
 
 	/**
 	 * Set the analysis strategy.
+	 *
+	 * @param string $analysis_strategy The analysis strategy.
 	 */
-	public function set_analysiss_strategy( $analysis_strategy ) {
-		$this->analysis_strategy = $analysis_strategy;
-	}
-
-	/**
-	 * Set the analysis strategy.
-	 */
-	public function set_analysis_strategy( $analysis_strategy ) {
+	public function set_analysis_strategy( string $analysis_strategy ): void {
 		$this->analysis_strategy = $analysis_strategy;
 	}
 
 	/**
 	 * Set the description for the data source.
+	 *
+	 * @param string $description The description for the data source.
 	 */
-	public function set_description( $description ) {
+	public function set_description( string $description ): void {
 		$this->description = $description;
 	}
 
 	/**
 	 * Get the wizard object.
+	 *
+	 * @return WP_Performance_Wizard The performance wizard object.
 	 */
-	public function get_wizard() {
+	public function get_wizard(): WP_Performance_Wizard {
 		return $this->wizard;
 	}
 
@@ -193,8 +199,7 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @param WP_Performance_Wizard $wizard The performance wizard object.
 	 */
-	public function __construct( $wizard) {
+	public function __construct( WP_Performance_Wizard $wizard ) {
 		$this->wizard = $wizard;
 	}
-
 }
