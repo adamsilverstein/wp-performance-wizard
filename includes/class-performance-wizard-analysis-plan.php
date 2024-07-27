@@ -83,6 +83,15 @@ class Performance_Wizard_Analysis_Plan {
 	}
 
 	/**
+	 * Get the system instructions for the AI agent.
+	 *
+	 * @return string The system instructions for the AI agent.
+	 */
+	public function get_system_instructions(): string {
+		return $this->system_instructions;
+	}
+
+	/**
 	 * Construct the class, setting up the plan.
 	 *
 	 * @param WP_Performance_Wizard $wizard The wizard to use.
@@ -109,6 +118,13 @@ class Performance_Wizard_Analysis_Plan {
 			'title'       => 'Introduction',
 			'user_prompt' => 'The Performance Wizard will analyze the performance of your WordPress site.',
 			'action'      => 'continue',
+		);
+
+		// Prompt the agent with the system instructions.
+		$steps[] = array(
+			'title'       => 'System Instructions',
+			'user_prompt' => $this->get_system_instructions(),
+			'action'      => 'prompt',
 		);
 
 		// Next, add a step for each data source.

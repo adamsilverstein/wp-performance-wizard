@@ -47,13 +47,6 @@ class Performance_Wizard_AI_Agent_Base {
 	private $description;
 
 	/**
-	 * The prompt to use when passing the data to the AI agent.
-	 *
-	 * @var string
-	 */
-	private $prompt;
-
-	/**
 	 * A method for calling the API of the AI agent.
 	 *
 	 * @param array    $prompts        The prompts to pass to the agent.
@@ -131,15 +124,6 @@ class Performance_Wizard_AI_Agent_Base {
 	 */
 	public function set_description( string $description ): void {
 		$this->description = $description;
-	}
-
-	/**
-	 * Get the prompt to use when passing the data to the AI agent.
-	 *
-	 * @return string The prompt to use when passing the data to the AI agent.
-	 */
-	public function get_prompt(): string {
-		return $this->prompt;
 	}
 
 	/**

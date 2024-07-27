@@ -91,6 +91,15 @@ class Performance_Wizard_Data_Source_Base {
 	}
 
 	/**
+	 * Set the user_prompt.
+	 *
+	 * @param string $user_prompt The prompt to use when passing the data to the user.
+	 */
+	public function set_user_prompt( string $user_prompt ): void {
+		$this->user_prompt = $user_prompt;
+	}
+
+	/**
 	 * Get the prompt for the user. Users user_prompt, falling back to prompt if empty.
 	 *
 	 * @return string The prompt for the user.
@@ -129,6 +138,15 @@ class Performance_Wizard_Data_Source_Base {
 	 */
 	public function get_data_shape(): string {
 		return $this->data_shape;
+	}
+
+	/**
+	 * Set the shape of the data returned from the data source.
+	 *
+	 * @param string $data_shape The shape of the data returned from the data source.
+	 */
+	public function set_data_shape( string $data_shape ): void {
+		$this->data_shape = $data_shape;
 	}
 
 	/**
