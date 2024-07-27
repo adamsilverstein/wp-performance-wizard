@@ -14,7 +14,6 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	 * Construct the class, setting key variables
 	 */
 	public function __construct() {
-		parent::__constructor();
 		$this->set_name( 'Themes and Plugins' );
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
 		$this->set_description( 'The Themes and Plugins data source provides a list of the theme and plugins installed on the website, as well as meta data about those plugins.' );

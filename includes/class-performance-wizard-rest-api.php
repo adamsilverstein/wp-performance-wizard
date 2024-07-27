@@ -62,9 +62,10 @@ class Performance_Wizard_Rest_API {
 	 * @return WP_REST_Response The response object.
 	 */
 	public function handle_command( WP_REST_Request $request ): WP_REST_Response {
-		$command = $request->get_param( 'command' );
-		$step    = $request->get_param( 'step' );
-		$step    = $step ? intval( $step ) : 0;
+		$command  = $request->get_param( 'command' );
+		$step     = $request->get_param( 'step' );
+		$step     = $step ? intval( $step ) : 0;
+		$response = '';
 		switch ( $command ) {
 			case '_get_next_action_':
 				$response = $this->wizard->get_analysis_plan()->get_next_action( $step );

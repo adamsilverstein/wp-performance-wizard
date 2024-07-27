@@ -36,7 +36,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest.
 		$api_base     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 		$query_params = array(
-			'key' => $this->api_key,
+			'key' => $this->get_api_key(),
 		);
 
 		$parts = array(

@@ -56,7 +56,7 @@ class WP_Performance_Wizard {
 	/**
 	 * The AI Agent.
 	 *
-	 * @var Performance_Wizard_AI_Agent
+	 * @var Performance_Wizard_AI_Agent_Base
 	 */
 	private $ai_agent;
 
@@ -131,9 +131,9 @@ class WP_Performance_Wizard {
 	/**
 	 * Get the ai agent.
 	 *
-	 * @return Performance_Wizard_AI_Agent The AI agent.
+	 * @return Performance_Wizard_AI_Agent_Base The AI agent.
 	 */
-	public function get_ai_agent(): Performance_Wizard_AI_Agent {
+	public function get_ai_agent(): Performance_Wizard_AI_Agent_Base {
 		return $this->ai_agent;
 	}
 

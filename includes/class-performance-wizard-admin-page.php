@@ -76,6 +76,6 @@ class Performance_Wizard_Admin_Page {
 		wp_enqueue_style( 'performance-wizard-terminal', plugin_dir_url( __FILE__ ) . 'css/jquery.terminal' . $suffix . '.css', array(), '1.0.0' );
 
 		// Enqueue the bootstrap script.
-		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'performance-wizard-terminal' ), WP_PERFORMANCE_WIZARD_VERSION . $timestamp_version, array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'performance-wizard-terminal' ), '1.0.0' . $timestamp_version, array( 'strategy' => 'defer' ) );
 	}
 }
