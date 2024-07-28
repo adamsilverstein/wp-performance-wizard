@@ -9,6 +9,7 @@
  * The Gemini class.
  */
 class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Base {
+
 	/**
 	 * A method to send a single prompt to the agent.
 	 *
@@ -78,29 +79,34 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 				'role'  => 'user',
 			)
 		);
-		$data = array(
-			'contents' => $contents,
 
-			/*
-			'system_instructions' => array(
+		$data = array(
+			'system_instruction' => array(
 				'parts' => array(
-					'text' => $this->get_system_instructions(),
+					'text' => $this->get_system_instruction(),
 				),
-			)
-			*/
+			),
+			'contents' => $contents,
 		);
+
+		// Log the size of the data payload for reference.
+		error_log( 'Gemini data payload size: ' . strlen( wp_json_encode( $data ) ) );
 
 		$response = wp_remote_post(
 			add_query_arg( $query_params, $api_base ),
 			array(
 				'body'    => wp_json_encode( $data ),
 				'method'  => 'POST',
-				'timeout' => 45,
+				'timeout' => 180, // Allow up to 3 minutes.
 				'headers' => array(
 					'Content-Type' => 'application/json',
 				),
 			)
 		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response->get_error_message();
+		}
 
 		// Check for errors, then return the response parameters.
 		if ( 200 !== $response['response']['code'] ) {
@@ -123,5 +129,45 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$this->set_name( 'Gemini' );
 		$this->set_wizard( $wizard );
 		$this->set_description( 'Gemini is a is a generative artificial intelligence chatbot developed by Google.' );
+		$this->set_system_instruction( "As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
+
+**Data Point Analysis:**
+
+1. **Receive Data:** Receive and carefully review each data point about the website's performance.
+
+2. **Summarize Findings:** Analyze the data point and summarize its meaning in the context of website performance. Explain the potential impact on user experience and overall site speed.
+
+3. **Recommend Improvements:** Provide specific and actionable recommendations on how to address the identified performance issues based on the data point. Explain the rationale behind each suggestion and the potential benefits.
+
+4. **Remember Context:** Store the findings, summaries, and recommendations for each data point to build a comprehensive understanding of the website's performance profile.
+
+**Overall Assessment and Recommendations:**
+
+1. **Consolidate Findings:** Review all analyzed data points and their respective findings to identify common themes and recurring issues.
+
+2. **Prioritize Recommendations:** Rank the suggested improvements based on their potential impact on overall website performance and user experience. Consider factors such as feasibility, cost, and implementation time.
+
+3. **Present Actionable Plan:** Provide a clear and concise summary of the website's performance strengths and weaknesses. Offer a set of prioritized and actionable recommendations for improvement, outlining the steps required for implementation.
+
+4. **Testing Strategy:** Suggest specific methods to measure the effectiveness of the implemented changes. Include key performance indicators (KPIs) and tools to monitor the impact on metrics such as page load times, bounce rates, and conversion rates.
+
+**Example Data Point:**
+
+* **Data:** The Time to First Byte (TTFB) is 500ms.
+
+* **Summary:** The TTFB indicates a delay in server response time, impacting the initial page loading speed and user experience.
+
+* **Recommendations:**
+
+    * Optimize server-side code and database queries.
+
+    * Consider using a Content Delivery Network (CDN) to reduce latency.
+
+     * Consider adding a page caching solution.
+
+    * Test the impact of caching mechanisms on the server.
+
+* **Testing:** Monitor the TTFB after implementing changes using web performance tools like WebPageTest or Google PageSpeed Insights.
+" );
 	}
 }

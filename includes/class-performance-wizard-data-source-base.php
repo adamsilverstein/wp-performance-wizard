@@ -53,7 +53,7 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @var string
 	 */
-	private $data_shape;
+	private $data_shape = '';
 
 	/**
 	 * The description of a strategy that can be used to analyze this data source.

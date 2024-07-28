@@ -30,7 +30,7 @@ class Performance_Wizard_AI_Agent_Base {
 	 *
 	 * @var string
 	 */
-	private $system_instructions;
+	private $system_instruction;
 
 	/**
 	 * The name of the AI agent.
@@ -77,17 +77,17 @@ class Performance_Wizard_AI_Agent_Base {
 	 *
 	 * @return string The systemInstructions for the AI agent.
 	 */
-	public function get_system_instructions(): string {
-		return $this->system_instructions;
+	public function get_system_instruction(): string {
+		return $this->system_instruction;
 	}
 
 	/**
 	 * Set the systemInstructions for the AI agent.
 	 *
-	 * @param string $system_instructions The systemInstructions for the AI agent.
+	 * @param string $system_instruction The system_instruction for the AI agent.
 	 */
-	public function set_system_instructions( string $system_instructions ): void {
-		$this->system_instructions = $system_instructions;
+	public function set_system_instruction( string $system_instruction ): void {
+		$this->system_instruction = $system_instruction;
 	}
 
 	/**
