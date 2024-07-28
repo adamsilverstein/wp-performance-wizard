@@ -116,7 +116,7 @@ class WP_Performance_Wizard {
 			return '';
 		}
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
-		$keydata  = json_decode( file_get_contents( $filename ) );
+		$keydata  = json_decode( file_get_contents( $filename ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		return $keydata->apikey;
 	}
 	/**

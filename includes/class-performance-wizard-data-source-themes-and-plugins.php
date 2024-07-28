@@ -46,9 +46,10 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 			);
 
 			// Also, get the data from the Plugin API.
-			$plugin_api_data = get_plugin_data_from_dotorg_api( $plugin_data['slug'] );
+			$plugin_slug     = dirname( plugin_basename( $plugin_data['PluginURI'] ) );
+			$plugin_api_data = $this->get_plugin_data_from_dotorg_api( $plugin_slug );
 
-			if ( ! empty ( $plugin__api_data ) ) {
+			if ( ! empty( $plugin__api_data ) ) {
 				$plugins_data['plugin_api_data'] = $plugin_api_data;
 			}
 		}
@@ -71,14 +72,14 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	 *
 	 * @param string $slug The slug of the plugin to get the data for.
 	 *
-	 * @return array The meta data about the plugin.
+	 * @return string The meta data about the plugin.
 	 */
-	public function get_plugin_data_from_dotorg_api( string $slug ): array {
+	public function get_plugin_data_from_dotorg_api( string $slug ): string {
 		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
 		$response = wp_remote_get(
 			add_query_arg(
 				array(
-					'action' => 'plugin_information',
+					'action'  => 'plugin_information',
 					'request' => $slug,
 				),
 				$api_base
@@ -87,13 +88,12 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 
 		// Check for errors.
 		if ( is_wp_error( $response ) ) {
-			return array();
+			return '';
 		}
 
 		// Return the data.
 		$results = wp_remote_retrieve_body( $response );
 
-		return json_decode( $results, true );
+		return $results;
 	}
-
 }
