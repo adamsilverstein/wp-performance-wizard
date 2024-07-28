@@ -11,11 +11,16 @@ jQuery( function( $ ) {
 		}
 	} );
 
-	// @todo strings should be localized.
-	terminal.echo( "[[b;green;]Let's get started...]" );
 
-	// Run the analysis....
-	runAnalysis( terminal );
+	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
+	$( '#performance-wizard-start' ).on( 'click', function() {
+
+		// @todo strings should be localized.
+		terminal.echo( "[[b;green;]Let's get started...]" );
+
+		// Run the analysis....
+		runAnalysis( terminal );
+	} );
 
 
 	/**
