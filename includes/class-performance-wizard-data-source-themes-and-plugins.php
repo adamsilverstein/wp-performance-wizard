@@ -17,7 +17,8 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		$this->set_name( 'Themes and Plugins' );
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
 		$this->set_description( 'The Themes and Plugins data source provides a list of the theme and plugins installed on the website, as well as meta data about those plugins.' );
-		$this->set_analysis_strategy( 'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make reccomendations about the instlled theme and plugins.' );
+		$this->set_analysis_strategy( 'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make recommendations about the installed theme and plugins.' );
+		$this->set_data_shape( "The returned data for each plugin includes a field named 'plugin_api_data' which contains the meta data about the plugin from the wordpress.org plugin API. This data includes a 'download' field which is a link you can follow to download a zip archive of the complete plugin source code. The versions field contains links to all versins of the plugin so you can download the version installed on the site you are working on for analysis." );
 	}
 
 	/**
@@ -43,6 +44,13 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 				'description' => $plugin_data['Description'],
 				'PluginURI'   => $plugin_data['PluginURI'],
 			);
+
+			// Also, get the data from the Plugin API.
+			$plugin_api_data = get_plugin_data_from_dotorg_api( $plugin_data['slug'] );
+
+			if ( ! empty ( $plugin__api_data ) ) {
+				$plugins_data['plugin_api_data'] = $plugin_api_data;
+			}
 		}
 		$theme_data = array(
 			'name'        => $active_theme->get( 'Name' ),
@@ -57,4 +65,35 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 
 		return wp_json_encode( $to_return );
 	}
+
+	/**
+	 * Helper function to retrieve all of the meta data about the plugin that is available from the wordpress.org plugin REST API.
+	 *
+	 * @param string $slug The slug of the plugin to get the data for.
+	 *
+	 * @return array The meta data about the plugin.
+	 */
+	public function get_plugin_data_from_dotorg_api( string $slug ): array {
+		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
+		$response = wp_remote_get(
+			add_query_arg(
+				array(
+					'action' => 'plugin_information',
+					'request' => $slug,
+				),
+				$api_base
+			)
+		);
+
+		// Check for errors.
+		if ( is_wp_error( $response ) ) {
+			return array();
+		}
+
+		// Return the data.
+		$results = wp_remote_retrieve_body( $response );
+
+		return json_decode( $results, true );
+	}
+
 }
