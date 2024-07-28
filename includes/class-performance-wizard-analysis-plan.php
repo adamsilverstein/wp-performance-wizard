@@ -41,18 +41,6 @@ class Performance_Wizard_Analysis_Plan {
 	);
 
 	/**
-	 * The primary prompt is used to set up the LLM, instructing it on its goals, behavior and the steps it will use.
-	 *
-	 * @var string
-	 */
-	private $system_instructions = 'You will play the role of a web performance expert. You will receive a series of data points about
-	the website you are analyzing. For each data point, you will provide a summary of the information received and how it reflects
-	on the performance of the site. For each step, you will offer recommendations for how the performance might be improved.
-	You will remember the results of each step and at the end of the process, you will provide an overall summary and set of recommendations
-	for how the site performance might be improved. You will assist the user in making these changes, then repeat the performance
-	analysis steps, comparing the new results with the previous results.';
-
-	/**
 	 * The prompt to send before each data point analysis,
 	 *
 	 * @var string
@@ -83,15 +71,6 @@ class Performance_Wizard_Analysis_Plan {
 	}
 
 	/**
-	 * Get the system instructions for the AI agent.
-	 *
-	 * @return string The system instructions for the AI agent.
-	 */
-	public function get_system_instructions(): string {
-		return $this->system_instructions;
-	}
-
-	/**
 	 * Construct the class, setting up the plan.
 	 *
 	 * @param WP_Performance_Wizard $wizard The wizard to use.
@@ -118,13 +97,6 @@ class Performance_Wizard_Analysis_Plan {
 			'title'       => 'Introduction',
 			'user_prompt' => 'The Performance Wizard will analyze the performance of your WordPress site.',
 			'action'      => 'continue',
-		);
-
-		// Prompt the agent with the system instructions.
-		$steps[] = array(
-			'title'       => 'System Instructions',
-			'user_prompt' => $this->get_system_instructions(),
-			'action'      => 'prompt',
 		);
 
 		// Next, add a step for each data source.

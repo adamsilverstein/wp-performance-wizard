@@ -15,7 +15,6 @@
  * @package wp-performance-wizard
  */
 
-
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

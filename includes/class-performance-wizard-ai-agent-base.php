@@ -55,7 +55,7 @@ class Performance_Wizard_AI_Agent_Base {
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompts( array $prompts, int $current_step, array $previous_steps ): string {
+	public function send_prompts( array $prompts, int $current_step, array $previous_steps ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return '';
 	}
 
@@ -68,7 +68,7 @@ class Performance_Wizard_AI_Agent_Base {
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompt( string $prompt, int $current_step, array $previous_steps ): string {
+	public function send_prompt( string $prompt, int $current_step, array $previous_steps ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return '';
 	}
 
@@ -84,7 +84,7 @@ class Performance_Wizard_AI_Agent_Base {
 	/**
 	 * Set the systemInstructions for the AI agent.
 	 *
-	 * @param string $system_instructions The systemInstructions for the AI agent.
+	 * @param string $system_instructions The system_instructions for the AI agent.
 	 */
 	public function set_system_instructions( string $system_instructions ): void {
 		$this->system_instructions = $system_instructions;

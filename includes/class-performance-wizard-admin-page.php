@@ -46,6 +46,12 @@ class Performance_Wizard_Admin_Page {
 		// Add the page title.
 		echo '<h1>' . esc_html( get_admin_page_title() ) . '</h1>';
 
+		// Add the description.
+		echo '<p>' . esc_html__( 'The Performance Wizard will analyze your site using an AI agent, then make recommendations to improve performance.', 'wp-performance-wizard' ) . '</p>';
+
+		// Add a start button.
+		echo '<p><button id="performance-wizard-start" class="button button-primary">' . esc_html__( 'Start analysis', 'wp-performance-wizard' ) . '</button></p>';
+
 		// Add the terminal.
 		echo '<div id="performance-wizard-terminal"></div>';
 	}
