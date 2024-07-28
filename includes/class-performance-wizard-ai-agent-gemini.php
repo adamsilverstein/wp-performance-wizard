@@ -86,7 +86,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 					'text' => $this->get_system_instruction(),
 				),
 			),
-			'contents' => $contents,
+			'contents'           => $contents,
 		);
 
 		// Log the size of the data payload for reference.
@@ -129,7 +129,8 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$this->set_name( 'Gemini' );
 		$this->set_wizard( $wizard );
 		$this->set_description( 'Gemini is a is a generative artificial intelligence chatbot developed by Google.' );
-		$this->set_system_instruction( "As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
+		$this->set_system_instruction(
+			"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
 
 **Data Point Analysis:**
 
@@ -168,6 +169,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
     * Test the impact of caching mechanisms on the server.
 
 * **Testing:** Monitor the TTFB after implementing changes using web performance tools like WebPageTest or Google PageSpeed Insights.
-" );
+"
+		);
 	}
 }
