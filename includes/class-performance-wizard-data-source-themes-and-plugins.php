@@ -78,15 +78,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	 */
 	public function get_plugin_data_from_dotorg_api( string $slug ): string {
 		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
-		$response = wp_remote_get(
-			add_query_arg(
-				array(
-					'action'  => 'plugin_information',
-					'request' => $slug,
-				),
-				$api_base
-			)
-		);
+		$response = wp_remote_get( $api_base . $slug . '.json' );
 
 		// Check for errors.
 		if ( is_wp_error( $response ) ) {
