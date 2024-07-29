@@ -1,10 +1,10 @@
 jQuery( function( $ ) {
 	const terminal = $( '#performance-wizard-terminal' ).terminal( function( command ) {}, {
-		greetings: 'WP Performance Wizard',
-		name: 'wppw',
-		height: '100%',
-		width: '100%',
-		prompt: '',
+		greetings        : 'WP Performance Wizard',
+		name             : 'wppw',
+		height           : '100%',
+		width            : '100%',
+		prompt           : '',
 		onCommandNotFound: function( term, command ) {
 			echo( 'err', term, command );
 			return false;
@@ -21,7 +21,6 @@ jQuery( function( $ ) {
 		// Run the analysis....
 		runAnalysis( terminal );
 	} );
-
 
 	/**
 	 * Run the analysis, interacting with the passed terminal.
@@ -87,7 +86,6 @@ jQuery( function( $ ) {
 
 	}
 
-
 	/**
 	 * Get the next step in the performance wizard.
 	 * The endpoint is set up with
@@ -132,7 +130,7 @@ jQuery( function( $ ) {
 	 * Function to send a prompt.
 	 *
 	 * @param {string} prompt The prompt to send.
-	 * @param {int} step The current step in the wizard.
+	 * @param {int}    step   The current step in the wizard.
 	 */
 	function runPerfomanceWizardPrompt( prompt, step ) {
 		// User= the REST API to send the prompt.

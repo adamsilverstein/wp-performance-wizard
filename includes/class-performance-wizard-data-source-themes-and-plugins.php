@@ -18,7 +18,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
 		$this->set_description( 'The Themes and Plugins data source provides a list of the theme and plugins installed on the website, as well as meta data about those plugins.' );
 		$this->set_analysis_strategy( 'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make recommendations about the installed theme and plugins.' );
-		$this->set_data_shape( "The returned data for each plugin includes a field named 'plugin_api_data' which contains the meta data about the plugin from the wordpress.org plugin API. This data includes a 'download' field which is a link you can follow to download a zip archive of the complete plugin source code. The versions field contains links to all versins of the plugin so you can download the version installed on the site you are working on for analysis." );
+		$this->set_data_shape( "The returned data for each plugin includes a field named 'plugin_api_data' which contains the meta data about the plugin from the wordpress.org plugin API. This data includes a 'download' field which is a link you can follow to download a zip archive of the complete plugin source code. The versions field contains links to all versions of the plugin so you can download the version installed on the site you are working on for analysis." );
 	}
 
 	/**
@@ -27,6 +27,8 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	 * @return string JSON encoded string of the active theme and plugins data.
 	 */
 	public function get_data(): string {
+		global $wp_filesystem;
+
 		$active_theme   = wp_get_theme();
 		$active_plugins = get_option( 'active_plugins' );
 
