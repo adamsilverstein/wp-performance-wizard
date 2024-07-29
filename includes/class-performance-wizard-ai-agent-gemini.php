@@ -47,6 +47,9 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$contents  = array();
 		$max_steps = $current_step;
 		for ( $i = 1; $i < $max_steps; $i++ ) {
+			if ( empty( $previous_steps[ $i ] ) ) {
+				continue;
+			}
 			$step = $previous_steps[ $i ];
 			if ( ! empty( $step['prompts'] ) ) {
 				array_push(
@@ -90,7 +93,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		);
 
 		// Log the size of the data payload for reference.
-		error_log( 'Gemini data payload size: ' . strlen( wp_json_encode( $data ) ) );
+		error_log( 'Gemini data payload size: ' . strlen( wp_json_encode( $data ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 		$response = wp_remote_post(
 			add_query_arg( $query_params, $api_base ),

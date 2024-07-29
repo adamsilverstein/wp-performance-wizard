@@ -225,12 +225,16 @@ class Performance_Wizard_Analysis_Plan {
 		if ( ! empty( $data ) ) {
 			$prompt            = '';
 			$prompt           .= 'Here is the data: ' . $data . PHP_EOL;
+			$for_user          = 'Here is the data: {DATA}' . PHP_EOL;
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
 			$prompt           .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
+			$for_user         .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
 			$prompt           .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
+			$for_user         .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
+
 			array_push( $prompts, $prompt );
-			array_push( $prompts_for_user, 'DATA' );
+			array_push( $prompts_for_user, $for_user );
 		}
 
 		// Send the post data analysis prompt.
