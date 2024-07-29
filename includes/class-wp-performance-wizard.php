@@ -112,11 +112,15 @@ class WP_Performance_Wizard {
 	 * @return string The API key.
 	 */
 	public function get_api_key( string $agent_name ): string {
+		global $wp_filesystem;
+
 		if ( empty( $agent_name ) ) {
 			return '';
 		}
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
-		$keydata  = json_decode( file_get_contents( $filename ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		include_once ABSPATH . 'wp-admin/includes/file.php';
+		WP_Filesystem();
+		$keydata  = json_decode( $wp_filesystem->get_contents( $filename ) );
 		return $keydata->apikey;
 	}
 	/**
