@@ -5,7 +5,7 @@
  * Description: A plugin that uses AI to help you optimize your WordPress site for performance.
  * Version: 1.0.0
  * Author: Adam Silverstein, Google
- * Author URI: ttps://github.com/adamsilverstein
+ * Author URI: https://github.com/adamsilverstein
  * License: GPLv2 or later
  * Text Domain: wp-performance-wizard
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
