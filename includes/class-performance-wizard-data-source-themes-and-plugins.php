@@ -48,11 +48,62 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 			);
 
 			// Also, get the data from the Plugin API.
-			$plugin_slug     = dirname( plugin_basename( $plugin_data['PluginURI'] ) );
+			$plugin_slug     = $plugin_data['TextDomain'];
+
+			// If the slug is empty, fall back to parsing the plugin file name.
+			if ( empty( $plugin_slug ) ) {
+				$plugin_slug = pathinfo( $plugin, PATHINFO_FILENAME );
+			}
+
+
 			$plugin_api_data = $this->get_plugin_data_from_dotorg_api( $plugin_slug );
 
-			if ( ! empty( $plugin__api_data ) ) {
-				$plugins_data['plugin_api_data'] = $plugin_api_data;
+			$source_files = array();
+			if ( ! empty( $plugin_api_data ) ) {
+				$decoded_data                    = json_decode( $plugin_api_data );
+				$plugins_data['plugin_api_data'] = $decoded_data;
+
+				if ( ! isset( $decoded_data->download_link ) ) {
+					$plugins_data['download_error'] = 'No download link found in the plugin API data.';
+					continue;
+				}
+
+				// Download the plugin and extract it so we can include the source code in our prompt.
+				$downloaded    = download_url( $decoded_data->download_link );
+				if ( ! is_wp_error( $downloaded ) ) {
+					$zip_file = $downloaded;
+					$unzip    = unzip_file( $zip_file, '/tmp/' . $plugin_slug );
+					if ( is_wp_error( $unzip ) ) {
+						$plugins_data['download_error'] = $unzip->get_error_message();
+					}
+				} else {
+					$plugins_data['download_error'] = $downloaded->get_error_message();
+				}
+
+				// Traverse the downloaded files and gather up the path and source for all html, php, css and js files.
+				$files = new RecursiveIteratorIterator(
+					new RecursiveDirectoryIterator( '/tmp/' . $plugin_slug )
+				);
+				include_once ABSPATH . 'wp-admin/includes/file.php';
+				WP_Filesystem();
+				foreach ( $files as $file ) {
+					if ( $file->isDir() ) {
+						continue;
+					}
+					$extension = pathinfo( $file->getFilename(), PATHINFO_EXTENSION );
+					if ( in_array( $extension, array( 'html', 'php', 'css', 'js' ), true ) ) {
+						$source = $wp_filesystem->get_contents( $file->getPathname() );
+						if ( ! empty( $source ) ) {
+							$source_files[] = array(
+								'path'   => $file->getPathname(),
+								'source' => $source,
+							);
+						}
+					}
+				}
+			}
+			if ( ! empty( $source_files ) ) {
+				$plugins_data['source_files'] = $source_files;
 			}
 		}
 		$theme_data = array(
