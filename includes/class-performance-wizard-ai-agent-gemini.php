@@ -2,6 +2,10 @@
 /**
  * A class that enables connections to Gemini AI.
  *
+ * You can get a key for Gemini API by visiting https://aistudio.google.com/app/apikey
+ *
+ * Copy the key into a file named gemini-key.json and place it in the .keys folder in the plugin directory.
+ *
  * @package wp-performance-wizard
  */
 
