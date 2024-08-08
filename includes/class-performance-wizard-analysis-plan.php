@@ -61,7 +61,7 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var string
 	 */
 	private $system_instructions =
-'As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
+"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
 
 **Data Point Analysis:**
 
@@ -100,7 +100,7 @@ class Performance_Wizard_Analysis_Plan {
     * Test the impact of caching mechanisms on the server.
 
 * **Testing:** Monitor the TTFB after implementing changes using web performance tools like WebPageTest or Google PageSpeed Insights.
-'
+";
 
 	/**
 	 * Keep a handle on the base wizard class.
