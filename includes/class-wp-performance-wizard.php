@@ -78,16 +78,18 @@ class WP_Performance_Wizard {
 
 		$this->load_required_files();
 
+		// Load the Analysis plan.
+		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
+
 		// Load the AI Agent.
 		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
+		$this->ai_agent->get_system_instructions( $this->analysis_plan->get_system_instructions() );
 		$api_key        = $this->get_api_key( $this->ai_agent->get_name() );
 		$this->ai_agent->set_api_key( $api_key );
 
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
 
-		// Load the Analysis plan.
-		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 	}
 
 	/**

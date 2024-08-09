@@ -17,7 +17,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		$this->set_name( 'Themes and Plugins' );
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
 		$this->set_description( 'The Themes and Plugins data source provides a list of the theme and plugins installed on the website, as well as meta data about those plugins.' );
-		$this->set_analysis_strategy( 'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make recommendations about the installed theme and plugins.' );
+		$this->set_analysis_strategy( 'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make recommendations about the installed theme and plugins. In particular, review the audits from the Lighthouse data and for each audit failure, try to identify the specific plugin from the site. Lighthouse provides a path to problematic scripts and for plugins, this will usually include the plugin slug.' );
 		$this->set_data_shape( "The returned data for each plugin includes a field named 'plugin_api_data' which contains the meta data about the plugin from the wordpress.org plugin API. This data includes a 'download' field which is a link you can follow to download a zip archive of the complete plugin source code. The versions field contains links to all versions of the plugin so you can download the version installed on the site you are working on for analysis." );
 	}
 

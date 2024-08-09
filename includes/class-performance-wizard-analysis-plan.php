@@ -16,6 +16,13 @@
 class Performance_Wizard_Analysis_Plan {
 
 	/**
+	 * Debug mode: when this is true, the plan will skip all costly API calls.
+	 *
+	 * @var bool
+	 */
+	private $debug_mode = false;
+
+	/**
 	 * The current step in the process.
 	 *
 	 * @var int
@@ -35,8 +42,8 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var array
 	 */
 	private $data_sources = array(
-		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
-		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
+		'Performance_Wizard_Data_Source_Lighthouse'         => 'class-performance-wizard-data-source-lighthouse.php',
+		'Performance_Wizard_Data_Source_HTML'               => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
@@ -52,7 +59,64 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var string
 	 */
-	private $data_point_summary_prompt = 'Analyze the data, while also consider analysis from previous steps, then please provide a summary of the information received and how it reflects on the performance of the site. ';
+	private $data_point_summary_prompt = 'Analyze the data, while also considering analysis from previous steps, then please provide a summary of the information received and how it reflects on the performance of the site. ';
+
+
+	/**
+	 * The system instructions to pass to the agent when setting up.
+	 *
+	 * @var string
+	 */
+	private $system_instructions =
+"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
+
+**Data Point Analysis:**
+
+1. **Receive Data:** Receive and carefully review each data point about the website's performance.
+
+2. **Summarize Findings:** Analyze the data point and summarize its meaning in the context of website performance. Explain the potential impact on user experience and overall site speed.
+
+3. **Recommend Improvements:** Provide specific and actionable recommendations on how to address the identified performance issues based on the data point. Explain the rationale behind each suggestion and the potential benefits.
+
+4. **Remember Context:** Store the findings, summaries, and recommendations for each data point to build a comprehensive understanding of the website's performance profile.
+
+**Overall Assessment and Recommendations:**
+
+1. **Consolidate Findings:** Review all analyzed data points and their respective findings to identify common themes and recurring issues.
+
+2. **Prioritize Recommendations:** Rank the suggested improvements based on their potential impact on overall website performance and user experience. Consider factors such as feasibility, cost, and implementation time.
+
+3. **Present Actionable Plan:** Provide a clear and concise summary of the website's performance strengths and weaknesses. Offer a set of prioritized and actionable recommendations for improvement, outlining the steps required for implementation.
+
+4. **Testing Strategy:** Suggest specific methods to measure the effectiveness of the implemented changes. Include key performance indicators (KPIs) and tools to monitor the impact on metrics such as page load times, bounce rates, and conversion rates.
+
+**Example Data Point:**
+
+* **Data:** The Time to First Byte (TTFB) is 500ms.
+
+* **Summary:** The TTFB indicates a delay in server response time, impacting the initial page loading speed and user experience.
+
+* **Recommendations:**
+
+    * Optimize server-side code and database queries.
+
+    * Consider using a Content Delivery Network (CDN) to reduce latency.
+
+     * Consider adding a page caching solution.
+
+    * Test the impact of caching mechanisms on the server.
+
+* **Testing:** Monitor the TTFB after implementing changes using web performance tools like WebPageTest or Google PageSpeed Insights.
+";
+
+	/**
+	 * Get the system instructions for the AI agent.
+	 *
+	 * @return string The system instructions.
+	 */
+	public function get_system_instructions(): string {
+		return $this->system_instructions;
+	}
 
 	/**
 	 * Keep a handle on the base wizard class.
@@ -178,9 +242,13 @@ class Performance_Wizard_Analysis_Plan {
 	 */
 	private function send_prompts_with_conversation( array $prompts, array &$conversation, array $prompts_for_user ): string {
 		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
-		$response       = $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
+		$response       = $this->debug_mode ? '{debug}' : $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
+		if ( $this->debug_mode ) {
+			sleep (1);
+		}
+
 		$q_and_a        = array(
-			'>Q: ' . implode( PHP_EOL, $prompts_for_user ),
+			'>Q: ' . implode( "<br>", $prompts_for_user ),
 			'>A: ' . $response,
 		);
 
@@ -221,17 +289,20 @@ class Performance_Wizard_Analysis_Plan {
 			array_push( $prompts_for_user, $description );
 		}
 		// Send the data to the AI agent.
-		$data = $data_source->get_data();
+		$data = $this->debug_mode ? '{debug}' : $data_source->get_data();
+		if ( $this->debug_mode ) {
+			sleep (1);
+		}
 		if ( ! empty( $data ) ) {
 			$prompt            = '';
-			$prompt           .= 'Here is the data: ' . $data . PHP_EOL;
-			$for_user          = 'Here is the data: {DATA}' . PHP_EOL;
+			$prompt           .= 'Here is the data: ' . $data . "<br>";
+			$for_user          = 'Here is the data: {DATA}' . "<br>"; // A string to show to the user.
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt           .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
-			$for_user         .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . PHP_EOL;
-			$prompt           .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
-			$for_user         .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . PHP_EOL;
+			$prompt           .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
+			$for_user         .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
+			$prompt           .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
+			$for_user         .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
 
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, $for_user );

@@ -1,0 +1,35 @@
+#performance-wizard-terminal {
+	margin-right: 20px;
+
+	p, div {
+		font-size: 14px;
+	}
+
+	r { color: red }
+	g { color: darkgreen }
+	b { color: blue }
+
+	m { color: magenta }
+	c { color: cyan }
+	w { color: white }
+	k { color: black }
+	dg { color: darkcyan }
+	vdg { color: #666 }
+
+	user-chip {
+		display: inline-block;
+		background: #CC7722;
+		padding: 0 12px;
+		border-radius: 32px;
+		color: white;
+	}
+	agent-chip {
+		display: inline-block;
+		background: darkcyan;
+		padding: 0 12px;
+		border-radius: 32px;
+		color: white;
+	}
+}
+#performance-wizard-terminal div.y { color: #aa5500 }
+#performance-wizard-terminal div.dc { color: darkcyan }

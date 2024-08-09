@@ -1,23 +1,15 @@
-jQuery( function( $ ) {
-	const terminal = $( '#performance-wizard-terminal' ).terminal( function( command ) {}, {
-		greetings        : 'WP Performance Wizard',
-		name             : 'wppw',
-		height           : '100%',
-		width            : '100%',
-		prompt           : '',
-		onCommandNotFound: function( term, command ) {
-			echo( 'err', term, command );
-			return false;
-		}
-	} );
 
+( function() {
+
+	// The performance-wizard-terminal div will be used to display all communications with the agent.
+	const terminal = document.getElementById( 'performance-wizard-terminal' );
+
+	// Set up the terminal.
+	echoToTerminal( '## Welcome to the Performance Wizard' );
 
 	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
-	$( '#performance-wizard-start' ).on( 'click', function() {
-
+	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function() {
 		// @todo strings should be localized.
-		terminal.echo( "[[b;green;]Let's get started...]" );
-
 		// Run the analysis....
 		runAnalysis( terminal );
 	} );
@@ -27,8 +19,7 @@ jQuery( function( $ ) {
 	 */
 	async function runAnalysis() {
 		// @todo strings should be localized.
-		terminal.echo( '[[b;green;]Running analysis...]' );
-
+		echoToTerminal( '### <g>Running analysis...</g>' );
 		// Get a description of the next step. Continue until the final step.
 		const complete = false;
 		const maxSteps = 25;
@@ -43,18 +34,19 @@ jQuery( function( $ ) {
 				case 'run_action':
 					results = await runPerfomanceWizardNextStep( step );
 					console.log( results );
-					terminal.echo( '[[b;white;]Analysis...]' );
+					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
 						const result = results[ resultIndex ];
+						echoToTerminal();
 						// If the results start with "Q: ", then it is a question. Remove that part and display the question in yellow.
 						if ( result.startsWith( '>Q: ' ) ) {
-							terminal.echo( '[[b;yellow;]' + result.replace( '>Q: ', '' ) + ']' );
+							echoToTerminal( '<user-chip>USER</user-chip><br><div class="y"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 						}
 						// Similarly, results starting with ">A: " are answers. Remove that part and display the answer in white.
 						else if ( result.startsWith( '>A: ' ) ) {
-							terminal.echo( '[[b;white;]' + result.replace( '>A: ', '' ) + ']' );
+							echoToTerminal( '<agent-chip>AGENT</agent-chip><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
 						}
 					};
 
@@ -62,16 +54,18 @@ jQuery( function( $ ) {
 					break;
 				case 'prompt':
 					step++
-					terminal.echo( '[[b;yellow;]' + nextStep.user_prompt  + ']' );
+					echoToTerminal( '<user-chip>USER</user-chip><br>' );
+					echoToTerminal( '<div class="y">' + nextStep.user_prompt  + '</div>' );
 					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
-					terminal.echo( '[[b;white;]' + results + ']' );
+					echoToTerminal( '<agent-chip>AGENT</agent-chip><br>')
+					echoToTerminal( '<div class="dc">' + results + '</div>' );
 					break;
 				case 'continue':
 					step++;
 					break;
 			}
 		}
-		terminal.echo( '[[b;green;]Analysis complete...]' );
+		echoToTerminal( '<g>Analysis complete...</g>' );
 	}
 
 	/**
@@ -79,12 +73,30 @@ jQuery( function( $ ) {
 	 */
 	function echoStep( nextStep, title = 'Next step') {
 		if ( 'error' === nextStep || 'undefined' === nextStep ) {
-			terminal.echo( '[[b;red;]Error: Unable to get the next step. Please try again.]' );
+			echoToTerminal( '<r>Error: Unable to get the next step. Please try again.</r>' );
 		} else {
-			terminal.echo( '[[b;yellow;]' + title + ': ' + nextStep + ']' );
+			echoToTerminal( '<div class="y">' + title + ': ' + nextStep + '</div>' );
 		}
 
 	}
+
+	/**
+	 * Echo out a message to the page, appending to the DOM.
+	 *
+	 * @param {string} message The message to display.
+	 */
+	function echoToTerminal( message = false ) {
+		if ( false === message ) {
+			const br = document.createElement( 'br' );
+			terminal.appendChild( br );
+			return;
+		}
+		const div = document.createElement( 'div' );
+		console.log( message );
+		div.innerHTML = marked.marked( message );
+		terminal.appendChild( div );
+	}
+
 
 	/**
 	 * Get the next step in the performance wizard.
@@ -130,7 +142,7 @@ jQuery( function( $ ) {
 	 * Function to send a prompt.
 	 *
 	 * @param {string} prompt The prompt to send.
-	 * @param {int}    step   The current step in the wizard.
+	 * @param {int}	step   The current step in the wizard.
 	 */
 	function runPerfomanceWizardPrompt( prompt, step ) {
 		// User= the REST API to send the prompt.
@@ -145,4 +157,7 @@ jQuery( function( $ ) {
 			data  : params
 		} );
 	}
-} );
+} )();
+
+
+
