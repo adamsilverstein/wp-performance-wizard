@@ -17,6 +17,5 @@
   },
   "homepage": "https://github.com/adamsilverstein/wp-performance-wizard#readme",
   "dependencies": {
-    "jquery.terminal": "^2.42.2"
   }
 }

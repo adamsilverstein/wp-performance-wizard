@@ -90,7 +90,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$data = array(
 			'system_instruction' => array(
 				'parts' => array(
-					'text' => $this->get_system_instruction(),
+					'text' => $this->get_system_instructions(),
 				),
 			),
 			'contents'           => $contents,
@@ -136,6 +136,5 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$this->set_name( 'Gemini' );
 		$this->set_wizard( $wizard );
 		$this->set_description( 'Gemini is a is a generative artificial intelligence chatbot developed by Google.' );
-		$this->set_system_instruction();
 	}
 }
