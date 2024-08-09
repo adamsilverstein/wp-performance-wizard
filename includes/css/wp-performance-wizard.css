@@ -1,14 +1,14 @@
 #performance-wizard-terminal {
 	margin-right: 20px;
 
-	p {
+	p, div {
 		font-size: 14px;
 	}
 
 	r { color: red }
 	g { color: darkgreen }
 	b { color: blue }
-	y { color: #aa5500 }
+
 	m { color: magenta }
 	c { color: cyan }
 	w { color: white }
@@ -31,3 +31,5 @@
 		color: white;
 	}
 }
+#performance-wizard-terminal div.y { color: #aa5500 }
+#performance-wizard-terminal div.dc { color: darkcyan }

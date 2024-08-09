@@ -34,7 +34,7 @@
 				case 'run_action':
 					results = await runPerfomanceWizardNextStep( step );
 					console.log( results );
-					echoToTerminal( '### <dg>Analysis...</dg>' );
+					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
@@ -42,11 +42,11 @@
 						echoToTerminal();
 						// If the results start with "Q: ", then it is a question. Remove that part and display the question in yellow.
 						if ( result.startsWith( '>Q: ' ) ) {
-							echoToTerminal( '<user-chip>USER</user-chip><br><y>' + result.replace( '>Q: ', '' ) + '</y>' );
+							echoToTerminal( '<user-chip>USER</user-chip><br><div class="y"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 						}
 						// Similarly, results starting with ">A: " are answers. Remove that part and display the answer in white.
 						else if ( result.startsWith( '>A: ' ) ) {
-							echoToTerminal( '<agent-chip>AGENT</agent-chip><br><dg>' + result.replace( '>A: ', '' ) + '</dg>' );
+							echoToTerminal( '<agent-chip>AGENT</agent-chip><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
 						}
 					};
 
@@ -55,10 +55,10 @@
 				case 'prompt':
 					step++
 					echoToTerminal( '<user-chip>USER</user-chip><br>' );
-					echoToTerminal( '<y>' + nextStep.user_prompt  + '</y>' );
+					echoToTerminal( '<div class="y">' + nextStep.user_prompt  + '</div>' );
 					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
 					echoToTerminal( '<agent-chip>AGENT</agent-chip><br>')
-					echoToTerminal( '<dg>' + results + '</dg>' );
+					echoToTerminal( '<div class="dc">' + results + '</div>' );
 					break;
 				case 'continue':
 					step++;
@@ -75,7 +75,7 @@
 		if ( 'error' === nextStep || 'undefined' === nextStep ) {
 			echoToTerminal( '<r>Error: Unable to get the next step. Please try again.</r>' );
 		} else {
-			echoToTerminal( '<y>' + title + ': ' + nextStep + '</y>' );
+			echoToTerminal( '<div class="y">' + title + ': ' + nextStep + '</div>' );
 		}
 
 	}
