@@ -62,9 +62,9 @@ class Performance_Wizard_AI_Agent_Base {
 	/**
 	 * A method for calling the API of the AI agent.
 	 *
-	 * @param string $prompt         The prompt to pass to the agent.
-	 * @param int    $current_step   The current step in the process.
-	 * @param array  $previous_steps The previous steps in the process.
+	 * @param string   $prompt         The prompt to pass to the agent.
+	 * @param int      $current_step   The current step in the process.
+	 * @param string[] $previous_steps The previous steps in the process.
 	 *
 	 * @return string The response from the API.
 	 */

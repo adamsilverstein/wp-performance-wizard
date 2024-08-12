@@ -14,6 +14,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	 * Construct the class, setting key variables
 	 */
 	public function __construct() {
+		parent::__construct();
 		$this->set_name( 'Themes and Plugins' );
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
 		$this->set_description( 'The Themes and Plugins data source provides a list of the theme and plugins installed on the website, as well as meta data about those plugins.' );
@@ -51,7 +52,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 			$plugin_slug     = dirname( plugin_basename( $plugin_data['PluginURI'] ) );
 			$plugin_api_data = $this->get_plugin_data_from_dotorg_api( $plugin_slug );
 
-			if ( ! empty( $plugin__api_data ) ) {
+			if ( '' !== $plugin_api_data ) {
 				$plugins_data['plugin_api_data'] = $plugin_api_data;
 			}
 		}

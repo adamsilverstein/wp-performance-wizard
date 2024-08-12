@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -16,6 +17,7 @@
     "url": "https://github.com/adamsilverstein/wp-performance-wizard/issues"
   },
   "homepage": "https://github.com/adamsilverstein/wp-performance-wizard#readme",
-  "dependencies": {
+  "devDependencies": {
+    "husky": "^9.1.4"
   }
 }
