@@ -224,7 +224,7 @@ class Performance_Wizard_Analysis_Plan {
 	 */
 	public function run_action( int $step ) {
 		$this->current_step = $step;
-		if ( empty( $this->steps[ $step ] ) ) {
+		if ( ! isset( $this->steps[ $step ] ) ) {
 			return 'No more steps to run.';
 		}
 		$action = $this->steps[ $step ];
@@ -278,13 +278,13 @@ class Performance_Wizard_Analysis_Plan {
 		array_push( $prompts_for_user, $prompt );
 
 		$prompt = $data_source->get_prompt();
-		if ( ! empty( $prompt ) ) {
+		if ( '' !== $prompt ) {
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, $prompt );
 		}
 
 		$description = $data_source->get_description();
-		if ( ! empty( $description ) ) {
+		if ( '' !== $description ) {
 			array_push( $prompts, $description );
 			array_push( $prompts_for_user, $description );
 		}
@@ -293,16 +293,16 @@ class Performance_Wizard_Analysis_Plan {
 		if ( $this->debug_mode ) {
 			sleep (1);
 		}
-		if ( ! empty( $data ) ) {
+		if ( '' !== $data ) {
 			$prompt            = '';
 			$prompt           .= 'Here is the data: ' . $data . "<br>";
 			$for_user          = 'Here is the data: {DATA}' . "<br>"; // A string to show to the user.
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt           .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
-			$for_user         .= empty( $data_shape ) ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
-			$prompt           .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
-			$for_user         .= empty( $analysis_strategy ) ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
+			$prompt           .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
+			$for_user         .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
+			$prompt           .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
+			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
 
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, $for_user );

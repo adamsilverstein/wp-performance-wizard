@@ -83,8 +83,8 @@ class WP_Performance_Wizard {
 
 		// Load the AI Agent.
 		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
-		$this->ai_agent->get_system_instructions( $this->analysis_plan->get_system_instructions() );
-		$api_key        = $this->get_api_key( $this->ai_agent->get_name() );
+		$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
+		$api_key = $this->get_api_key( $this->ai_agent->get_name() );
 		$this->ai_agent->set_api_key( $api_key );
 
 		// Load the REST API handler.
@@ -116,7 +116,7 @@ class WP_Performance_Wizard {
 	public function get_api_key( string $agent_name ): string {
 		global $wp_filesystem;
 
-		if ( empty( $agent_name ) ) {
+		if ( '' === $agent_name ) {
 			return '';
 		}
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';

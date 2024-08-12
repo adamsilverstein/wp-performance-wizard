@@ -14,6 +14,7 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 		 * Construct the class, setting key variables
 		 */
 	public function __construct() {
+		parent::__construct();
 		$this->set_name( 'Lighthouse' );
 		$this->set_prompt( 'Gathering Lighthouse data for the site, this may take a moment.' );
 		$this->set_description( "Lighthouse is an open-source, automated tool for improving the quality of web pages. You can run it against any web page, public or requiring authentication. It has audits for performance, accessibility, progressive web apps, SEO and more. The PageSpeed Insights API is used to collect Lighthouse data. This API is described here: https://developers.google.com/speed/docs/insights/v5/about. This page describes how Lighthouse weighs it's performance scores: https://developer.chrome.com/docs/lighthouse/performance/performance-scoring" );

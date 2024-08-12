@@ -25,28 +25,28 @@ class Performance_Wizard_Data_Source_Base {
 	 *
 	 * @var string
 	 */
-	private $name;
+	private $name = '';
 
 	/**
 	 * The description of the data source.
 	 *
 	 * @var string
 	 */
-	private $description;
+	private $description = '';
 
 	/**
 	 * The prompt to use when passing the data to the AI agent.
 	 *
 	 * @var string
 	 */
-	private $prompt;
+	private $prompt = '';
 
 	/**
 	 * The prompt to the user explaining this data source. Falls back to prompt.
 	 *
 	 * @var string
 	 */
-	private $user_prompt;
+	private $user_prompt = '';
 
 	/**
 	 * A plain text description of the shape of the data returned from the data source.
@@ -69,6 +69,7 @@ class Performance_Wizard_Data_Source_Base {
 	 */
 	public function get_data() {
 		// To be implemented by subclasses.
+		return null;
 	}
 
 
@@ -106,7 +107,7 @@ class Performance_Wizard_Data_Source_Base {
 	 */
 	public function get_user_prompt(): string {
 		$user_prompt = $this->user_prompt;
-		if ( empty( $user_prompt ) ) {
+		if ( '' === $user_prompt ) {
 			$user_prompt = $this->prompt;
 		}
 		return $user_prompt;
@@ -196,10 +197,7 @@ class Performance_Wizard_Data_Source_Base {
 
 	/**
 	 * Basic constructor for the data source.
-	 *
-	 * @param WP_Performance_Wizard $wizard The performance wizard object.
 	 */
-	public function __construct( WP_Performance_Wizard $wizard ) {
-		$this->wizard = $wizard;
+	public function __construct() {
 	}
 }

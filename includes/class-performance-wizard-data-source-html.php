@@ -14,6 +14,7 @@ class Performance_Wizard_Data_Source_HTML extends Performance_Wizard_Data_Source
 	 * Construct the class, setting key variables
 	 */
 	public function __construct() {
+		parent::__construct();
 		$this->set_name( 'HTML' );
 		$this->set_prompt( 'Collecting HTML source for the site, attempting to grab the home page, a recent post and an archive page.' );
 		$this->set_description( 'The HTML data source provides the HTML of the website as retrieved from the front end by an unauthenticated user.' );
