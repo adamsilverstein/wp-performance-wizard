@@ -1,1 +1,2 @@
 composer phpstan
+composer lint

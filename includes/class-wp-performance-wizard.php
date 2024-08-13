@@ -89,7 +89,6 @@ class WP_Performance_Wizard {
 
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
-
 	}
 
 	/**
@@ -122,7 +121,7 @@ class WP_Performance_Wizard {
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
 		include_once ABSPATH . 'wp-admin/includes/file.php';
 		WP_Filesystem();
-		$keydata  = json_decode( $wp_filesystem->get_contents( $filename ) );
+		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
 		return $keydata->apikey;
 	}
 	/**

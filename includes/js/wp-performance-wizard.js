@@ -4,9 +4,6 @@
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
-	// Set up the terminal.
-	echoToTerminal( '## Welcome to the Performance Wizard' );
-
 	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
 	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function() {
 		// @todo strings should be localized.
@@ -19,34 +16,34 @@
 	 */
 	async function runAnalysis() {
 		// @todo strings should be localized.
-		echoToTerminal( '### <g>Running analysis...</g>' );
+		echoToTerminal( '## <g>Running analysis...</g>' );
 		// Get a description of the next step. Continue until the final step.
 		const complete = false;
 		const maxSteps = 25;
 		let step = 0;
 		while ( ! complete && step <= maxSteps ) {
 			const nextStep = await getPerfomanceWizardNextStep( step );
-			echoStep( nextStep.user_prompt, nextStep.title );
 			switch ( nextStep.action ) {
 				case 'complete':
 					complete = true;
 					break;
 				case 'run_action':
-					results = await runPerfomanceWizardNextStep( step );
-					console.log( results );
+					echoToTerminal( '<br><div class="info-chip step-chip">Collecting Data</div><br>' );
+					echoStep( nextStep.user_prompt, nextStep.title );
+					results = await runPerformanceWizardNextStep( step );
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
 						const result = results[ resultIndex ];
 						echoToTerminal();
-						// If the results start with "Q: ", then it is a question. Remove that part and display the question in yellow.
+						// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
 						if ( result.startsWith( '>Q: ' ) ) {
-							echoToTerminal( '<user-chip>USER</user-chip><br><div class="y"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
+							echoToTerminal( '<div class="info-chip user-chip">USER</div><br><div class="y"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 						}
-						// Similarly, results starting with ">A: " are answers. Remove that part and display the answer in white.
+						// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
 						else if ( result.startsWith( '>A: ' ) ) {
-							echoToTerminal( '<agent-chip>AGENT</agent-chip><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
+							echoToTerminal( '<div class="info-chip agent-chip">AGENT</div><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
 						}
 					};
 
@@ -54,11 +51,11 @@
 					break;
 				case 'prompt':
 					step++
-					echoToTerminal( '<user-chip>USER</user-chip><br>' );
-					echoToTerminal( '<div class="y">' + nextStep.user_prompt  + '</div>' );
+					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
+					echoToTerminal( '<div class="y"><br>' + nextStep.user_prompt  + '</div>' );
 					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
-					echoToTerminal( '<agent-chip>AGENT</agent-chip><br>')
-					echoToTerminal( '<div class="dc">' + results + '</div>' );
+					echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
+					echoToTerminal( '<div class="dc"><br>' + results + '</div>' );
 					break;
 				case 'continue':
 					step++;
@@ -75,7 +72,7 @@
 		if ( 'error' === nextStep || 'undefined' === nextStep ) {
 			echoToTerminal( '<r>Error: Unable to get the next step. Please try again.</r>' );
 		} else {
-			echoToTerminal( '<div class="y">' + title + ': ' + nextStep + '</div>' );
+			echoToTerminal( '<div class="y"><br>' + title + ': ' + nextStep + '</div>' );
 		}
 
 	}
@@ -125,7 +122,7 @@
 	 *
 	 * @param {int} step The current step in the wizard.
 	 */
-	function runPerfomanceWizardNextStep( step ) {
+	function runPerformanceWizardNextStep( step ) {
 		// User= the REST API to run the next step.
 		const params = {
 			'command': '_run_action_',

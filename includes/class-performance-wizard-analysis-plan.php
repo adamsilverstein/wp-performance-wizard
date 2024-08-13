@@ -42,8 +42,8 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var array
 	 */
 	private $data_sources = array(
-		'Performance_Wizard_Data_Source_Lighthouse'         => 'class-performance-wizard-data-source-lighthouse.php',
-		'Performance_Wizard_Data_Source_HTML'               => 'class-performance-wizard-data-source-html.php',
+		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
+		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
@@ -52,14 +52,14 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var string
 	 */
-	private $data_point_prompt = 'You will now analyze a data point. Remember the analysis for this data point so you can refer to it in future steps.';
+	private $data_point_prompt = 'You will now analyze a new data point. Remember the analysis for this data point so you can refer to it in future steps.';
 
 	/**
 	 * The prompt to send after each data point analysis.
 	 *
 	 * @var string
 	 */
-	private $data_point_summary_prompt = 'Analyze the data, while also considering analysis from previous steps, then please provide a summary of the information received and how it reflects on the performance of the site. ';
+	private $data_point_summary_prompt = 'Analyze the data, while also considering analysis from previous steps. Provide a high level summary of the information received - 2-3 paragraphs at most - and how it reflects on the performance of the site. Highlight the most important findings.';
 
 
 	/**
@@ -68,7 +68,7 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var string
 	 */
 	private $system_instructions =
-"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end.
+	"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end. You will not hallucinate or make up facts about the site. If you don't know or something you will say so. Use plain language an average developer or site builder would understand. Use a professional, positive and friendly tone. Only discuss performance related issues. Do not discuss security, design, or other non-performance related issues.
 
 **Data Point Analysis:**
 
@@ -98,11 +98,13 @@ class Performance_Wizard_Analysis_Plan {
 
 * **Recommendations:**
 
-    * Optimize server-side code and database queries.
+    * Contact Form 7 loads it's JavaScript on every page. Consider switching to a more lightweight form plugin.
+
+	* Optimize server-side responsiveness by adding a full page caching solution.
 
     * Consider using a Content Delivery Network (CDN) to reduce latency.
 
-     * Consider adding a page caching solution.
+    * Consider adding an image CDN solution to serve optimized images.
 
     * Test the impact of caching mechanisms on the server.
 
@@ -178,7 +180,7 @@ class Performance_Wizard_Analysis_Plan {
 		// Finally, add the wrap up steps.
 		$steps[] = array(
 			'title'       => 'Summarize Results',
-			'user_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site.',
+			'user_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. First, summarize all of the findings. Next, list the top recommendations for improving the performance of the site. For each point, refer to the plugin that could be causing the issue. Each issue should also be rooted in a specific failing Lighhouse audit - state which audit or problem it is aiming to fix. Do not provide generic recommendations like "consider adding caching". Instead, always provide specific recommendations such as "Try installing a full page caching solution like WP Fastest Cache". Finally, provide a testing strategy for measuring the impact of the recommendations.',
 			'source'      => null,
 			'action'      => 'prompt',
 		);
@@ -244,11 +246,11 @@ class Performance_Wizard_Analysis_Plan {
 		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
 		$response       = $this->debug_mode ? '{debug}' : $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
 		if ( $this->debug_mode ) {
-			sleep (1);
+			sleep( 1 );
 		}
 
-		$q_and_a        = array(
-			'>Q: ' . implode( "<br>", $prompts_for_user ),
+		$q_and_a = array(
+			'>Q: ' . implode( '<br>', $prompts_for_user ),
 			'>A: ' . $response,
 		);
 
@@ -291,18 +293,18 @@ class Performance_Wizard_Analysis_Plan {
 		// Send the data to the AI agent.
 		$data = $this->debug_mode ? '{debug}' : $data_source->get_data();
 		if ( $this->debug_mode ) {
-			sleep (1);
+			sleep( 1 );
 		}
 		if ( '' !== $data ) {
 			$prompt            = '';
-			$prompt           .= 'Here is the data: ' . $data . "<br>";
-			$for_user          = 'Here is the data: {DATA}' . "<br>"; // A string to show to the user.
+			$prompt           .= 'Here is the data: ' . $data . '<br>';
+			$for_user          = 'Here is the data: {DATA} <br>'; // A string to show to the user.
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt           .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
-			$for_user         .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
-			$prompt           .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
-			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
+			$prompt           .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . '<br>';
+			$for_user         .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . '<br>';
+			$prompt           .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
+			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
 
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, $for_user );
