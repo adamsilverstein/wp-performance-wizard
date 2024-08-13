@@ -16,20 +16,27 @@
 	dg { color: darkcyan }
 	vdg { color: #666 }
 
-	user-chip {
+	.info-chip {
 		display: inline-block;
-		background: #CC7722;
 		padding: 0 12px;
 		border-radius: 32px;
 		color: white;
 	}
-	agent-chip {
-		display: inline-block;
+	.user-chip {
+		background: #CC7722;
+	}
+	.agent-chip {
 		background: darkcyan;
-		padding: 0 12px;
-		border-radius: 32px;
-		color: white;
+	}
+	.step-chip {
+		background: #666;
 	}
 }
-#performance-wizard-terminal div.y { color: #aa5500 }
-#performance-wizard-terminal div.dc { color: darkcyan }
+#performance-wizard-terminal div.y {
+	color: #aa5500
+}
+
+#performance-wizard-terminal div.dc,
+#performance-wizard-terminal div.dc h2 {
+	color: darkcyan
+}
