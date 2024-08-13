@@ -51,7 +51,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$contents  = array();
 		$max_steps = $current_step;
 		for ( $i = 1; $i < $max_steps; $i++ ) {
-			if ( isset( $previous_steps[ $i ] ) ) {
+			if ( ! isset( $previous_steps[ $i ] ) ) {
 				continue;
 			}
 			$step = $previous_steps[ $i ];
