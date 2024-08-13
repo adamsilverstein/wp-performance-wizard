@@ -18,10 +18,12 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		$this->set_name( 'Themes and Plugins' );
 		$this->set_prompt( 'Collecting data about the themes and plugins used on the site...' );
 		$this->set_description( 'The Themes and Plugins data source provides a list of the theme and plugins installed on the website, as well as meta data about those plugins.' );
-		$this->set_analysis_strategy( 'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make recommendations about the installed theme and plugins.
+		$this->set_analysis_strategy(
+			'The Themes and Plugins data source can be analyzed by looking for common performance issues for the listed themes and plugins and combined with the HTML and Lighthouse data to make recommendations about the installed theme and plugins.
 		In particular, review the audits from the Lighthouse data and for each audit failure, try to identify the specific plugin from the site that could be causing the issue.
 		Lighthouse provides a path to scripts that are causing performance issues and for assets enqueued by plugins, this will usually include the plugin slug as part of the path (typically /wp-content/plugins/{slug}/path...). Use this information to correlate plugins to the assets they enqueue.
-		The plugin meta data returned includes additional quality signals, such as an overall rating, counts of 1-5 star reviews, and fields for support_threads and support_threads_resolved which indicate support responsiveness. Use this information when comparing plugins or considering disabling a plugin.' );
+		The plugin meta data returned includes additional quality signals, such as an overall rating, counts of 1-5 star reviews, and fields for support_threads and support_threads_resolved which indicate support responsiveness. Use this information when comparing plugins or considering disabling a plugin.'
+		);
 		$this->set_data_shape( "The returned data for each plugin includes the name, slug, version, author, description, URI  and a field named 'plugin_api_data' which contains the metadata about the plugin from the wordpress.org plugin API. This metadata includes a rating field with an overall rating (0-100) of the plugin, as well as a ratings object with the number of 1 star (worst) thru 5 star (best) reviews, as well as fields for support_threads and support_threads_resolved ." );
 	}
 
@@ -41,9 +43,9 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 
 		$plugins_data = array();
 		foreach ( $active_plugins as $plugin ) {
-			$plugin_file    = WP_PLUGIN_DIR . '/' . $plugin;
-			$plugin_data    = get_plugin_data( $plugin_file );
-			$plugin_slug    = $plugin_data['TextDomain'];
+			$plugin_file = WP_PLUGIN_DIR . '/' . $plugin;
+			$plugin_data = get_plugin_data( $plugin_file );
+			$plugin_slug = $plugin_data['TextDomain'];
 
 			// Skip the wp-performance-wizard plugin.
 			if ( 'wp-performance-wizard' === $plugin_slug ) {
@@ -56,7 +58,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 				'version'     => $plugin_data['Version'],
 				'author'      => $plugin_data['Author'],
 				'description' => $plugin_data['Description'],
-				'URI'   => $plugin_data['PluginURI'],
+				'URI'         => $plugin_data['PluginURI'],
 			);
 
 			// Also, get the data from the Plugin API.

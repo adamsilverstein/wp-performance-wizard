@@ -55,7 +55,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 				continue;
 			}
 			$step = $previous_steps[ $i ];
-			if ( isset ( $step['prompts'] ) ) {
+			if ( isset( $step['prompts'] ) ) {
 				array_push(
 					$contents,
 					array(

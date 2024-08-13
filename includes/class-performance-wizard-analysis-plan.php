@@ -42,8 +42,8 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var array
 	 */
 	private $data_sources = array(
-		'Performance_Wizard_Data_Source_Lighthouse'         => 'class-performance-wizard-data-source-lighthouse.php',
-		'Performance_Wizard_Data_Source_HTML'               => 'class-performance-wizard-data-source-html.php',
+		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
+		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
@@ -68,7 +68,7 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var string
 	 */
 	private $system_instructions =
-"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end. You will not hallucinate or make up facts about the site. If you don't know or something you will say so. Use plain language an average developer or site builder would understand. Use a professional, positive and friendly tone. Only discuss performance related issues. Do not discuss security, design, or other non-performance related issues.
+	"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end. You will not hallucinate or make up facts about the site. If you don't know or something you will say so. Use plain language an average developer or site builder would understand. Use a professional, positive and friendly tone. Only discuss performance related issues. Do not discuss security, design, or other non-performance related issues.
 
 **Data Point Analysis:**
 
@@ -246,11 +246,11 @@ class Performance_Wizard_Analysis_Plan {
 		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
 		$response       = $this->debug_mode ? '{debug}' : $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
 		if ( $this->debug_mode ) {
-			sleep (1);
+			sleep( 1 );
 		}
 
-		$q_and_a        = array(
-			'>Q: ' . implode( "<br>", $prompts_for_user ),
+		$q_and_a = array(
+			'>Q: ' . implode( '<br>', $prompts_for_user ),
 			'>A: ' . $response,
 		);
 
@@ -293,18 +293,18 @@ class Performance_Wizard_Analysis_Plan {
 		// Send the data to the AI agent.
 		$data = $this->debug_mode ? '{debug}' : $data_source->get_data();
 		if ( $this->debug_mode ) {
-			sleep (1);
+			sleep( 1 );
 		}
 		if ( '' !== $data ) {
 			$prompt            = '';
-			$prompt           .= 'Here is the data: ' . $data . "<br>";
-			$for_user          = 'Here is the data: {DATA}' . "<br>"; // A string to show to the user.
+			$prompt           .= 'Here is the data: ' . $data . '<br>';
+			$for_user          = 'Here is the data: {DATA} <br>'; // A string to show to the user.
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt           .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
-			$for_user         .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . "<br>";
-			$prompt           .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
-			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . "<br>";
+			$prompt           .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . '<br>';
+			$for_user         .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . '<br>';
+			$prompt           .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
+			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
 
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_user, $for_user );
