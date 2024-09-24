@@ -45,13 +45,13 @@
 }
 
 button.wp-wizard-follow-up-question {
-	background: lightgray;
-	color: black;
-	border: none;
 	padding: 10px 10px;
+	margin: 5px;
 	border-radius: 5px;
 	cursor: pointer;
 	font-size: medium;
+	color: #3858e9;
+	border-color: #3858e9;
 }
 
 button#performance-wizard-ask {
