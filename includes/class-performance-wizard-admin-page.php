@@ -28,7 +28,8 @@ class Performance_Wizard_Admin_Page {
 			__( 'Performance Wizard', 'wp-performance-wizard' ),
 			'manage_options',
 			'wp-performance-wizard',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			1
 		);
 	}
 

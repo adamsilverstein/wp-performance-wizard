@@ -52,10 +52,11 @@ class Performance_Wizard_AI_Agent_Base {
 	 * @param array    $prompts        The prompts to pass to the agent.
 	 * @param int      $current_step   The current step in the process.
 	 * @param string[] $previous_steps The previous steps in the process.
+	 * @param bool     $additional_questions Whether to ask additional questions.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompts( array $prompts, int $current_step, array $previous_steps ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return '';
 	}
 
@@ -65,10 +66,11 @@ class Performance_Wizard_AI_Agent_Base {
 	 * @param string   $prompt         The prompt to pass to the agent.
 	 * @param int      $current_step   The current step in the process.
 	 * @param string[] $previous_steps The previous steps in the process.
+	 * @param bool     $additional_questions Whether to ask additional questions.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompt( string $prompt, int $current_step, array $previous_steps ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public function send_prompt( string $prompt, int $current_step, array $previous_steps, bool $additional_questions ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return '';
 	}
 

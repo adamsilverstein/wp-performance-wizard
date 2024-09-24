@@ -62,10 +62,11 @@ class Performance_Wizard_Rest_API {
 	 * @return WP_REST_Response The response object.
 	 */
 	public function handle_command( WP_REST_Request $request ): WP_REST_Response {
-		$command  = $request->get_param( 'command' );
-		$step     = $request->get_param( 'step' );
-		$step     = $step ? intval( $step ) : 0;
-		$response = '';
+		$command              = $request->get_param( 'command' );
+		$step                 = $request->get_param( 'step' );
+		$step                 = $step ? intval( $step ) : 0;
+		$additional_questions = $request->get_param( 'additional_questions' );
+		$response             = '';
 		switch ( $command ) {
 			case '_get_next_action_':
 				$response = $this->wizard->get_analysis_plan()->get_next_action( $step );
@@ -79,7 +80,7 @@ class Performance_Wizard_Rest_API {
 			case '_prompt_':
 				$prompt         = $request->get_param( 'prompt' );
 				$previous_steps = get_option( $this->wizard->get_option_name(), array() );
-				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps );
+				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps, $additional_questions );
 		}
 
 		return new WP_REST_Response( $response, 200 );
