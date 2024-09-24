@@ -78,13 +78,14 @@ class Performance_Wizard_Rest_API {
 				$response = $this->wizard->get_analysis_plan()->run_action( $step );
 				break;
 			case '_prompt_':
-				$prompt = $request->get_param( 'prompt' );
+				$prompt         = $request->get_param( 'prompt' );
+				$previous_steps = get_option( $this->wizard->get_option_name(), array() );
 
-				// Handle the special case of the promt 'compare' which prompts the system to run a new Lighthouse report and compare the results to the previous one.
+				// Handle the special case of the prompt 'compare' which prompts the system to run a new Lighthouse report and compare the results to the previous one.
 				if ( 'compare' === $prompt ) {
 					$response = $this->wizard->get_analysis_plan()->compare();
 				} else {
-					$response = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, array(), $additional_questions );
+					$response = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps, $additional_questions );
 				}
 		}
 

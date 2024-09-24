@@ -28,6 +28,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		if ( $additional_questions ) {
 			$prompt .= PHP_EOL . $this->getAdditionalQuestionsPrompt();
 		}
+
 		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps, $additional_questions );
 	}
 

@@ -149,6 +149,7 @@ class Performance_Wizard_Analysis_Plan {
 		$this->wizard = $wizard;
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-data-source-base.php';
 		$this->set_up_plan();
+		add_option( $this->wizard->get_option_name(), array() );
 	}
 
 	/**
@@ -302,7 +303,7 @@ Finally, based on the data collected and recommendations so far, provide two uni
 	 */
 	private function do_run_action( array $action, bool $is_comparison = false ): array {
 
-		$data_source  = $action['source'];
+		$data_source  = isset( $action['source'] ) ? $action['source'] : '';
 		$conversation = array();
 
 		// All of these prompts need to be combined into a single request to theAPI.
