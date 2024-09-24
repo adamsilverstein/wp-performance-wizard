@@ -55,6 +55,12 @@ class Performance_Wizard_Analysis_Plan {
 	private $data_point_prompt = 'You will now analyze a new data point. Remember the analysis for this data point so you can refer to it in future steps.';
 
 	/**
+	 * The prompt to send before each data point comparison analysis,
+	 *
+	 * @var string
+	 */
+	private $data_point_comparison_prompt = 'You will now analyze a new data point. You will then compare this datapoint to the previous one. Report on how specific metrics have changed, highlighting the most notable improvements or regressions.';
+	/**
 	 * The prompt to send after each data point analysis.
 	 *
 	 * @var string
@@ -180,7 +186,7 @@ class Performance_Wizard_Analysis_Plan {
 			'title'          => 'Summarize Results',
 			'user_prompt'    => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. 
 			
-First, briefly summarize all of the findings so far. ONLY DISCUSS ITEMS THAT HAVE BEEN ANALYZED SO FAR. DO NOT MAKE UP RESULTS THAT YOU DO NOT KNOW ABOUT
+First, briefly summarize all of the findings so far.
 
 Next, list the top recommendations for improving the performance of the site. Keep it short, highlighting only the issues that will be most impactful to fix. 
 
@@ -248,6 +254,22 @@ Finally, based on the data collected and recommendations so far, provide two sug
 	}
 
 	/**
+	 * Create and run an action that compares the current Lighthouse report to the previous one.
+	 *
+	 * @return mixed The result of the action.
+	 */
+	public function compare() {
+		$lighthouse        = new Performance_Wizard_Data_Source_Lighthouse();
+		$lighthouse_action = array(
+			'source' => $lighthouse,
+		);
+
+		$conversation = $this->do_run_action( $lighthouse_action, true );
+
+		return $conversation;
+	}
+
+	/**
 	 * Sent a prompt, adding it to the conversation.
 	 *
 	 * @param array $prompts          The prompt to send.
@@ -275,11 +297,12 @@ Finally, based on the data collected and recommendations so far, provide two sug
 	/**
 	 * Run an action in the analysis process.
 	 *
-	 * @param array $action The action to run.
+	 * @param array $action        The action to run.
+	 * @param bool  $is_comparison Whether this is a comparison step. Optional, default is false.
 	 *
 	 * @return array The conversation with Q&A pairs.
 	 */
-	private function do_run_action( array $action ): array {
+	private function do_run_action( array $action, bool $is_comparison = false ): array {
 
 		$data_source  = $action['source'];
 		$conversation = array();
@@ -289,7 +312,11 @@ Finally, based on the data collected and recommendations so far, provide two sug
 		$prompts_for_display = array();
 
 		// Send the before data analysis prompt.
-		$prompt = $this->data_point_prompt;
+		if ( $is_comparison ) {
+			$prompt = $this->data_point_comparison_prompt;
+		} else {
+			$prompt = $this->data_point_prompt;
+		}
 		array_push( $prompts, $prompt );
 		array_push( $prompts_for_display, $prompt );
 
