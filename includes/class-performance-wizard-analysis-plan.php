@@ -42,8 +42,8 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var array
 	 */
 	private $data_sources = array(
-		//'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
-		//'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
+		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
+		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
@@ -177,8 +177,8 @@ class Performance_Wizard_Analysis_Plan {
 
 		// Finally, add the wrap up steps.
 		$steps[] = array(
-			'title'       => 'Summarize Results',
-			'user_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. 
+			'title'          => 'Summarize Results',
+			'user_prompt'    => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. 
 			
 First, briefly summarize all of the findings so far. 
 
@@ -191,10 +191,10 @@ Important: Do not provide generic recommendations like "consider adding caching"
 Next, provide a testing strategy for measuring the impact of the recommendations.
 
 Finally, based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: 
-"<button class="wp-wizard-follow-up-question">What is the best way to optimize my LCP image?</button>"',
+			"<button class="wp-wizard-follow-up-question">What is the best way to optimize my LCP image?</button>"',
 			'display_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site including a testing strategy for measuring the impact of the recommendations.',
-			'source'      => null,
-			'action'      => 'prompt',
+			'source'         => null,
+			'action'         => 'prompt',
 		);
 
 		$steps[] = array(
