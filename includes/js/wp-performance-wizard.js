@@ -95,7 +95,9 @@
 					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
 					echoToTerminal( '<div class="k"><br>' + promptForDisplay  + '</div>' );
 					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
-					outputFormattedResults( result );
+					echoToTerminal();
+					echoToTerminal( result );
+					
 					break;
 				case 'continue':
 					step++;

@@ -190,16 +190,14 @@ First, briefly summarize all of the findings so far.
 
 Next, list the top recommendations for improving the performance of the site. Keep it short, highlighting only the issues that will be most impactful to fix. 
 
-For each recommendation, if there is a plugin that could be causing the issue, refer to it specifically. Each issue should also be rooted in a specific failing Lighthouse audit - state which audit or problem it is aiming to fix. If a fix does not address an audit raised by Lighthouse, do not discuss it.
+For each recommendation, if there is a plugin that could be causing the issue, refer to it specifically. 
+Each issue should also be rooted in a specific failing Lighthouse audit - state which audit or problem it is aiming to fix.  
 
 Important: Do not provide generic recommendations like "consider adding caching". Instead, always provide specific recommendations such as "Try installing a full page caching solution like WP Fastest Cache" or "Try disabling Contact Form 7 and switching to a more lightweight form solution". 
 
 Next, provide a testing strategy for measuring the impact of the recommendations.
 
-Finally, based on the data collected and recommendations so far, provide two suggestions for performance related follow up questions that the user could ask. These questions should help them get more information or further recommendations, provide more details or drill down to a specific issue. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example:
- 
-			"<button class="wp-wizard-follow-up-question">What is LCP image and how can I fix it?</button>" or
-			"<button class="wp-wizard-follow-up-question">What is the most impactful blocking script?</button>"',
+Finally, based on the data collected and recommendations so far, provide two unique suggestions for follow up questions the user can ask that are for performance related. These questions should help them the user more information or further recommendations, provide more details or drill down to a specific issue. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example:"<button class="wp-wizard-follow-up-question">What is LCP image and how can I fix it?</button>" or "<button class="wp-wizard-follow-up-question">What is the most impactful blocking script?</button>"',
 			'display_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site including a testing strategy for measuring the impact of the recommendations.',
 			'source'         => null,
 			'action'         => 'prompt',
@@ -250,7 +248,7 @@ Finally, based on the data collected and recommendations so far, provide two sug
 			return 'No more steps to run.';
 		}
 		$action = $this->steps[ $step ];
-		return $this->do_run_action( $action );
+		return $this->do_run_action( $action, false );
 	}
 
 	/**
