@@ -23,7 +23,7 @@
 		color: white;
 	}
 	.user-chip {
-		background: #CC7722;
+		background: darkcyan;
 	}
 	.agent-chip {
 		background: darkcyan;
@@ -33,10 +33,39 @@
 	}
 }
 #performance-wizard-terminal div.y {
-	color: #aa5500
+	color: darkolivegreen
 }
 
 #performance-wizard-terminal div.dc,
 #performance-wizard-terminal div.dc h2 {
 	color: darkcyan
+}
+
+button.wp-wizard-follow-up-question {
+	background: lightgray;
+	color: black;
+	border: none;
+	padding: 10px 10px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: medium;
+}
+
+button#performance-wizard-ask {
+	background: #0073aa;
+	color: white;
+	border: none;
+	padding: 8px 10px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: medium;
+	margin-top: 10px;
+	margin-left: 5px;
+}
+
+#performance-wizard-question {
+	margin-top: 10px;
+	width: 80%;
+	float: left;
+	font-size: medium;
 }
