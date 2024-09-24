@@ -32,7 +32,7 @@
 			if ( 'performance-wizard-ask' === event.target.id ) {
 				const question = document.getElementById( 'performance-wizard-question' ).value;
 				echoToTerminal( '<div class="info-chip user-chip">USER</div><br>' );
-				echoToTerminal( '<div class="y"><br>' + question + '</div>' );
+				echoToTerminal( '<div class="k"><br>' + question + '</div>' );
 				// Remove the question field and buttons.
 				document.getElementById( 'wp-performance-wizard-follow-up' ).remove();
 
@@ -52,7 +52,7 @@
 		} );
 
 		function addFollowUpQuestion() {
-			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip">USER</div><br><div class="y"><br>Ask a question about the results</div><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
+			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip">USER</div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
 		}
 		
 		while ( ! complete && step <= maxSteps ) {
@@ -77,7 +77,7 @@
 						echoToTerminal();
 						// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
 						if ( result.startsWith( '>Q: ' ) ) {
-							echoToTerminal( '<div class="info-chip user-chip">USER</div><br><div class="y"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
+							echoToTerminal( '<div class="info-chip user-chip">USER</div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 						}
 						// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
 						else if ( result.startsWith( '>A: ' ) ) {
@@ -90,7 +90,7 @@
 				case 'prompt':
 					step++
 					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
-					echoToTerminal( '<div class="y"><br>' + promptForDisplay  + '</div>' );
+					echoToTerminal( '<div class="k"><br>' + promptForDisplay  + '</div>' );
 					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
 					echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
 					echoToTerminal( '<div class="dc"><br>' + results + '</div>' );
@@ -109,7 +109,7 @@
 		if ( 'error' === nextStep || 'undefined' === nextStep ) {
 			echoToTerminal( '<r>Error: Unable to get the next step. Please try again.</r>' );
 		} else {
-			echoToTerminal( '<div class="y"><br>' + title + ': ' + nextStep + '</div>' );
+			echoToTerminal( '<div class="k"><h3>' + title + '</h3> ' + nextStep + '</div>' );
 		}
 
 	}
@@ -194,6 +194,3 @@
 		} );
 	}
 } )();
-
-
-

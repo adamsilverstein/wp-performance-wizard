@@ -12,7 +12,6 @@
 	m { color: magenta }
 	c { color: cyan }
 	w { color: white }
-	k { color: black }
 	dg { color: darkcyan }
 	vdg { color: #666 }
 
@@ -23,22 +22,26 @@
 		color: white;
 	}
 	.user-chip {
-	background: darkcyan;
+		background: darkcyan;
 	}
 	.agent-chip {
-		background: darkcyan;
+		background: darkgreen;
 	}
 	.step-chip {
 		background: #666;
 	}
 }
-#performance-wizard-terminal div.y {
-	color: darkolivegreen
+#performance-wizard-terminal div.x {
+	color: black;
+}
+
+#performance-wizard-terminal div.k {
+	color: black
 }
 
 #performance-wizard-terminal div.dc,
 #performance-wizard-terminal div.dc h2 {
-	color: darkcyan
+	color: darkgreen
 }
 
 button.wp-wizard-follow-up-question {

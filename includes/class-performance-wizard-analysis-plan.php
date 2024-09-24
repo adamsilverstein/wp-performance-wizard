@@ -180,18 +180,20 @@ class Performance_Wizard_Analysis_Plan {
 			'title'          => 'Summarize Results',
 			'user_prompt'    => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. 
 			
-First, briefly summarize all of the findings so far. 
+First, briefly summarize all of the findings so far. ONLY DISCUSS ITEMS THAT HAVE BEEN ANALYZED SO FAR. DO NOT MAKE UP RESULTS THAT YOU DO NOT KNOW ABOUT
 
 Next, list the top recommendations for improving the performance of the site. Keep it short, highlighting only the issues that will be most impactful to fix. 
 
-For each recommendation, refer to the plugin that could be causing the issue. Each issue should also be rooted in a specific failing Lighhouse audit - state which audit or problem it is aiming to fix. 
+For each recommendation, if there is a plugin that could be causing the issue, refer to it specifically. Each issue should also be rooted in a specific failing Lighthouse audit - state which audit or problem it is aiming to fix. If a fix does not address an audit raised by Lighthouse, do not discuss it.
 
-Important: Do not provide generic recommendations like "consider adding caching". Instead, always provide specific recommendations such as "Try installing a full page caching solution like WP Fastest Cache" or "Try disabling Contact Form 7 and switchhing to a more lightweight form solution". 
+Important: Do not provide generic recommendations like "consider adding caching". Instead, always provide specific recommendations such as "Try installing a full page caching solution like WP Fastest Cache" or "Try disabling Contact Form 7 and switching to a more lightweight form solution". 
 
 Next, provide a testing strategy for measuring the impact of the recommendations.
 
-Finally, based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: 
-			"<button class="wp-wizard-follow-up-question">What is the best way to optimize my LCP image?</button>"',
+Finally, based on the data collected and recommendations so far, provide two suggestions for performance related follow up questions that the user could ask. These questions should help them get more information or further recommendations, provide more details or drill down to a specific issue. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example:
+ 
+			"<button class="wp-wizard-follow-up-question">What is LCP image and how can I fix it?</button>" or
+			"<button class="wp-wizard-follow-up-question">What is the most impactful blocking script?</button>"',
 			'display_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site including a testing strategy for measuring the impact of the recommendations.',
 			'source'         => null,
 			'action'         => 'prompt',
@@ -250,11 +252,11 @@ Finally, based on the data collected and recommendations so far, provide two sug
 	 *
 	 * @param array $prompts          The prompt to send.
 	 * @param array $conversation     The conversation to add the prompt to.
-	 * @param array $prompts_for_user The prompts to show to the user.
+	 * @param array $prompts_for_display The prompts to show to the user.
 	 *
 	 * @return string The response from the AI agent.
 	 */
-	private function send_prompts_with_conversation( array $prompts, array &$conversation, array $prompts_for_user ): string {
+	private function send_prompts_with_conversation( array $prompts, array &$conversation, array $prompts_for_display ): string {
 		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
 		$response       = $this->debug_mode ? '{debug}' : $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps, false );
 		if ( $this->debug_mode ) {
@@ -262,7 +264,7 @@ Finally, based on the data collected and recommendations so far, provide two sug
 		}
 
 		$q_and_a = array(
-			'>Q: ' . implode( '<br>', $prompts_for_user ),
+			'>Q: ' . implode( '<br>', $prompts_for_display ),
 			'>A: ' . $response,
 		);
 
@@ -283,24 +285,24 @@ Finally, based on the data collected and recommendations so far, provide two sug
 		$conversation = array();
 
 		// All of these prompts need to be combined into a single request to theAPI.
-		$prompts          = array();
-		$prompts_for_user = array();
+		$prompts             = array();
+		$prompts_for_display = array();
 
 		// Send the before data analysis prompt.
 		$prompt = $this->data_point_prompt;
 		array_push( $prompts, $prompt );
-		array_push( $prompts_for_user, $prompt );
+		array_push( $prompts_for_display, $prompt );
 
 		$prompt = $data_source->get_prompt();
 		if ( '' !== $prompt ) {
 			array_push( $prompts, $prompt );
-			array_push( $prompts_for_user, $prompt );
+			array_push( $prompts_for_display, $prompt );
 		}
 
 		$description = $data_source->get_description();
 		if ( '' !== $description ) {
 			array_push( $prompts, $description );
-			array_push( $prompts_for_user, $description );
+			array_push( $prompts_for_display, $description );
 		}
 		// Send the data to the AI agent.
 		$data = $this->debug_mode ? '{debug}' : $data_source->get_data();
@@ -319,15 +321,15 @@ Finally, based on the data collected and recommendations so far, provide two sug
 			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
 
 			array_push( $prompts, $prompt );
-			array_push( $prompts_for_user, $for_user );
+			array_push( $prompts_for_display, $for_user );
 		}
 
 		// Send the post data analysis prompt.
 		$prompt = $this->data_point_summary_prompt;
 		array_push( $prompts, $prompt );
-		array_push( $prompts_for_user, $prompt );
+		array_push( $prompts_for_display, '<strong>' . $prompt . '</strong>' );
 
-		$response = $this->send_prompts_with_conversation( $prompts, $conversation, $prompts_for_user );
+		$response = $this->send_prompts_with_conversation( $prompts, $conversation, $prompts_for_display );
 
 		// Store the prompt and response for subsequent steps.
 		$this->store_prompts_and_response( implode( PHP_EOL, $prompts ), $response );
