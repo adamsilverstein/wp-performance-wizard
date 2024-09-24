@@ -18,18 +18,56 @@
 		// @todo strings should be localized.
 		echoToTerminal( '## <g>Running analysis...</g>' );
 		// Get a description of the next step. Continue until the final step.
-		const complete = false;
+		let complete = false;
 		const maxSteps = 25;
 		let step = 0;
+		// Listen for clicks on the wp-wizard-follow-up-question buttons using event delegation.
+		document.getElementById( 'performance-wizard-terminal' ).addEventListener( 'click', async function( event ) {
+			if ( 'wp-wizard-follow-up-question' === event.target.className ) {
+				// Extract the question from the content of the button, add it to the input field, and click the ask button.
+				const question = event.target.innerHTML;
+				document.getElementById( 'performance-wizard-question' ).value = question;
+				document.getElementById( 'performance-wizard-ask' ).click();
+			}
+			if ( 'performance-wizard-ask' === event.target.id ) {
+				const question = document.getElementById( 'performance-wizard-question' ).value;
+				echoToTerminal( '<div class="info-chip user-chip">USER</div><br>' );
+				echoToTerminal( '<div class="y"><br>' + question + '</div>' );
+				// Remove the question field and buttons.
+				document.getElementById( 'wp-performance-wizard-follow-up' ).remove();
+
+				// Remove all the buttons with the class "wp-wizard-follow-up-question"
+				const buttonsToRemove = document.querySelectorAll( '.wp-wizard-follow-up-question' );
+				buttonsToRemove.forEach( button => {
+					button.remove();
+				} );	
+
+				// Ask the model for additional questions.
+				// Send the question to the server.
+				results = await runPerfomanceWizardPrompt( question, step, true );
+				echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
+				echoToTerminal( '<br><div class="dc">' + results + ' </div>' );
+				addFollowUpQuestion();
+			}
+		} );
+
+		function addFollowUpQuestion() {
+			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip">USER</div><br><div class="y"><br>Ask a question about the results</div><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
+		}
+		
 		while ( ! complete && step <= maxSteps ) {
 			const nextStep = await getPerfomanceWizardNextStep( step );
+			const promptForDisplay = nextStep.display_prompt ? nextStep.display_prompt : nextStep.user_prompt;
 			switch ( nextStep.action ) {
 				case 'complete':
+					// Output the input field so users can ask follow up questions.
+					addFollowUpQuestion();
+
 					complete = true;
 					break;
 				case 'run_action':
 					echoToTerminal( '<br><div class="info-chip step-chip">Collecting Data</div><br>' );
-					echoStep( nextStep.user_prompt, nextStep.title );
+					echoStep( promptForDisplay, nextStep.title );
 					results = await runPerformanceWizardNextStep( step );
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 
@@ -52,7 +90,7 @@
 				case 'prompt':
 					step++
 					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
-					echoToTerminal( '<div class="y"><br>' + nextStep.user_prompt  + '</div>' );
+					echoToTerminal( '<div class="y"><br>' + promptForDisplay  + '</div>' );
 					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
 					echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
 					echoToTerminal( '<div class="dc"><br>' + results + '</div>' );
@@ -62,7 +100,6 @@
 					break;
 			}
 		}
-		echoToTerminal( '<g>Analysis complete...</g>' );
 	}
 
 	/**
@@ -138,15 +175,17 @@
 	/**
 	 * Function to send a prompt.
 	 *
-	 * @param {string} prompt The prompt to send.
-	 * @param {int}	step   The current step in the wizard.
+	 * @param {string} prompt               The prompt to send.
+	 * @param {int}	   step                 The current step in the wizard.
+	 * @param {bool}   additional_questions Whether or not to ask additional questions.
 	 */
-	function runPerfomanceWizardPrompt( prompt, step ) {
+	function runPerfomanceWizardPrompt( prompt, step, additional_questions = false ) {
 		// User= the REST API to send the prompt.
 		const params = {
-			'command': '_prompt_',
-			'prompt' : prompt,
-			'step'   : step
+			'command'             : '_prompt_',
+			'prompt'              : prompt,
+			'step'                : step,
+			'additional_questions': additional_questions,
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',

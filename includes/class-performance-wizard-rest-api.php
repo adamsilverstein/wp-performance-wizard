@@ -65,6 +65,7 @@ class Performance_Wizard_Rest_API {
 		$command  = $request->get_param( 'command' );
 		$step     = $request->get_param( 'step' );
 		$step     = $step ? intval( $step ) : 0;
+		$additional_questions = $request->get_param( 'additional_questions' );
 		$response = '';
 		switch ( $command ) {
 			case '_get_next_action_':
@@ -79,7 +80,7 @@ class Performance_Wizard_Rest_API {
 			case '_prompt_':
 				$prompt         = $request->get_param( 'prompt' );
 				$previous_steps = get_option( $this->wizard->get_option_name(), array() );
-				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps );
+				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps, $additional_questions );
 		}
 
 		return new WP_REST_Response( $response, 200 );

@@ -42,8 +42,8 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var array
 	 */
 	private $data_sources = array(
-		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
-		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
+		//'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
+		//'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
@@ -98,15 +98,13 @@ class Performance_Wizard_Analysis_Plan {
 
 * **Recommendations:**
 
-    * Contact Form 7 loads it's JavaScript on every page. Consider switching to a more lightweight form plugin.
+* Optimize server-side responsiveness by adding a full page caching solution.
 
-	* Optimize server-side responsiveness by adding a full page caching solution.
+* Consider using a Content Delivery Network (CDN) to reduce latency.
 
-    * Consider using a Content Delivery Network (CDN) to reduce latency.
+* Consider adding an image CDN solution to serve optimized images.
 
-    * Consider adding an image CDN solution to serve optimized images.
-
-    * Test the impact of caching mechanisms on the server.
+* Test the impact of caching mechanisms on the server.
 
 * **Testing:** Monitor the TTFB after implementing changes using web performance tools like WebPageTest or Google PageSpeed Insights.
 ";
@@ -180,7 +178,21 @@ class Performance_Wizard_Analysis_Plan {
 		// Finally, add the wrap up steps.
 		$steps[] = array(
 			'title'       => 'Summarize Results',
-			'user_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. First, summarize all of the findings. Next, list the top recommendations for improving the performance of the site. For each point, refer to the plugin that could be causing the issue. Each issue should also be rooted in a specific failing Lighhouse audit - state which audit or problem it is aiming to fix. Do not provide generic recommendations like "consider adding caching". Instead, always provide specific recommendations such as "Try installing a full page caching solution like WP Fastest Cache". Finally, provide a testing strategy for measuring the impact of the recommendations.',
+			'user_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site. This response can be several paragraphs long. 
+			
+First, briefly summarize all of the findings so far. 
+
+Next, list the top recommendations for improving the performance of the site. Keep it short, highlighting only the issues that will be most impactful to fix. 
+
+For each recommendation, refer to the plugin that could be causing the issue. Each issue should also be rooted in a specific failing Lighhouse audit - state which audit or problem it is aiming to fix. 
+
+Important: Do not provide generic recommendations like "consider adding caching". Instead, always provide specific recommendations such as "Try installing a full page caching solution like WP Fastest Cache" or "Try disabling Contact Form 7 and switchhing to a more lightweight form solution". 
+
+Next, provide a testing strategy for measuring the impact of the recommendations.
+
+Finally, based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: 
+"<button class="wp-wizard-follow-up-question">What is the best way to optimize my LCP image?</button>"',
+			'display_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site including a testing strategy for measuring the impact of the recommendations.',
 			'source'      => null,
 			'action'      => 'prompt',
 		);
@@ -244,7 +256,7 @@ class Performance_Wizard_Analysis_Plan {
 	 */
 	private function send_prompts_with_conversation( array $prompts, array &$conversation, array $prompts_for_user ): string {
 		$previous_steps = get_option( $this->wizard->get_option_name(), array() );
-		$response       = $this->debug_mode ? '{debug}' : $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps );
+		$response       = $this->debug_mode ? '{debug}' : $this->wizard->get_ai_agent()->send_prompts( $prompts, $this->current_step, $previous_steps, false );
 		if ( $this->debug_mode ) {
 			sleep( 1 );
 		}

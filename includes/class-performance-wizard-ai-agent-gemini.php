@@ -20,11 +20,15 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @param string   $prompt         The prompt to pass to the agent.
 	 * @param int      $current_step   The current step in the process.
 	 * @param string[] $previous_steps The previous steps in the process.
+	 * @param bool     $additional_questions Whether to ask additional questions.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompt( string $prompt, int $current_step, array $previous_steps ): string {
-		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps );
+	public function send_prompt( string $prompt, int $current_step, array $previous_steps, bool $additional_questions ): string {
+		if ( $additional_questions ) {
+			$prompt .= PHP_EOL . $this->getAdditionalQuestionsPrompt();
+		}
+		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps, $additional_questions );
 	}
 
 	/**
@@ -33,10 +37,11 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @param array $prompts        The prompts to pass to the agent.
 	 * @param int   $current_step   The current step in the process.
 	 * @param array $previous_steps The previous steps in the process.
+	 * @param bool  $additional_questions Whether to ask additional questions.
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompts( array $prompts, int $current_step, array $previous_steps ): string {
+	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest.
 		$api_base     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
@@ -124,6 +129,13 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$response_data = json_decode( $response_body, true );
 
 		return $response_data['candidates'][0]['content']['parts'][0]['text'];
+	}
+
+	/**
+	 * Request additional questions from the AI agent.
+	 */
+	public function getAdditionalQuestionsPrompt(): string {
+		return 'Finally,  based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: "<button class="wp-wizard-follow-up-question">What is the best way to optimize my LCP image?</button>"';
 	}
 
 	/**
