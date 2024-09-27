@@ -9,6 +9,9 @@ To use the Gemini agent currently included in the project, you need to obtain an
 	"apikey": "XXXXXXXXXXXXXXXXXXXXXXXX"
 }
 ```
+## Versions
+* 1.1.0 - Added experimental support for running comparisons between data points.
+* 1.0.0 - Initial release.
 
 ## Analysis
 The performance wizard will analyze the following data sources to make its recommendations:

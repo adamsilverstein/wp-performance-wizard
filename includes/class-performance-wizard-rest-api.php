@@ -80,7 +80,13 @@ class Performance_Wizard_Rest_API {
 			case '_prompt_':
 				$prompt         = $request->get_param( 'prompt' );
 				$previous_steps = get_option( $this->wizard->get_option_name(), array() );
-				$response       = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps, $additional_questions );
+
+				// Handle the special case of the prompt 'compare' which prompts the system to run a new Lighthouse report and compare the results to the previous one.
+				if ( 'compare' === $prompt ) {
+					$response = $this->wizard->get_analysis_plan()->compare();
+				} else {
+					$response = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps, $additional_questions );
+				}
 		}
 
 		return new WP_REST_Response( $response, 200 );

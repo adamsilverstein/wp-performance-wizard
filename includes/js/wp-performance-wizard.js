@@ -54,6 +54,17 @@
 		function addFollowUpQuestion() {
 			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip">USER</div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
 		}
+
+		function outputFormattedResults( result ) {
+			// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
+			if ( result.startsWith( '>Q: ' ) ) {
+				echoToTerminal( '<div class="info-chip user-chip">USER</div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
+			}
+			// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
+			else if ( result.startsWith( '>A: ' ) ) {
+				echoToTerminal( '<div class="info-chip agent-chip">AGENT</div><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
+			}
+		}
 		
 		while ( ! complete && step <= maxSteps ) {
 			const nextStep = await getPerfomanceWizardNextStep( step );
@@ -70,19 +81,11 @@
 					echoStep( promptForDisplay, nextStep.title );
 					results = await runPerformanceWizardNextStep( step );
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
-
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
 						const result = results[ resultIndex ];
 						echoToTerminal();
-						// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
-						if ( result.startsWith( '>Q: ' ) ) {
-							echoToTerminal( '<div class="info-chip user-chip">USER</div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
-						}
-						// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
-						else if ( result.startsWith( '>A: ' ) ) {
-							echoToTerminal( '<div class="info-chip agent-chip">AGENT</div><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
-						}
+						outputFormattedResults( result );
 					};
 
 					step++;
@@ -91,9 +94,10 @@
 					step++
 					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
 					echoToTerminal( '<div class="k"><br>' + promptForDisplay  + '</div>' );
-					results = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
-					echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
-					echoToTerminal( '<div class="dc"><br>' + results + '</div>' );
+					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
+					echoToTerminal();
+					echoToTerminal( result );
+					
 					break;
 				case 'continue':
 					step++;
