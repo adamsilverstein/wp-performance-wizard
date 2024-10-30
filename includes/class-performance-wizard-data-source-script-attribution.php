@@ -36,7 +36,24 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 		// Collect front end metrics.
 		add_action( 'wp_footer', array( $this, 'get_and_store_already_queued_scripts' ), PHP_INT_MAX );
 		add_action( 'wp_footer', array( $this, 'get_and_store_manually_output_scripts' ), PHP_INT_MAX );
+
+		// Clear the transients when a plugin is upgraded, activated or deactivated, or the theme is changed.
+		add_action( 'upgrader_process_complete', array( $this, 'clear_transients' ) );
+		add_action( 'activated_plugin', array( $this, 'clear_transients' ) );
+		add_action( 'deactivated_plugin', array( $this, 'clear_transients' ) );
+		add_action( 'switch_theme', array( $this, 'clear_transients' ) );
 	}
+
+	/**
+	 * Helper function to clear the transients.
+	 *
+	 * Called whenever a plugin is upgraded, activated or deactivated, or the theme is changed.
+	 */
+	public function clear_transients(): void {
+		delete_transient( 'performance_wizard_script_attribution_queued' );
+		delete_transient( 'performance_wizard_script_attribution_manually_output' );
+	}
+
 
 	/**
 	 * Get the script attribution data and return in a structured data object.
