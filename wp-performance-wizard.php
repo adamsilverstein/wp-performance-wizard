@@ -3,7 +3,7 @@
  * Plugin Name: WP Performance Wizard
  * Plugin URI: https://github.com/adamsilverstein/wp-performance-wizard
  * Description: A plugin that uses AI to help you optimize your WordPress site for performance.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Author: Adam Silverstein, Google
  * Author URI: https://github.com/adamsilverstein
  * License: GPLv2 or later

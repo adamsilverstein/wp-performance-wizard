@@ -42,11 +42,36 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var array
 	 */
 	private $data_sources = array(
-		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
-		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
-		'Performance_Wizard_Data_Source_Script_Attribution' => 'class-performance-wizard-data-source-script-attribution.php',
-		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
+		array(
+			'name'       => 'Lighthouse',
+			'class_name' => 'Performance_Wizard_Data_Source_Lighthouse',
+			'file_name'  => 'class-performance-wizard-data-source-lighthouse.php',
+		),
+		array(
+			'name'       => 'HTML',
+			'class_name' => 'Performance_Wizard_Data_Source_HTML',
+			'file_name'  => 'class-performance-wizard-data-source-html.php',
+		),
+		array(
+			'name'       => 'Script Attribution',
+			'class_name' => 'Performance_Wizard_Data_Source_Script_Attribution',
+			'file_name'  => 'class-performance-wizard-data-source-script-attribution.php',
+		),
+		array(
+			'name'       => 'Themes and Plugins',
+			'class_name' => 'Performance_Wizard_Data_Source_Themes_And_Plugins',
+			'file_name'  => 'class-performance-wizard-data-source-themes-and-plugins.php',
+		),
 	);
+
+	/**
+	 * Get the data sources.
+	 *
+	 * @return array The data sources.
+	 */
+	public function get_data_sources(): array {
+		return $this->data_sources;
+	}
 
 	/**
 	 * The prompt to send before each data point analysis,
@@ -172,9 +197,9 @@ class Performance_Wizard_Analysis_Plan {
 		);
 
 		// Next, add a step for each data source.
-		foreach ( $this->data_sources as $source_name => $data_source ) {
-			include_once plugin_dir_path( __FILE__ ) . $data_source;
-			$source  = new $source_name( $this->wizard );
+		foreach ( $this->data_sources as $data_source ) {
+			include_once plugin_dir_path( __FILE__ ) . $data_source['file_name'];
+			$source  = new $data_source['class_name']( $this->wizard );
 			$steps[] = array(
 				'title'       => $source->get_name(),
 				'user_prompt' => $source->get_user_prompt(),

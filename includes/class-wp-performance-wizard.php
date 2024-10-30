@@ -67,7 +67,7 @@ class WP_Performance_Wizard {
 
 		// Load the wp-admin page.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
-		new Performance_Wizard_Admin_Page();
+		new Performance_Wizard_Admin_Page( $this );
 
 		// Load the Analysis plan.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
