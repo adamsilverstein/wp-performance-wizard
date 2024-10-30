@@ -41,7 +41,7 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 	/**
 	 * Get the script attribution data and return in a structured data object.
 	 *
-	@return string JSON encoded string of the script attribution data.
+	 * @return string JSON encoded string of the script attribution data.
 	 */
 	public function get_data(): string {
 		$already_queued_scripts  = get_transient( 'performance_wizard_script_attribution_queued' );
