@@ -69,6 +69,10 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
 		new Performance_Wizard_Admin_Page();
 
+		// Load the Analysis plan.
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
+		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
+
 		// We only need the admin page menu, unless we are on the admin page.
 		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
 
@@ -77,9 +81,6 @@ class WP_Performance_Wizard {
 		}
 
 		$this->load_required_files();
-
-		// Load the Analysis plan.
-		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
 		// Load the AI Agent.
 		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
@@ -96,7 +97,6 @@ class WP_Performance_Wizard {
 	 */
 	private function load_required_files(): void {
 		// Load all required files.
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
