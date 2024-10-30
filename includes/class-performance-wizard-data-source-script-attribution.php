@@ -139,10 +139,8 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 			return '';
 		}
 		$pattern = '#/(?:plugins|themes)/([^/]+)/#'; // Match anything after '/plugins/' or '/themes/' up to the next '/'.
-		if ( false !== preg_match( $pattern, $file_path, $matches ) ) {
-			return $matches[1];
-		}
-		return '';
+		preg_match( $pattern, $file_path, $matches );
+		return null !== $matches[1] ? $matches[1] : '';
 	}
 
 	/**
