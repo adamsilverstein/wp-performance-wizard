@@ -44,6 +44,7 @@ class Performance_Wizard_Analysis_Plan {
 	private $data_sources = array(
 		'Performance_Wizard_Data_Source_Lighthouse' => 'class-performance-wizard-data-source-lighthouse.php',
 		'Performance_Wizard_Data_Source_HTML'       => 'class-performance-wizard-data-source-html.php',
+		'Performance_Wizard_Data_Source_Script_Attribution' => 'class-performance-wizard-data-source-script-attribution.php',
 		'Performance_Wizard_Data_Source_Themes_And_Plugins' => 'class-performance-wizard-data-source-themes-and-plugins.php',
 	);
 
