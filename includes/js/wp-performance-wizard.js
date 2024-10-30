@@ -4,17 +4,30 @@
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
+	console.log( 'waiting' );
+
 	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
 	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function() {
 		// @todo strings should be localized.
+		// Collect the checkbox data from performance-wizard-data-source class checkboxes.
+		const dataSources = document.querySelectorAll( '.performance-wizard-data-source' );
+
+		// Extract the values of the checkboxes that are checked.
+		const checkedDataSources = [];
+		dataSources.forEach( dataSource => {
+			if ( dataSource.checked ) {
+				checkedDataSources.push( dataSource.value );
+			}
+		} );
+
 		// Run the analysis....
-		runAnalysis( terminal );
+		runAnalysis( checkedDataSources );
 	} );
 
 	/**
 	 * Run the analysis, interacting with the passed terminal.
 	 */
-	async function runAnalysis() {
+	async function runAnalysis( dataSources ) {
 		// @todo strings should be localized.
 		echoToTerminal( '## <g>Running analysis...</g>' );
 		// Get a description of the next step. Continue until the final step.
@@ -40,7 +53,7 @@
 				const buttonsToRemove = document.querySelectorAll( '.wp-wizard-follow-up-question' );
 				buttonsToRemove.forEach( button => {
 					button.remove();
-				} );	
+				} );
 
 				// Ask the model for additional questions.
 				// Send the question to the server.
@@ -65,9 +78,16 @@
 				echoToTerminal( '<div class="info-chip agent-chip">AGENT</div><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
 			}
 		}
-		
+
 		while ( ! complete && step <= maxSteps ) {
 			const nextStep = await getPerfomanceWizardNextStep( step );
+			console.log( nextStep );
+			console.log( dataSources );
+			// If the next step isn't in the checked data sources, skip it.
+			if ( ! dataSources.includes( nextStep.title ) ) {
+				step++;
+				continue;
+			}
 			const promptForDisplay = nextStep.display_prompt ? nextStep.display_prompt : nextStep.user_prompt;
 			switch ( nextStep.action ) {
 				case 'complete':
@@ -97,7 +117,7 @@
 					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
 					echoToTerminal();
 					echoToTerminal( result );
-					
+
 					break;
 				case 'continue':
 					step++;

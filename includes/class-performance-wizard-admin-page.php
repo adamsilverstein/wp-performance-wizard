@@ -9,12 +9,23 @@
  * The Admin page class.
  */
 class Performance_Wizard_Admin_Page {
+
+	/**
+	 * The main wizard class.
+	 *
+	 * @var WP_Performance_Wizard
+	 */
+	private $wizard;
+
 	/**
 	 * Construct the class by adding the primary callback.
+	 *
+	 * @param WP_Performance_Wizard $wizard The main wizard class.
 	 */
-	public function __construct() {
+	public function __construct( WP_Performance_Wizard $wizard ) {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+		$this->wizard = $wizard;
 	}
 
 	/**
@@ -49,6 +60,18 @@ class Performance_Wizard_Admin_Page {
 
 		// Add the description.
 		echo '<p>' . esc_html__( 'The Performance Wizard will analyze your site using an AI agent, then make recommendations to improve performance.', 'wp-performance-wizard' ) . '</p>';
+
+		echo '<h3>' . esc_html__( 'Select the data sources to use for the analysis:', 'wp-performance-wizard' ) . '</h3>';
+		// Add checkboxes for all of the data sources.
+		$data_sources = $this->wizard->get_analysis_plan()->get_data_sources();
+		foreach ( $data_sources as $data_source ) {
+			echo '<label><input type="checkbox" class="performance-wizard-data-source" name="data_source" value="' . esc_attr( $data_source['name'] ) . '" checked>' . esc_html( $data_source['name'] ) . '</label><br>';
+		}
+
+		// Add hidden elements for steps that always run. Summarize Results, Wrap Up and Introduction.
+		foreach ( array( 'Summarize Results', 'Wrap Up', 'Introduction' ) as $step ) {
+			echo '<input type="hidden" class="performance-wizard-data-source" value="' . esc_attr( $step ) . '" checked>';
+		}
 
 		// Add a start button.
 		echo '<p><button id="performance-wizard-start" class="button button-primary">' . esc_html__( 'Start analysis', 'wp-performance-wizard' ) . '</button></p>';
