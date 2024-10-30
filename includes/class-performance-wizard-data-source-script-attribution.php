@@ -33,6 +33,9 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 		$this->set_analysis_strategy( 'The Script Attribution data source can be combined with the Lighthouse data to include the plugin name when making recommendations. When a Lighthouse audit identifies a script as a performance issue, the script attribution data can be used to identify the specific plugin that is causing the issue.' );
 		$this->set_data_shape( 'The returned data is a JSON object with a list of scripts. Each script object includes the path (or URL) of the script, the slug and name of the plugin that enqueued the script' );
 
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
 		$this->plugins_data = get_plugins();
 
 		// Collect front end metrics.
