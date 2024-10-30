@@ -4,7 +4,7 @@
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
-	console.log( 'waiting' );
+	console.log( 'Ready' );
 
 	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
 	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function() {
