@@ -10,6 +10,7 @@ To use the Gemini agent currently included in the project, you need to obtain an
 }
 ```
 ## Versions
+* 1.2.0 - Added the Script Attribution data source.
 * 1.1.0 - Added experimental support for running comparisons between data points.
 * 1.0.0 - Initial release.
 
