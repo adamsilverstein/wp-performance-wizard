@@ -54,7 +54,6 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 		delete_transient( 'performance_wizard_script_attribution_manually_output' );
 	}
 
-
 	/**
 	 * Get the script attribution data and return in a structured data object.
 	 *
