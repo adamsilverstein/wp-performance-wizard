@@ -61,29 +61,42 @@ class WP_Performance_Wizard {
 	private $ai_agent;
 
 	/**
+	 * Supported agents
+	 *
+	 * @var array
+	 */
+	private $supported_agents = array(
+		'Gemini' => 'Performance_Wizard_AI_Agent_Gemini',
+	);
+	/**
+	 * Get supported agents.
+	 *
+	 * @return string[] The supported agents.
+	 */
+	public function get_supported_agents(): array {
+		return $this->supported_agents;
+	}
+
+	/**
 	 * Set up the plugin, bootstrapping required classes.
 	 */
 	public function __construct() {
+		$this->load_required_files();
 
 		// Load the wp-admin page.
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
 		new Performance_Wizard_Admin_Page( $this );
 
 		// Load the Analysis plan.
-		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
-		// We only need the admin page menu, unless we are on the admin page.
-		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
+		// Load the AI Agent.
+		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
 
+		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
 		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
-		$this->load_required_files();
-
-		// Load the AI Agent.
-		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
 		$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
 		$api_key = $this->get_api_key( $this->ai_agent->get_name() );
 		$this->ai_agent->set_api_key( $api_key );
@@ -97,6 +110,8 @@ class WP_Performance_Wizard {
 	 */
 	private function load_required_files(): void {
 		// Load all required files.
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
@@ -124,6 +139,7 @@ class WP_Performance_Wizard {
 		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
 		return $keydata->apikey;
 	}
+
 	/**
 	 * Get the analysis plan class.
 	 *

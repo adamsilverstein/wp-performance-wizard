@@ -33,15 +33,23 @@ class Performance_Wizard_Admin_Page {
 	 */
 	public function add_menu(): void {
 
-		add_submenu_page(
-			'tools.php',
+		add_menu_page(
 			__( 'Performance Wizard', 'wp-performance-wizard' ),
 			__( 'Performance Wizard', 'wp-performance-wizard' ),
 			'manage_options',
 			'wp-performance-wizard',
 			array( $this, 'render_page' ),
-			1
+			'dashicons-performance',
+			90
 		);
+		// Add submenu pages for all supported agents that have them.
+		$supported_agents = $this->wizard->get_supported_agents();
+		foreach ( $supported_agents as $agent_name => $agent_class_name ) {
+			$agent_class = new $agent_class_name( $this->wizard );
+			if ( method_exists( $agent_class, 'add_submenu_page' ) ) {
+				$agent_class->add_submenu_page();
+			}
+		}
 	}
 
 	/**
