@@ -152,6 +152,9 @@ class Performance_Wizard_AI_Agent_Base {
 	 * @return string The api key.
 	 */
 	public function get_api_key(): string {
+		if ( null === $this->api_key ) {
+			$this->api_key = $this->load_api_key();
+		}
 		return $this->api_key;
 	}
 
@@ -162,5 +165,38 @@ class Performance_Wizard_AI_Agent_Base {
 	 */
 	public function set_api_key( string $api_key ): void {
 		$this->api_key = $api_key;
+	}
+
+	/**
+	 * Function to load the API key for an agent.
+	 *
+	 * The key can either be stored as an option under 'performance-wizard-api-key-[api slug]'or as a JSON file with the key "apikey"
+	 *
+	 * @return string The API key.
+	 */
+	public function load_api_key(): string {
+		global $wp_filesystem;
+
+		$agent_name = $this->get_name();
+
+		if ( '' === $agent_name ) {
+			return '';
+		}
+
+		// Construct the slug from the name.
+		$agent_slug = str_replace( ' ', '-', strtolower( $agent_name ) );
+
+		// First check the options table.
+		$api_key = get_option( 'performance-wizard-api-key-' . $agent_slug );
+		if ( '' !== $api_key && false !== $api_key ) {
+			return $api_key;
+		}
+
+		// Next check the key file.
+		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . $agent_slug . '-key.json';
+		include_once ABSPATH . 'wp-admin/includes/file.php';
+		WP_Filesystem();
+		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
+		return $keydata->apikey;
 	}
 }

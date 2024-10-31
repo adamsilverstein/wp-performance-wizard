@@ -149,5 +149,120 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		$this->set_name( 'Gemini' );
 		$this->set_wizard( $wizard );
 		$this->set_description( 'Gemini is a is a generative artificial intelligence chatbot developed by Google.' );
+
+		// Add the handle_api_key_submission callback to the admin_post action.
+		add_action( 'admin_post_handle_gemini_api_key_submission', array( $this, 'handle_api_key_submission' ), 10, 0 );
+	}
+
+	/**
+	 * Add a submenu page for Gemini Admin, including a field to enter the API key.
+	 */
+	public function add_submenu_page(): void {
+		// Add a submenu page for Gemini Admin, including a field to enter the API key. Goes as a sub menu under 'Performance Wizard'.
+		add_submenu_page(
+			'wp-performance-wizard',
+			__( 'Gemini', 'wp-performance-wizard' ),
+			__( 'Gemini', 'wp-performance-wizard' ),
+			'manage_options',
+			'wp-performance-wizard-gemini',
+			array( $this, 'render_admin_page' ),
+			1
+		);
+	}
+
+	/**
+	 * Render the Gemini Admin page.
+	 */
+	public function render_admin_page(): void {
+		echo '<h2>' . esc_attr( $this->get_name() ) . ' Admin</h2>';
+
+		$default_api_key = '';
+		$api_key         = $this->get_api_key();
+		if ( '' !== $api_key ) {
+			$default_api_key = str_repeat( '*', strlen( $api_key ) );
+		}
+
+		// Explain the Gemini API and where to get an API key.
+		echo '<p>Gemini is a generative artificial intelligence tool developed by Google. You can get an API key by visiting <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a>.</p>';
+
+		// Add a form element, with a nonce field for security. Add as a WordPress action.
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( 'save_gemini_api_key', 'gemini_api_key_nonce' );
+
+		echo '<input type="hidden" name="action" value="handle_gemini_api_key_submission">';
+
+		// Add a field for the API key.
+		echo '<label for="gemini-api-key">API Key</label> ';
+		echo '<input type="password" id="gemini-api-key" name="gemini-api-key" value="' . esc_attr( $default_api_key ) . '">';
+
+		// Add a hidden field with the default so we can skip if password is unchanged.
+		echo '<input type="hidden" name="default-gemini-api-key" value="' . esc_attr( $default_api_key ) . '">';
+
+		// Add a submit button.
+		echo '<input type="submit" class="button button-primary" value="Save">';
+		echo '</form>';
+	}
+
+	/**
+	 * Handle the API key submission.
+	 */
+	public function handle_api_key_submission(): void {
+
+		// Validate the nonce.
+		if ( ! wp_verify_nonce( $_POST['gemini_api_key_nonce'], 'save_gemini_api_key' ) ) {
+			$url = $_POST['_wp_http_referer'];
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'info' => 'error',
+					),
+					$url
+				)
+			);
+			exit;
+		}
+
+		$api_key = sanitize_text_field( $_POST['gemini-api-key'] );
+		$url     = sanitize_text_field( $_POST['_wp_http_referer'] );
+
+		// Double check the user capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'info' => 'error',
+					),
+					$url
+				)
+			);
+			exit;
+		}
+
+		$default_api_key = sanitize_text_field( $_POST['default-gemini-api-key'] );
+		if ( $default_api_key === $api_key ) {
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'info' => 'error',
+					),
+					$url
+				)
+			);
+			exit;
+		}
+
+		// Save the API key. Save in the options table and use if key file is not available.
+		update_option( 'wp_performance_wizard_gemini_api_key', $api_key );
+
+		// Redirect back to the form page.
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'info' => 'saved',
+				),
+				$url
+			)
+		);
+		exit;
 	}
 }
