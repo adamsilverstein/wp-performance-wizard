@@ -183,7 +183,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		}
 
 		// Explain the Gemini API and where to get an API key.
-		echo '<p>Gemini is a generative artificial intelligence tool developed by Google. You can get an API key by visiting <a href="https://aistudio.google.com/app/apikey">https://aistudio.google.com/app/apikey</a>.</p>';
+		echo '<p>Gemini is a generative artificial intelligence tool developed by Google. You can get an API key by visiting <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a>.</p>';
 
 		// Add a form element, with a nonce field for security. Add as a WordPress action.
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
