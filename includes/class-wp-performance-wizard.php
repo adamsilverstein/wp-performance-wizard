@@ -66,7 +66,8 @@ class WP_Performance_Wizard {
 	 * @var array
 	 */
 	private $supported_agents = array(
-		'Gemini' => 'Performance_Wizard_AI_Agent_Gemini',
+		'Gemini'  => 'Performance_Wizard_AI_Agent_Gemini',
+		'ChatGPT' => 'Performance_Wizard_AI_Agent_Chat_GPT',
 	);
 	/**
 	 * Get supported agents.
@@ -89,8 +90,13 @@ class WP_Performance_Wizard {
 		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
-		// Load the AI Agent.
-		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
+		// Load the AI Agents.
+		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
+			new $agent_class_name( $this );
+		}
+
+		// Set $this->ai_agent to the first agent in the array by default.
+		$this->ai_agent = $this->supported_agents[0];
 
 		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
 		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -115,6 +121,7 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-chat-gpt.php';
 	}
 
 
