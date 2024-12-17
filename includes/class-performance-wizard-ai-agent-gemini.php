@@ -51,7 +51,111 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 *
 	 * @return string The response from the API.
 	 */
-	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
+	    public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions, array $file_ids = array() ): string {
+
+        // Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest.
+		$api_base     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent';
+		$query_params = array(
+			'key' => $this->get_api_key(),
+		);
+
+
+        $parts = array();
+        foreach ($prompts as $prompt) {
+            $parts[] = array('text' => $prompt);
+        }
+
+
+        $contents  = array();
+		$max_steps = $current_step;
+		for ( $i = 1; $i < $max_steps; $i++ ) {
+			if ( ! isset( $previous_steps[ $i ] ) ) {
+				continue;
+			}
+			$step = $previous_steps[ $i ];
+			if ( isset( $step['prompts'] ) ) {
+				array_push(
+					$contents,
+					array(
+						'parts' => array(
+							'text' => $step['prompts'],
+						),
+						'role'  => 'user',
+					)
+				);
+			}
+			if ( isset( $step['response'] ) ) {
+				array_push(
+					$contents,
+					array(
+						'parts' => array(
+							'text' => $step['response'],
+						),
+						'role'  => 'model',
+					)
+				);
+			}
+		}
+
+        array_push(
+			$contents,
+			array(
+				'parts' => $parts,
+				'role'  => 'user',
+			)
+		);
+
+
+        $data = array(
+			'system_instruction' => array(
+				'parts' => array(
+					'text' => $this->get_system_instructions(),
+				),
+			),
+			'contents'           => $contents,
+		);
+
+        if (!empty($file_ids)) {
+            $data['context'] = array(
+                'fileReferences' => array_map(function ($id) { return array('fileId' => $id); }, $file_ids)
+            );
+        }
+
+
+		// Log the size of the data payload for reference.
+		error_log( 'Gemini data payload size: ' . strlen( wp_json_encode( $data ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+
+        $response = wp_remote_post(
+			add_query_arg( $query_params, $api_base ),
+			array(
+				'body'    => wp_json_encode( $data ),
+				'method'  => 'POST',
+				'timeout' => 180, // Allow up to 3 minutes.
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+			)
+		);
+
+
+        if ( is_wp_error( $response ) ) {
+			return $response->get_error_message();
+		}
+
+		// Check for errors, then return the response parameters.
+		if ( 200 !== $response['response']['code'] ) {
+			return $response['response']['message'];
+		}
+
+		$response_body = wp_remote_retrieve_body( $response );
+		$response_data = json_decode( $response_body, true );
+
+		return $response_data['candidates'][0]['content']['parts'][0]['text'];
+    }
+
+
+    public function send_prompt( string $prompt, int $current_step, array $previous_steps, bool $additional_questions ): string {
 
 		// Send a REST API request to the Gemini API, as documented here: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest.
 		$api_base     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent';
@@ -379,7 +483,90 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 *
 	 * @return string The API key.
 	 */
-	public function load_api_key(): string {
+	    /**
+     * Uploads a file to the Gemini API.
+     *
+     * @param string $file_path The path to the file to upload.
+     * @return string|WP_Error The file ID on success, or a WP_Error on failure.
+     */
+        /**
+     * Gets the cached file ID for a file, or uploads and caches it if not found.
+     *
+     * @param string $file_path The path to the file.
+     * @return string|WP_Error The file ID on success, or a WP_Error on failure.
+     */
+    public function get_cached_file_id(string $file_path): string|WP_Error {
+        $transient_key = 'gemini_file_id_' . md5($file_path);
+        $cached_id = get_transient($transient_key);
+
+        if ($cached_id) {
+            return $cached_id;
+        }
+
+        $uploaded_id = $this->upload_file($file_path);
+
+        if (is_string($uploaded_id)) {
+            set_transient($transient_key, $uploaded_id, DAY_IN_SECONDS);
+            return $uploaded_id;
+        } else {
+            return $uploaded_id;
+        }
+    }
+
+
+    /**
+     * Uploads a file to the Gemini API.
+     *
+     * @param string $file_path The path to the file to upload.
+     * @return string|WP_Error The file ID on success, or a WP_Error on failure.
+     */
+    public function upload_file(string $file_path): string|WP_Error {
+        $api_base = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:uploadContent';
+        $query_params = array(
+            'key' => $this->get_api_key(),
+        );
+
+        global $wp_filesystem;
+        WP_Filesystem();
+
+        if ( ! $wp_filesystem->exists( $file_path ) ) {
+            return new WP_Error( 'file_not_found', 'File not found.' );
+        }
+
+        $file_contents = $wp_filesystem->get_contents( $file_path );
+
+        $response = wp_remote_post(
+            add_query_arg( $query_params, $api_base ),
+            array(
+                'body' => $file_contents,
+                'method' => 'POST',
+                'timeout' => 180,
+                'headers' => array(
+                    'Content-Type' => 'application/octet-stream',
+                ),
+            )
+        );
+
+
+        if ( is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        if ( 200 !== $response['response']['code'] ) {
+            return new WP_Error( 'api_error', $response['response']['message'] );
+        }
+
+        $response_body = wp_remote_retrieve_body( $response );
+        $response_data = json_decode( $response_body, true );
+
+        if ( isset( $response_data['uploadId'] ) ) {
+            return $response_data['uploadId'];
+        } else {
+            return new WP_Error( 'invalid_response', 'Invalid response from API.' );
+        }
+    }
+
+public function load_api_key(): string {
 		$stored_key = $this->get_key();
 		if ( '' !== $stored_key ) {
 			return $stored_key;
