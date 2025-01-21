@@ -34,6 +34,7 @@
 		let complete = false;
 		const maxSteps = 25;
 		let step = 0;
+
 		// Listen for clicks on the wp-wizard-follow-up-question buttons using event delegation.
 		document.getElementById( 'performance-wizard-terminal' ).addEventListener( 'click', async function( event ) {
 			if ( 'wp-wizard-follow-up-question' === event.target.className ) {
@@ -184,10 +185,16 @@
 	 * @param {int} step The current step in the wizard.
 	 */
 	function runPerformanceWizardNextStep( step ) {
+
+		// Grab the value of the agent select.
+		const agentSelect = document.getElementById( 'performance-wizard-agent-select' );
+		const agentValue = agentSelect.value;
+
 		// User= the REST API to run the next step.
 		const params = {
 			'command': '_run_action_',
-			'step'   : step
+			'step'   : step,
+			'agent'  : agentValue
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',
@@ -204,12 +211,18 @@
 	 * @param {bool}   additional_questions Whether or not to ask additional questions.
 	 */
 	function runPerfomanceWizardPrompt( prompt, step, additional_questions = false ) {
+
+		// Grab the value of the agent select.
+		const agentSelect = document.getElementById( 'performance-wizard-agent-select' );
+		const agentValue = agentSelect.value;
+
 		// User= the REST API to send the prompt.
 		const params = {
 			'command'             : '_prompt_',
 			'prompt'              : prompt,
 			'step'                : step,
 			'additional_questions': additional_questions,
+			'agent'               : agentValue
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',

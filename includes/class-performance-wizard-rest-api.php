@@ -66,7 +66,21 @@ class Performance_Wizard_Rest_API {
 		$step                 = $request->get_param( 'step' );
 		$step                 = $step ? intval( $step ) : 0;
 		$additional_questions = $request->get_param( 'additional_questions' );
+		$agent                = $request->get_param( 'agent' );
 		$response             = '';
+
+		// Set the agent on the wizard.
+		if ( '' !== $agent ) {
+			$all_agents = $this->wizard->get_supported_agents();
+			if ( array_key_exists( $agent, $all_agents ) ) {
+				$agent_class = new $all_agents[ $agent ]( $this->wizard );
+				$this->wizard->set_ai_agent( $agent_class );
+			}
+		}
+
+		// Log this event.
+		error_log( 'Command: ' . $command . ' Step: ' . $step . ' Additional Questions: ' . $additional_questions . ' Agent: ' . $agent );  // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
 		switch ( $command ) {
 			case '_get_next_action_':
 				$response = $this->wizard->get_analysis_plan()->get_next_action( $step );
