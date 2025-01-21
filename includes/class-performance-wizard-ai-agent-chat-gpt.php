@@ -14,16 +14,6 @@
  */
 class Performance_Wizard_AI_Agent_Chat_GPT extends Performance_Wizard_AI_Agent_Base {
 	/**
-	 * Number of iterations for key derivation
-	 */
-	private const PBKDF2_ITERATIONS = 1000;
-
-	/**
-	 * Length of derived key in bytes
-	 */
-	private const KEY_LENGTH = 32;
-
-	/**
 	 * A method to send a single prompt to the agent.
 	 *
 	 * @param string   $prompt         The prompt to pass to the agent.
@@ -273,93 +263,6 @@ class Performance_Wizard_AI_Agent_Chat_GPT extends Performance_Wizard_AI_Agent_B
 	public function get_key(): string {
 		$encrypted_key = get_option( 'wp_performance_wizard_chat_gpt_api_key' );
 		return $this->decrypt_key( $encrypted_key );
-	}
-
-	/**
-	 * Encrypt the key.
-	 *
-	 * @param string $key The key to encrypt.
-	 *
-	 * @return string The encrypted key.
-	 */
-	public function encrypt_key( string $key ): string {
-		$cipher = 'aes-256-cbc';
-		$ivlen  = openssl_cipher_iv_length( $cipher );
-		$iv     = openssl_random_pseudo_bytes( $ivlen );
-		$salt   = openssl_random_pseudo_bytes( 32 );
-
-		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
-			return '';
-		}
-
-		$encryption_key = hash_pbkdf2(
-			'sha256',
-			SECURE_AUTH_KEY . SECURE_AUTH_SALT,
-			$salt,
-			self::PBKDF2_ITERATIONS,
-			self::KEY_LENGTH,
-			true
-		);
-
-		$encrypted = openssl_encrypt(
-			$key,
-			$cipher,
-			$encryption_key,
-			OPENSSL_RAW_DATA,
-			$iv
-		);
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		return base64_encode( $iv . $salt . $encrypted );
-	}
-
-	/**
-	 * Decrypt the key.
-	 *
-	 * @param string $encrypted_key The encrypted key to decrypt.
-	 *
-	 * @return string The decrypted key.
-	 */
-	public function decrypt_key( string $encrypted_key ): string {
-		if ( '' === $encrypted_key ) {
-			return '';
-		}
-
-		$cipher = 'aes-256-cbc';
-		$ivlen  = openssl_cipher_iv_length( $cipher );
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-		$combined = base64_decode( $encrypted_key, true );
-		if ( false === $combined ) {
-			return '';
-		}
-
-		$iv        = substr( $combined, 0, $ivlen );
-		$salt      = substr( $combined, $ivlen, 32 );
-		$encrypted = substr( $combined, $ivlen + 32 );
-
-		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
-			return '';
-		}
-
-		$encryption_key = hash_pbkdf2(
-			'sha256',
-			SECURE_AUTH_KEY . SECURE_AUTH_SALT,
-			$salt,
-			self::PBKDF2_ITERATIONS,
-			self::KEY_LENGTH,
-			true
-		);
-
-		$decrypted = openssl_decrypt(
-			$encrypted,
-			$cipher,
-			$encryption_key,
-			OPENSSL_RAW_DATA,
-			$iv
-		);
-
-		return false === $decrypted ? '' : $decrypted;
 	}
 
 	/**

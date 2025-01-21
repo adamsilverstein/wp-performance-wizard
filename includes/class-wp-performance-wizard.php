@@ -90,22 +90,23 @@ class WP_Performance_Wizard {
 		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
-		// Load the AI Agents.
-		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
-			new $agent_class_name( $this );
-		}
-
 		// Set $this->ai_agent to the first agent in the array by default.
-		$this->ai_agent = $this->supported_agents[0];
+		if ( count( $this->supported_agents ) > 0 ) {
+			$keys                   = array_keys( $this->supported_agents );
+			$first_agent_class_name = $this->supported_agents[ $keys[0] ];
+			$this->ai_agent         = new $first_agent_class_name( $this );
+		}
 
 		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
 		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
-		$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
-		$api_key = $this->get_api_key( $this->ai_agent->get_name() );
-		$this->ai_agent->set_api_key( $api_key );
+		if ( null !== $this->ai_agent ) {
+			$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
+			$api_key = $this->get_api_key( $this->ai_agent->get_name() );
+			$this->ai_agent->set_api_key( $api_key );
+		}
 
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
@@ -172,5 +173,14 @@ class WP_Performance_Wizard {
 	 */
 	public function get_option_name(): string {
 		return $this->option_name;
+	}
+
+	/**
+	 * Set the agent.
+	 *
+	 * @param Performance_Wizard_AI_Agent_Base $agent The agent to set.
+	 */
+	public function set_ai_agent( Performance_Wizard_AI_Agent_Base $agent ): void {
+		$this->ai_agent = $agent;
 	}
 }
