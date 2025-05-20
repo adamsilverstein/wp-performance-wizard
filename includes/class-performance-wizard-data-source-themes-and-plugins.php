@@ -28,6 +28,43 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	}
 
 	/**
+	 * Helper function to retrieve all of the meta data about the plugin that is available from the wordpress.org plugin REST API.
+	 *
+	 * @param string $slug The slug of the plugin to get the data for.
+	 *
+	 * @return string The meta data about the plugin.
+	 */
+	public function get_plugin_data_from_dotorg_api( string $slug ): string {
+		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
+		$response = wp_remote_get( $api_base . $slug . '.json' );
+
+		// Check for errors.
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+
+		// Return the data.
+		$results = wp_remote_retrieve_body( $response );
+
+		return $results;
+	}
+
+	/**
+	 * Helper function to retrieve all of the meta data about the theme that is available from the wordpress.org theme REST API.
+	 *
+	 * @param string $slug The slug of the theme to get the data for.
+	 * @return string The meta data about the theme.
+	 */
+	public function get_theme_data_from_dotorg_api( string $slug ): string {
+		$api_base = 'https://api.wordpress.org/themes/info/1.2/?action=theme_information&request[slug]=';
+		$response = wp_remote_get( $api_base . $slug );
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+		return wp_remote_retrieve_body( $response );
+	}
+
+	/**
 	 * Get the active theme and plugins data and return in a structured data object.
 	 *
 	 * @return string JSON encoded string of the active theme and plugins data.
@@ -52,7 +89,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 				continue;
 			}
 
-			$plugins_data[] = array(
+			$plugin_entry = array(
 				'name'        => $plugin_data['Name'],
 				'slug'        => $plugin_slug,
 				'version'     => $plugin_data['Version'],
@@ -63,44 +100,34 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 
 			// Also, get the data from the Plugin API.
 			$plugin_api_data = $this->get_plugin_data_from_dotorg_api( $plugin_slug );
-
 			if ( '' !== $plugin_api_data ) {
-				$plugins_data['plugin_api_data'] = $plugin_api_data;
+				$plugin_entry['plugin_api_data'] = $plugin_api_data;
 			}
+			$plugins_data[] = $plugin_entry;
 		}
+
+		// Theme slug is usually the stylesheet (directory) name.
+		$theme_slug = $active_theme->get_stylesheet();
+		$theme_api_data = $this->get_theme_data_from_dotorg_api( $theme_slug );
+
+		// Detect if the theme is a block theme (WP 5.9+).
+		$is_block_theme = function_exists('wp_is_block_theme') ? wp_is_block_theme() : ( file_exists( get_theme_root() . '/' . $theme_slug . '/theme.json' ) );
+
 		$theme_data = array(
-			'name'        => $active_theme->get( 'Name' ),
-			'version'     => $active_theme->get( 'Version' ),
-			'author'      => $active_theme->get( 'Author' ),
-			'description' => $active_theme->get( 'Description' ),
+			'name'           => $active_theme->get( 'Name' ),
+			'version'        => $active_theme->get( 'Version' ),
+			'author'         => $active_theme->get( 'Author' ),
+			'description'    => $active_theme->get( 'Description' ),
+			'slug'           => $theme_slug,
+			'is_block_theme' => (bool) $is_block_theme,
+			'theme_api_data' => $theme_api_data,
 		);
+
 		$to_return  = array(
 			'active_theme'   => $theme_data,
 			'active_plugins' => $plugins_data,
 		);
 
 		return wp_json_encode( $to_return );
-	}
-
-	/**
-	 * Helper function to retrieve all of the meta data about the plugin that is available from the wordpress.org plugin REST API.
-	 *
-	 * @param string $slug The slug of the plugin to get the data for.
-	 *
-	 * @return string The meta data about the plugin.
-	 */
-	public function get_plugin_data_from_dotorg_api( string $slug ): string {
-		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
-		$response = wp_remote_get( $api_base . $slug . '.json' );
-
-		// Check for errors.
-		if ( is_wp_error( $response ) ) {
-			return '';
-		}
-
-		// Return the data.
-		$results = wp_remote_retrieve_body( $response );
-
-		return $results;
 	}
 }
