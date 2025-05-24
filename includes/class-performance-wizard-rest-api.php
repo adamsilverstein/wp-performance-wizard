@@ -70,7 +70,7 @@ class Performance_Wizard_Rest_API {
 		$response             = '';
 
 		// Set the agent on the wizard.
-		if ( '' !== $agent ) {
+		if ( ! empty( $agent ) ) {
 			$all_agents = $this->wizard->get_supported_agents();
 			if ( array_key_exists( $agent, $all_agents ) ) {
 				$agent_class = new $all_agents[ $agent ]( $this->wizard );
