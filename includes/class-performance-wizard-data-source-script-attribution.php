@@ -160,8 +160,11 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 			return '';
 		}
 		$pattern = '#/(?:plugins|themes)/([^/]+)/#'; // Match anything after '/plugins/' or '/themes/' up to the next '/'.
-		preg_match( $pattern, $file_path, $matches );
-		return null !== $matches[1] ? $matches[1] : '';
+		$matches = array();
+		if ( preg_match( $pattern, $file_path, $matches ) ) {
+			return $matches[1];
+		}
+		return '';
 	}
 
 	/**
@@ -175,7 +178,7 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 		// Get just the local path for the src (removing the local domain).
 		$src = str_replace( get_site_url(), '', $src );
 
-		if ( str_starts_with( $src, '/wp-includes/' ) ) {
+		if ( 0 === strpos( $src, '/wp-includes/' ) ) {
 			return array(
 				'slug' => 'core',
 				'name' => 'Core',
