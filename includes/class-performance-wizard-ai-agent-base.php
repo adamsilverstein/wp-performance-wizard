@@ -203,7 +203,7 @@ class Performance_Wizard_AI_Agent_Base {
 	/**
 	 * Number of iterations for key derivation
 	 */
-	private const PBKDF2_ITERATIONS = 1000;
+	private const PBKDF2_ITERATIONS = 100000;
 
 	/**
 	 * Length of derived key in bytes
