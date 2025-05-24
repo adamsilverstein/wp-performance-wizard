@@ -186,7 +186,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		echo '<h2>' . esc_attr( $this->get_name() ) . ' Admin</h2>';
 
 		$default_api_key = '';
-		$api_key         = $this->get_key();
+		$api_key         = $this->get_api_key();
 		if ( '' !== $api_key ) {
 			$default_api_key = str_repeat( '*', strlen( $api_key ) );
 		}
@@ -292,7 +292,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 *
 	 * @return string The decrypted key.
 	 */
-	public function get_key(): string {
+	public function get_api_key(): string {
 		$encrypted_key = get_option( 'wp_performance_wizard_gemini_api_key' );
 		return $this->decrypt_key( $encrypted_key );
 	}
@@ -380,7 +380,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @return string The API key.
 	 */
 	public function load_api_key(): string {
-		$stored_key = $this->get_key();
+		$stored_key = $this->get_api_key();
 		if ( '' !== $stored_key ) {
 			return $stored_key;
 		} else {
