@@ -8,48 +8,8 @@ on:
 jobs:
   code-quality:
     name: Code Quality Checks
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        php-version: ['7.4', '8.0', '8.1', '8.2']
+    uses: ./.github/workflows/_setup-php.yml
+    with:
+      run-phpcs: true
+      run-phpstan: true
       fail-fast: false
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP ${{ matrix.php-version }}
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-version }}
-          coverage: none
-          tools: composer
-
-      - name: Get Composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest --optimize-autoloader
-
-      - name: Run PHPCS (Code Standards)
-        run: composer run lint
-
-      - name: Run PHPStan (Static Analysis)
-        run: composer run phpstan
-
-      - name: Summary
-        if: always()
-        run: |
-          echo "✅ Code quality checks completed for PHP ${{ matrix.php-version }}"
-          echo "📋 Checks performed:"
-          echo "   - PHPCS (WordPress Coding Standards)"
-          echo "   - PHPStan (Static Analysis Level 5)"
