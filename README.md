@@ -11,6 +11,33 @@ Visit Performance Wizard -> Gemini to enter your API key, or manually create a f
 	"apikey": "[YOUR_API_KEY]"
 }
 ```
+
+## Development
+
+### Code Quality
+This project uses automated code quality checks via GitHub Actions:
+
+- **PHPStan**: Static analysis at level 5 with WordPress-specific rules
+- **PHPCS**: WordPress Coding Standards compliance
+- **Multi-PHP Testing**: Compatibility testing across PHP 7.4-8.2
+
+#### Local Development Commands
+```bash
+# Install dependencies
+composer install
+
+# Run coding standards check
+composer run lint
+
+# Run static analysis
+composer run phpstan
+
+# Auto-fix coding standards issues
+composer run format
+```
+
+See [docs/github-actions.md](docs/github-actions.md) for detailed information about the CI/CD setup.
+
 ## Versions
 * 1.3.1 - Added Gemini key entry in admin.
 * 1.3.0 - Added checkboxes to select which data sources to use.
