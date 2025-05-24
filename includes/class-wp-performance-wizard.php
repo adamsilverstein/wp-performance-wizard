@@ -67,6 +67,7 @@ class WP_Performance_Wizard {
 	 */
 	private $supported_agents = array(
 		'Gemini' => 'Performance_Wizard_AI_Agent_Gemini',
+		'Claude' => 'Performance_Wizard_AI_Agent_Claude',
 	);
 	/**
 	 * Get supported agents.
@@ -115,6 +116,7 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-claude.php';
 	}
 
 
