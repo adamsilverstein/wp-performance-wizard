@@ -235,7 +235,8 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 			return '';
 		}
 		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, self::PBKDF2_ITERATIONS, self::KEY_LENGTH, true );
-		return openssl_decrypt( $encrypted, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
+		$decrypted      = openssl_decrypt( $encrypted, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
+		return ( false === $decrypted ) ? '' : $decrypted;
 	}
 
 	/**
