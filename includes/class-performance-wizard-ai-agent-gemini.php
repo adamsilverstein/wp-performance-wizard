@@ -232,7 +232,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		}
 
 		$api_key = sanitize_text_field( $_POST['gemini-api-key'] );
-		$url     = sanitize_text_field( $_POST['_wp_http_referer'] );
+		$url     = esc_url_raw( $_POST['_wp_http_referer'] );
 
 		// Double check the user capabilities.
 		if ( ! current_user_can( 'manage_options' ) ) {
