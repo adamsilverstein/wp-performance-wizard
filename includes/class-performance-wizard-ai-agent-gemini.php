@@ -14,9 +14,14 @@
  */
 class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Base {
 	/**
+	 * Encryption cipher method
+	 */
+	private const ENCRYPTION_CIPHER = 'aes-256-cbc';
+
+	/**
 	 * Number of iterations for key derivation
 	 */
-	private const PBKDF2_ITERATIONS = 1000;
+	private const PBKDF2_ITERATIONS = 10000;
 
 	/**
 	 * Length of derived key in bytes
@@ -305,7 +310,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @return string The encrypted key.
 	 */
 	public function encrypt_key( string $key ): string {
-		$cipher = 'aes-256-cbc';
+		$cipher = self::ENCRYPTION_CIPHER;
 		$ivlen  = openssl_cipher_iv_length( $cipher );
 		$iv     = openssl_random_pseudo_bytes( $ivlen );
 		$salt   = openssl_random_pseudo_bytes( 32 );
@@ -343,7 +348,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @return string The decrypted key.
 	 */
 	public function decrypt_key( string $encrypted_key ): string {
-		$cipher = 'aes-256-cbc';
+		$cipher = self::ENCRYPTION_CIPHER;
 		$ivlen  = openssl_cipher_iv_length( $cipher );
 
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode

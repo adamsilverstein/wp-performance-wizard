@@ -11,6 +11,21 @@
 
 class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Base {
 	/**
+	 * Encryption cipher method
+	 */
+	private const ENCRYPTION_CIPHER = 'aes-256-cbc';
+
+	/**
+	 * Number of iterations for key derivation
+	 */
+	private const PBKDF2_ITERATIONS = 10000;
+
+	/**
+	 * Length of derived key in bytes
+	 */
+	private const KEY_LENGTH = 32;
+
+	/**
 	 * Construct the agent.
 	 *
 	 * @param WP_Performance_Wizard $wizard The performance wizard.
@@ -148,7 +163,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 			exit;
 		}
 		$api_key = sanitize_text_field( $_POST['claude-api-key'] );
-		$url     = sanitize_text_field( $_POST['_wp_http_referer'] );
+		$url     = esc_url_raw( $_POST['_wp_http_referer'] );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_safe_redirect( add_query_arg( array( 'info' => 'error', ), $url ) );
 			exit;
@@ -191,14 +206,14 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 * @return string The encrypted key.
 	 */
 	public function encrypt_key( string $key ): string {
-		$cipher = 'aes-256-cbc';
+		$cipher = self::ENCRYPTION_CIPHER;
 		$ivlen  = openssl_cipher_iv_length( $cipher );
 		$iv     = openssl_random_pseudo_bytes( $ivlen );
 		$salt   = openssl_random_pseudo_bytes( 32 );
 		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
 			return '';
 		}
-		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, 1000, 32, true );
+		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, self::PBKDF2_ITERATIONS, self::KEY_LENGTH, true );
 		$encrypted = openssl_encrypt( $key, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
 		return base64_encode( $iv . $salt . $encrypted );
 	}
@@ -210,7 +225,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 * @return string The decrypted key.
 	 */
 	public function decrypt_key( string $encrypted_key ): string {
-		$cipher = 'aes-256-cbc';
+		$cipher = self::ENCRYPTION_CIPHER;
 		$ivlen  = openssl_cipher_iv_length( $cipher );
 		$combined  = base64_decode( $encrypted_key, true );
 		$iv        = substr( $combined, 0, $ivlen );
@@ -219,7 +234,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
 			return '';
 		}
-		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, 1000, 32, true );
+		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, self::PBKDF2_ITERATIONS, self::KEY_LENGTH, true );
 		return openssl_decrypt( $encrypted, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
 	}
 
