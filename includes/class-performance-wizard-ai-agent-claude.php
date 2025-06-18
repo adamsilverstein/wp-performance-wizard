@@ -1,6 +1,9 @@
 <?php
 /**
- * A class that enables connections to Anthropic Claude AI.
+ * Performance Wizard AI Agent for Claude.
+ *
+ * This file contains the Claude AI agent implementation for the WordPress Performance Wizard.
+ * It handles API connections to Anthropic's Claude AI service.
  *
  * You can get a key for Claude API by visiting https://console.anthropic.com/settings/keys
  *
@@ -9,6 +12,15 @@
  * @package wp-performance-wizard
  */
 
+/**
+ * A class that enables connections to Anthropic Claude AI.
+ *
+ * You can get a key for Claude API by visiting https://console.anthropic.com/settings/keys
+ *
+ * Copy the key into a file named claude-key.json and place it in the .keys folder in the plugin directory.
+ *
+ * @package wp-performance-wizard
+ */
 class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Base {
 	/**
 	 * Encryption cipher method
@@ -41,9 +53,9 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 * Send a single prompt to the Claude API.
 	 *
 	 * @param string $prompt The prompt to pass to the agent.
-	 * @param int $current_step The current step in the process.
-	 * @param array $previous_steps The previous steps in the process.
-	 * @param bool $additional_questions Whether to ask additional questions.
+	 * @param int    $current_step The current step in the process.
+	 * @param array  $previous_steps The previous steps in the process.
+	 * @param bool   $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
 	public function send_prompt( string $prompt, int $current_step, array $previous_steps, bool $additional_questions ): string {
@@ -57,17 +69,17 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 * Send prompts to the Claude API.
 	 *
 	 * @param array $prompts The prompts to pass to the agent.
-	 * @param int $current_step The current step in the process.
+	 * @param int   $current_step The current step in the process.
 	 * @param array $previous_steps The previous steps in the process.
-	 * @param bool $additional_questions Whether to ask additional questions.
+	 * @param bool  $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
 	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
-		$api_url = 'https://api.anthropic.com/v1/messages';
-		$api_key = $this->get_api_key();
+		$api_url            = 'https://api.anthropic.com/v1/messages';
+		$api_key            = $this->get_api_key();
 		$system_instruction = $this->get_system_instructions();
 
-		$messages = array();
+		$messages  = array();
 		$max_steps = $current_step;
 		for ( $i = 1; $i < $max_steps; $i++ ) {
 			if ( ! isset( $previous_steps[ $i ] ) ) {
@@ -75,19 +87,28 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 			}
 			$step = $previous_steps[ $i ];
 			if ( isset( $step['prompts'] ) ) {
-				$messages[] = array( 'role' => 'user', 'content' => $step['prompts'] );
+				$messages[] = array(
+					'role'    => 'user',
+					'content' => $step['prompts'],
+				);
 			}
 			if ( isset( $step['response'] ) ) {
-				$messages[] = array( 'role' => 'assistant', 'content' => $step['response'] );
+				$messages[] = array(
+					'role'    => 'assistant',
+					'content' => $step['response'],
+				);
 			}
 		}
-		$messages[] = array( 'role' => 'user', 'content' => implode( PHP_EOL, $prompts ) );
+		$messages[] = array(
+			'role'    => 'user',
+			'content' => implode( PHP_EOL, $prompts ),
+		);
 
 		$data = array(
-			"model" => "claude-3-sonnet-20240229", // Claude Sonnet 4.0 model
-			"system" => $system_instruction,
-			"messages" => $messages,
-			"max_tokens" => 2048,
+			'model'      => 'claude-3-sonnet-20240229', // Claude Sonnet 4.0 model.
+			'system'     => $system_instruction,
+			'messages'   => $messages,
+			'max_tokens' => 2048,
 		);
 
 		$response = wp_remote_post(
@@ -95,8 +116,8 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 			array(
 				'body'    => wp_json_encode( $data ),
 				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'X-API-Key'     => $api_key,
+					'Content-Type'      => 'application/json',
+					'X-API-Key'         => $api_key,
 					'Anthropic-Version' => '2023-06-01',
 				),
 				'timeout' => 180,
@@ -159,22 +180,22 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	public function handle_api_key_submission(): void {
 		if ( ! wp_verify_nonce( $_POST['claude_api_key_nonce'], 'save_claude_api_key' ) ) {
 			$url = $_POST['_wp_http_referer'];
-			wp_safe_redirect( add_query_arg( array( 'info' => 'error', ), $url ) );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'error' ), $url ) );
 			exit;
 		}
 		$api_key = sanitize_text_field( $_POST['claude-api-key'] );
 		$url     = esc_url_raw( $_POST['_wp_http_referer'] );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_safe_redirect( add_query_arg( array( 'info' => 'error', ), $url ) );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'error' ), $url ) );
 			exit;
 		}
 		$default_api_key = sanitize_text_field( $_POST['default-claude-api-key'] );
 		if ( $default_api_key === $api_key ) {
-			wp_safe_redirect( add_query_arg( array( 'info' => 'error', ), $url ) );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'error' ), $url ) );
 			exit;
 		}
 		$this->save_key( $api_key );
-		wp_safe_redirect( add_query_arg( array( 'info' => 'saved', ), $url ) );
+		wp_safe_redirect( add_query_arg( array( 'info' => 'saved' ), $url ) );
 		exit;
 	}
 
@@ -214,7 +235,8 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 			return '';
 		}
 		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, self::PBKDF2_ITERATIONS, self::KEY_LENGTH, true );
-		$encrypted = openssl_encrypt( $key, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
+		$encrypted      = openssl_encrypt( $key, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used for encryption, not obfuscation.
 		return base64_encode( $iv . $salt . $encrypted );
 	}
 
@@ -227,6 +249,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	public function decrypt_key( string $encrypted_key ): string {
 		$cipher = self::ENCRYPTION_CIPHER;
 		$ivlen  = openssl_cipher_iv_length( $cipher );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for decryption, not obfuscation.
 		$combined  = base64_decode( $encrypted_key, true );
 		$iv        = substr( $combined, 0, $ivlen );
 		$salt      = substr( $combined, $ivlen, 32 );
