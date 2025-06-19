@@ -204,6 +204,29 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		// Add a submit button.
 		echo '<input type="submit" class="button button-primary" value="Save">';
 		echo '</form>';
+		if ( '' !== $api_key ) {
+			$default_api_key = str_repeat( '*', strlen( $api_key ) );
+		}
+
+		// Explain the Gemini API and where to get an API key.
+		echo '<p>Gemini is a generative artificial intelligence tool developed by Google. You can get an API key by visiting <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a>.</p>';
+
+		// Add a form element, with a nonce field for security. Add as a WordPress action.
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( 'save_gemini_api_key', 'gemini_api_key_nonce' );
+
+		echo '<input type="hidden" name="action" value="handle_gemini_api_key_submission">';
+
+		// Add a field for the API key.
+		echo '<label for="gemini-api-key">API Key</label> ';
+		echo '<input type="password" id="gemini-api-key" name="gemini-api-key" value="' . esc_attr( $default_api_key ) . '">';
+
+		// Add a hidden field with the default so we can skip if password is unchanged.
+		echo '<input type="hidden" name="default-gemini-api-key" value="' . esc_attr( $default_api_key ) . '">';
+
+		// Add a submit button.
+		echo '<input type="submit" class="button button-primary" value="Save">';
+		echo '</form>';
 	}
 
 	/**
