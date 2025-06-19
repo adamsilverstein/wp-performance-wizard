@@ -66,7 +66,20 @@ class Performance_Wizard_Rest_API {
 		$step                 = $request->get_param( 'step' );
 		$step                 = $step ? intval( $step ) : 0;
 		$additional_questions = $request->get_param( 'additional_questions' );
+		$model                = $request->get_param( 'model' );
 		$response             = '';
+
+		// Set the AI agent based on the selected model if provided
+		if ( ! empty( $model ) ) {
+			$model_set = $this->wizard->set_ai_agent( $model );
+			if ( ! $model_set ) {
+				return new WP_REST_Response(
+					array( 'error' => 'Invalid or unconfigured AI model: ' . $model ),
+					400
+				);
+			}
+		}
+
 		switch ( $command ) {
 			case '_get_next_action_':
 				$response = $this->wizard->get_analysis_plan()->get_next_action( $step );

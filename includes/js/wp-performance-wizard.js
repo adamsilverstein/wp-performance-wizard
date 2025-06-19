@@ -25,11 +25,25 @@
 	} );
 
 	/**
+	 * Get the selected AI model from the form.
+	 */
+	function getSelectedModel() {
+		const modelElement = document.getElementById( 'performance-wizard-model' );
+		return modelElement ? modelElement.value : '';
+	}
+
+	/**
 	 * Run the analysis, interacting with the passed terminal.
 	 */
 	async function runAnalysis( dataSources ) {
 		// @todo strings should be localized.
-		echoToTerminal( '## <g>Running analysis...</g>' );
+		const selectedModel = getSelectedModel();
+		if ( ! selectedModel ) {
+			echoToTerminal( '<r>Error: No AI model selected. Please configure an AI model first.</r>' );
+			return;
+		}
+
+		echoToTerminal( '## <g>Running analysis with ' + selectedModel + '...</g>' );
 		// Get a description of the next step. Continue until the final step.
 		let complete = false;
 		const maxSteps = 25;
@@ -57,7 +71,8 @@
 
 				// Ask the model for additional questions.
 				// Send the question to the server.
-				results = await runPerfomanceWizardPrompt( question, step, true );
+				const selectedModel = getSelectedModel();
+				results = await runPerfomanceWizardPrompt( question, step, true, selectedModel );
 				echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
 				echoToTerminal( '<br><div class="dc">' + results + ' </div>' );
 				addFollowUpQuestion();
@@ -80,7 +95,7 @@
 		}
 
 		while ( ! complete && step <= maxSteps ) {
-			const nextStep = await getPerfomanceWizardNextStep( step );
+			const nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
 			console.log( nextStep );
 			console.log( dataSources );
 			// If the next step isn't in the checked data sources, skip it.
@@ -99,7 +114,7 @@
 				case 'run_action':
 					echoToTerminal( '<br><div class="info-chip step-chip">Collecting Data</div><br>' );
 					echoStep( promptForDisplay, nextStep.title );
-					results = await runPerformanceWizardNextStep( step );
+					results = await runPerformanceWizardNextStep( step, selectedModel );
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
@@ -114,7 +129,7 @@
 					step++
 					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
 					echoToTerminal( '<div class="k"><br>' + promptForDisplay  + '</div>' );
-					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step );
+					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step, false, selectedModel );
 					echoToTerminal();
 					echoToTerminal( result );
 
@@ -161,13 +176,15 @@
 	 * The endpoint is set up with
 	 * register_rest_route( 'performance-wizard/v1', '/command/'...
 	 *
-	 * @param {int} step The current step in the wizard.
+	 * @param {int}    step  The current step in the wizard.
+	 * @param {string} model The selected AI model.
 	 */
-	function getPerfomanceWizardNextStep( step ) {
+	function getPerfomanceWizardNextStep( step, model = '' ) {
 		// User= the REST API to get the next step.
 		const params = {
 			'command': '_get_next_action_',
-			'step'   : step
+			'step'   : step,
+			'model'  : model
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',
@@ -181,13 +198,15 @@
 	 * The endpoint is set up with
 	 * register_rest_route( 'performance-wizard/v1', '/command/'...
 	 *
-	 * @param {int} step The current step in the wizard.
+	 * @param {int}    step  The current step in the wizard.
+	 * @param {string} model The selected AI model.
 	 */
-	function runPerformanceWizardNextStep( step ) {
+	function runPerformanceWizardNextStep( step, model = '' ) {
 		// User= the REST API to run the next step.
 		const params = {
 			'command': '_run_action_',
-			'step'   : step
+			'step'   : step,
+			'model'  : model
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',
@@ -202,14 +221,16 @@
 	 * @param {string} prompt               The prompt to send.
 	 * @param {int}	   step                 The current step in the wizard.
 	 * @param {bool}   additional_questions Whether or not to ask additional questions.
+	 * @param {string} model                The selected AI model.
 	 */
-	function runPerfomanceWizardPrompt( prompt, step, additional_questions = false ) {
+	function runPerfomanceWizardPrompt( prompt, step, additional_questions = false, model = '' ) {
 		// User= the REST API to send the prompt.
 		const params = {
 			'command'             : '_prompt_',
 			'prompt'              : prompt,
 			'step'                : step,
 			'additional_questions': additional_questions,
+			'model'               : model
 		};
 		return wp.apiFetch( {
 			path  : '/performance-wizard/v1/command/',
