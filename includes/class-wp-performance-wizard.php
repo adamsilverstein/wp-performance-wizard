@@ -56,7 +56,7 @@ class WP_Performance_Wizard {
 	/**
 	 * The AI Agent.
 	 *
-	 * @var Performance_Wizard_AI_Agent_Base
+	 * @var Performance_Wizard_AI_Agent_Base|null
 	 */
 	private $ai_agent;
 
@@ -90,7 +90,7 @@ class WP_Performance_Wizard {
 			$agent   = new $agent_class_name( $this );
 			$api_key = $agent->get_api_key();
 
-			if ( ! empty( $api_key ) ) {
+			if ( '' !== $api_key ) {
 				$available_models[ $agent_name ] = array(
 					'name'        => $agent_name,
 					'class'       => $agent_class_name,
@@ -117,7 +117,7 @@ class WP_Performance_Wizard {
 		$agent            = new $agent_class_name( $this );
 
 		// Check if the agent has a valid API key.
-		if ( empty( $agent->get_api_key() ) ) {
+		if ( '' === $agent->get_api_key() ) {
 			return false;
 		}
 
@@ -144,7 +144,7 @@ class WP_Performance_Wizard {
 			$agent = new $agent_class_name( $this );
 
 			// Set $this->ai_agent if not set already.
-			if ( ! isset( $this->ai_agent ) && $agent->get_api_key() ) {
+			if ( ! isset( $this->ai_agent ) && '' !== $agent->get_api_key() ) {
 				$this->ai_agent = $agent;
 			}
 		}
@@ -154,7 +154,9 @@ class WP_Performance_Wizard {
 			return;
 		}
 
-		$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
+		if ( null !== $this->ai_agent ) {
+			$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
+		}
 
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
@@ -190,7 +192,7 @@ class WP_Performance_Wizard {
 			return '';
 		}
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
-		include_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
 		WP_Filesystem();
 		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
 		return isset( $keydata->apikey ) ? $keydata->apikey : '';
@@ -208,9 +210,9 @@ class WP_Performance_Wizard {
 	/**
 	 * Get the ai agent.
 	 *
-	 * @return Performance_Wizard_AI_Agent_Base The AI agent.
+	 * @return Performance_Wizard_AI_Agent_Base|null The AI agent.
 	 */
-	public function get_ai_agent(): Performance_Wizard_AI_Agent_Base {
+	public function get_ai_agent(): ?Performance_Wizard_AI_Agent_Base {
 		return $this->ai_agent;
 	}
 

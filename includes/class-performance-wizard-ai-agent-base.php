@@ -255,7 +255,7 @@ class Performance_Wizard_AI_Agent_Base {
 	 * @return string The decrypted key.
 	 */
 	public function decrypt_key( string $encrypted_key ): string {
-		if ( empty( $encrypted_key ) ) {
+		if ( '' === $encrypted_key ) {
 			return '';
 		}
 
@@ -375,7 +375,7 @@ class Performance_Wizard_AI_Agent_Base {
 
 		// Next check the key file.
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . $agent_slug . '-key.json';
-		include_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
 		WP_Filesystem();
 		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
 		return isset( $keydata->apikey ) ? $keydata->apikey : '';

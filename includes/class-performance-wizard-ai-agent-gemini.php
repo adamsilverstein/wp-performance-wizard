@@ -245,7 +245,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		}
 
 		// Validate API key format.
-		if ( empty( $api_key ) || strlen( $api_key ) < 10 ) {
+		if ( '' === $api_key || strlen( $api_key ) < 10 ) {
 			wp_safe_redirect( add_query_arg( array( 'info' => 'invalid_key' ), $url ) );
 			exit;
 		}

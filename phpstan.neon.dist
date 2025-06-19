@@ -5,3 +5,5 @@ parameters:
 	treatPhpDocTypesAsCertain: false
 	paths:
 		- includes
+	ignoreErrors:
+		- '#Path in require_once\(\) "\./wp-admin/includes/.*" is not a file or it does not exist\.#'

@@ -70,7 +70,7 @@ class Performance_Wizard_Rest_API {
 		$response             = '';
 
 		// Set the AI agent based on the selected model if provided.
-		if ( ! empty( $model ) ) {
+		if ( '' !== $model ) {
 			$model_set = $this->wizard->set_ai_agent( $model );
 			if ( ! $model_set ) {
 				return new WP_REST_Response(
