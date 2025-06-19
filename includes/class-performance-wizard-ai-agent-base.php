@@ -12,17 +12,17 @@
  */
 class Performance_Wizard_AI_Agent_Base {
 	/**
-	 * Encryption cipher method
+	 * Encryption cipher method.
 	 */
 	protected const ENCRYPTION_CIPHER = 'aes-256-cbc';
 
 	/**
-	 * Number of iterations for key derivation
+	 * Number of iterations for key derivation.
 	 */
 	protected const PBKDF2_ITERATIONS = 10000;
 
 	/**
-	 * Length of derived key in bytes
+	 * Length of derived key in bytes.
 	 */
 	protected const KEY_LENGTH = 32;
 
@@ -191,7 +191,7 @@ class Performance_Wizard_AI_Agent_Base {
 	 */
 	public function save_key( string $key ): bool {
 		$encrypted_key = $this->encrypt_key( $key );
-		$option_name = $this->get_api_key_option_name();
+		$option_name   = $this->get_api_key_option_name();
 		return update_option( $option_name, $encrypted_key );
 	}
 
@@ -263,7 +263,7 @@ class Performance_Wizard_AI_Agent_Base {
 		$ivlen  = openssl_cipher_iv_length( $cipher );
 
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-		$combined  = base64_decode( $encrypted_key, true );
+		$combined = base64_decode( $encrypted_key, true );
 		if ( false === $combined ) {
 			return '';
 		}
@@ -303,11 +303,13 @@ class Performance_Wizard_AI_Agent_Base {
 	 * and can be called by child classes in their render_admin_page methods.
 	 */
 	protected function render_status_messages(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just reading status parameter for display.
 		if ( ! isset( $_GET['info'] ) ) {
 			return;
 		}
 
-		$info = sanitize_text_field( $_GET['info'] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just reading status parameter for display.
+		$info       = sanitize_text_field( $_GET['info'] );
 		$agent_name = $this->get_name();
 
 		switch ( $info ) {
@@ -344,8 +346,8 @@ class Performance_Wizard_AI_Agent_Base {
 	 * @return string The API key.
 	 */
 	public function load_api_key(): string {
-		// First try to get the encrypted key from options
-		$option_name = $this->get_api_key_option_name();
+		// First try to get the encrypted key from options.
+		$option_name   = $this->get_api_key_option_name();
 		$encrypted_key = get_option( $option_name );
 		$decrypted_key = $this->decrypt_key( $encrypted_key );
 
@@ -353,7 +355,7 @@ class Performance_Wizard_AI_Agent_Base {
 			return $decrypted_key;
 		}
 
-		// Fall back to legacy methods
+		// Fall back to legacy methods.
 		global $wp_filesystem;
 
 		$agent_name = $this->get_name();

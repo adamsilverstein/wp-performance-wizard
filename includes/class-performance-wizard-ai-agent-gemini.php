@@ -176,7 +176,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	public function render_admin_page(): void {
 		echo '<h2>' . esc_attr( $this->get_name() ) . ' Admin</h2>';
 
-		// Show status messages using base class helper
+		// Show status messages using base class helper.
 		$this->render_status_messages();
 
 		$default_api_key = '';
@@ -244,7 +244,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 			exit;
 		}
 
-				// Validate API key format.
+		// Validate API key format.
 		if ( empty( $api_key ) || strlen( $api_key ) < 10 ) {
 			wp_safe_redirect( add_query_arg( array( 'info' => 'invalid_key' ), $url ) );
 			exit;
@@ -264,7 +264,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		}
 
 		// Save the API key. Save in the options table and use if key file is not available.
-		// Try to save the key
+		// Try to save the key.
 		try {
 			$saved = $this->save_key( $api_key );
 			if ( $saved ) {
@@ -273,10 +273,8 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 				wp_safe_redirect( add_query_arg( array( 'info' => 'save_failed' ), $url ) );
 			}
 		} catch ( Exception $e ) {
-			error_log( 'Claude API key save error: ' . $e->getMessage() );
 			wp_safe_redirect( add_query_arg( array( 'info' => 'exception' ), $url ) );
 		}
 		exit;
 	}
-
 }

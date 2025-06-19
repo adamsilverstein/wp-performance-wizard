@@ -145,7 +145,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	public function render_admin_page(): void {
 		echo '<h2>' . esc_attr( $this->get_name() ) . ' Admin</h2>';
 
-		// Show status messages using base class helper
+		// Show status messages using base class helper.
 		$this->render_status_messages();
 
 		$default_api_key = '';
@@ -168,26 +168,26 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 * Handle the API key submission.
 	 */
 	public function handle_api_key_submission(): void {
-		// Validate nonce
+		// Validate nonce.
 		if ( ! isset( $_POST['claude_api_key_nonce'] ) || ! wp_verify_nonce( $_POST['claude_api_key_nonce'], 'save_claude_api_key' ) ) {
 			$url = isset( $_POST['_wp_http_referer'] ) ? $_POST['_wp_http_referer'] : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
 			wp_safe_redirect( add_query_arg( array( 'info' => 'nonce_error' ), $url ) );
 			exit;
 		}
 
-		// Check user capabilities
+		// Check user capabilities.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			$url = isset( $_POST['_wp_http_referer'] ) ? $_POST['_wp_http_referer'] : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
 			wp_safe_redirect( add_query_arg( array( 'info' => 'permission_error' ), $url ) );
 			exit;
 		}
 
-		// Get and validate form data
-		$api_key = isset( $_POST['claude-api-key'] ) ? sanitize_text_field( $_POST['claude-api-key'] ) : '';
-		$url     = isset( $_POST['_wp_http_referer'] ) ? esc_url_raw( $_POST['_wp_http_referer'] ) : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
+		// Get and validate form data.
+		$api_key         = isset( $_POST['claude-api-key'] ) ? sanitize_text_field( $_POST['claude-api-key'] ) : '';
+		$url             = isset( $_POST['_wp_http_referer'] ) ? esc_url_raw( $_POST['_wp_http_referer'] ) : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
 		$default_api_key = isset( $_POST['default-claude-api-key'] ) ? sanitize_text_field( $_POST['default-claude-api-key'] ) : '';
 
-		// Check if the key was actually changed
+		// Check if the key was actually changed.
 		if ( $default_api_key === $api_key ) {
 			wp_safe_redirect( add_query_arg( array( 'info' => 'no_change' ), $url ) );
 			exit;
@@ -199,7 +199,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 			exit;
 		}
 
-		// Try to save the key
+		// Try to save the key.
 		try {
 			$saved = $this->save_key( $api_key );
 			if ( $saved ) {
@@ -208,7 +208,6 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 				wp_safe_redirect( add_query_arg( array( 'info' => 'save_failed' ), $url ) );
 			}
 		} catch ( Exception $e ) {
-			error_log( 'Claude API key save error: ' . $e->getMessage() );
 			wp_safe_redirect( add_query_arg( array( 'info' => 'exception' ), $url ) );
 		}
 		exit;

@@ -61,7 +61,7 @@ class WP_Performance_Wizard {
 	private $ai_agent;
 
 	/**
-	 * Supported agents
+	 * Supported agents.
 	 *
 	 * @var array
 	 */
@@ -87,13 +87,13 @@ class WP_Performance_Wizard {
 		$available_models = array();
 
 		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
-			$agent = new $agent_class_name( $this );
+			$agent   = new $agent_class_name( $this );
 			$api_key = $agent->get_api_key();
 
 			if ( ! empty( $api_key ) ) {
 				$available_models[ $agent_name ] = array(
-					'name' => $agent_name,
-					'class' => $agent_class_name,
+					'name'        => $agent_name,
+					'class'       => $agent_class_name,
 					'description' => $agent->get_description(),
 				);
 			}
@@ -114,9 +114,9 @@ class WP_Performance_Wizard {
 		}
 
 		$agent_class_name = $this->supported_agents[ $model_name ];
-		$agent = new $agent_class_name( $this );
+		$agent            = new $agent_class_name( $this );
 
-		// Check if the agent has a valid API key
+		// Check if the agent has a valid API key.
 		if ( empty( $agent->get_api_key() ) ) {
 			return false;
 		}
@@ -139,7 +139,7 @@ class WP_Performance_Wizard {
 		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
-		// Load the $supported_agents, eg. call new Performance_Wizard_AI_Agent_Gemini( $this ) for each agent;
+		// Load the $supported_agents, eg. call new Performance_Wizard_AI_Agent_Gemini( $this ) for each agent.
 		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
 			$agent = new $agent_class_name( $this );
 
@@ -148,7 +148,6 @@ class WP_Performance_Wizard {
 				$this->ai_agent = $agent;
 			}
 		}
-
 
 		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
 		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -178,7 +177,7 @@ class WP_Performance_Wizard {
 	/**
 	 * Function to get the api key for a specific AI agent.
 	 *
-	 * The key is stored in a JSON file with the key "apikey"
+	 * The key is stored in a JSON file with the key "apikey".
 	 *
 	 * @param string $agent_name The name of the agent to get the key for.
 	 *

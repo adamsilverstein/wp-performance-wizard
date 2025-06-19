@@ -69,7 +69,7 @@ class Performance_Wizard_Admin_Page {
 		// Add the description.
 		echo '<p>' . esc_html__( 'The Performance Wizard will analyze your site using an AI agent, then make recommendations to improve performance.', 'wp-performance-wizard' ) . '</p>';
 
-		// Show model selection or status
+		// Show model selection or status.
 		$this->render_model_selection();
 
 		echo '<h3>' . esc_html__( 'Select the data sources to use for the analysis:', 'wp-performance-wizard' ) . '</h3>';
@@ -96,7 +96,7 @@ class Performance_Wizard_Admin_Page {
 	 */
 	private function render_model_selection(): void {
 		$available_models = $this->wizard->get_available_models();
-		$model_count = count( $available_models );
+		$model_count      = count( $available_models );
 
 		if ( 0 === $model_count ) {
 			echo '<div class="notice notice-warning"><p>';
@@ -110,10 +110,10 @@ class Performance_Wizard_Admin_Page {
 		echo '<h3>' . esc_html__( 'AI Model Selection:', 'wp-performance-wizard' ) . '</h3>';
 
 		if ( 1 === $model_count ) {
-			// Only one model available, show status text
+			// Only one model available, show status text.
 			$model = reset( $available_models );
 			echo '<p>';
-			echo sprintf(
+			printf(
 				/* translators: %s: AI model name */
 				esc_html__( 'Using %s for analysis.', 'wp-performance-wizard' ),
 				'<strong>' . esc_html( $model['name'] ) . '</strong>'
@@ -122,7 +122,7 @@ class Performance_Wizard_Admin_Page {
 			echo '</p>';
 			echo '<input type="hidden" id="performance-wizard-model" value="' . esc_attr( $model['name'] ) . '">';
 		} else {
-			// Multiple models available, show selection dropdown
+			// Multiple models available, show selection dropdown.
 			echo '<p>';
 			echo '<label for="performance-wizard-model">' . esc_html__( 'Select AI model:', 'wp-performance-wizard' ) . '</label> ';
 			echo '<select id="performance-wizard-model" name="performance-wizard-model">';

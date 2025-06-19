@@ -69,7 +69,7 @@ class Performance_Wizard_Rest_API {
 		$model                = $request->get_param( 'model' );
 		$response             = '';
 
-		// Set the AI agent based on the selected model if provided
+		// Set the AI agent based on the selected model if provided.
 		if ( ! empty( $model ) ) {
 			$model_set = $this->wizard->set_ai_agent( $model );
 			if ( ! $model_set ) {
