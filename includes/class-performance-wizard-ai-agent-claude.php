@@ -144,6 +144,35 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 */
 	public function render_admin_page(): void {
 		echo '<h2>' . esc_attr( $this->get_name() ) . ' Admin</h2>';
+
+		// Show status messages
+		if ( isset( $_GET['info'] ) ) {
+			$info = sanitize_text_field( $_GET['info'] );
+			switch ( $info ) {
+				case 'saved':
+					echo '<div class="notice notice-success"><p>API key saved successfully!</p></div>';
+					break;
+				case 'nonce_error':
+					echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
+					break;
+				case 'permission_error':
+					echo '<div class="notice notice-error"><p>You do not have permission to perform this action.</p></div>';
+					break;
+				case 'no_change':
+					echo '<div class="notice notice-warning"><p>No changes were made to the API key.</p></div>';
+					break;
+				case 'invalid_key':
+					echo '<div class="notice notice-error"><p>Invalid API key format. Please enter a valid Claude API key.</p></div>';
+					break;
+				case 'save_failed':
+					echo '<div class="notice notice-error"><p>Failed to save API key. Please try again.</p></div>';
+					break;
+				case 'exception':
+					echo '<div class="notice notice-error"><p>An error occurred while saving the API key. Please check the error logs.</p></div>';
+					break;
+			}
+		}
+
 		$default_api_key = '';
 		$api_key         = $this->get_api_key();
 		if ( '' !== $api_key ) {
