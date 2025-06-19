@@ -12,6 +12,21 @@
  */
 class Performance_Wizard_AI_Agent_Base {
 	/**
+	 * Encryption cipher method
+	 */
+	protected const ENCRYPTION_CIPHER = 'aes-256-cbc';
+
+	/**
+	 * Number of iterations for key derivation
+	 */
+	protected const PBKDF2_ITERATIONS = 10000;
+
+	/**
+	 * Length of derived key in bytes
+	 */
+	protected const KEY_LENGTH = 32;
+
+	/**
 	 * The private API key.
 	 *
 	 * @var string
@@ -168,13 +183,138 @@ class Performance_Wizard_AI_Agent_Base {
 	}
 
 	/**
+	 * Encrypt and save the key.
+	 *
+	 * @param string $key The key to save.
+	 *
+	 * @return bool Whether the key was saved successfully.
+	 */
+	public function save_key( string $key ): bool {
+		$encrypted_key = $this->encrypt_key( $key );
+		$option_name = $this->get_api_key_option_name();
+		return update_option( $option_name, $encrypted_key );
+	}
+
+	/**
+	 * Get the standardized option name for storing the API key.
+	 *
+	 * @return string The option name.
+	 */
+	protected function get_api_key_option_name(): string {
+		$agent_name = $this->get_name();
+		if ( '' === $agent_name ) {
+			return '';
+		}
+		$agent_slug = str_replace( ' ', '_', strtolower( $agent_name ) );
+		return 'wp_performance_wizard_' . $agent_slug . '_api_key';
+	}
+
+	/**
+	 * Encrypt the key.
+	 *
+	 * @param string $key The key to encrypt.
+	 *
+	 * @return string The encrypted key.
+	 */
+	public function encrypt_key( string $key ): string {
+		$cipher = self::ENCRYPTION_CIPHER;
+		$ivlen  = openssl_cipher_iv_length( $cipher );
+		$iv     = openssl_random_pseudo_bytes( $ivlen );
+		$salt   = openssl_random_pseudo_bytes( 32 );
+
+		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
+			return '';
+		}
+
+		$encryption_key = hash_pbkdf2(
+			'sha256',
+			SECURE_AUTH_KEY . SECURE_AUTH_SALT,
+			$salt,
+			self::PBKDF2_ITERATIONS,
+			self::KEY_LENGTH,
+			true
+		);
+
+		$encrypted = openssl_encrypt(
+			$key,
+			$cipher,
+			$encryption_key,
+			OPENSSL_RAW_DATA,
+			$iv
+		);
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		return base64_encode( $iv . $salt . $encrypted );
+	}
+
+	/**
+	 * Decrypt the key.
+	 *
+	 * @param string $encrypted_key The encrypted key to decrypt.
+	 *
+	 * @return string The decrypted key.
+	 */
+	public function decrypt_key( string $encrypted_key ): string {
+		if ( empty( $encrypted_key ) ) {
+			return '';
+		}
+
+		$cipher = self::ENCRYPTION_CIPHER;
+		$ivlen  = openssl_cipher_iv_length( $cipher );
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		$combined  = base64_decode( $encrypted_key, true );
+		if ( false === $combined ) {
+			return '';
+		}
+
+		$iv        = substr( $combined, 0, $ivlen );
+		$salt      = substr( $combined, $ivlen, 32 );
+		$encrypted = substr( $combined, $ivlen + 32 );
+
+		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
+			return '';
+		}
+
+		$encryption_key = hash_pbkdf2(
+			'sha256',
+			SECURE_AUTH_KEY . SECURE_AUTH_SALT,
+			$salt,
+			self::PBKDF2_ITERATIONS,
+			self::KEY_LENGTH,
+			true
+		);
+
+		$decrypted = openssl_decrypt(
+			$encrypted,
+			$cipher,
+			$encryption_key,
+			OPENSSL_RAW_DATA,
+			$iv
+		);
+
+		return ( false === $decrypted ) ? '' : $decrypted;
+	}
+
+	/**
 	 * Function to load the API key for an agent.
 	 *
-	 * The key can either be stored as an option under 'performance-wizard-api-key-[api slug]'or as a JSON file with the key "apikey"
+	 * First tries to load from the encrypted option, then falls back to
+	 * the legacy option or JSON file.
 	 *
 	 * @return string The API key.
 	 */
 	public function load_api_key(): string {
+		// First try to get the encrypted key from options
+		$option_name = $this->get_api_key_option_name();
+		$encrypted_key = get_option( $option_name );
+		$decrypted_key = $this->decrypt_key( $encrypted_key );
+
+		if ( '' !== $decrypted_key ) {
+			return $decrypted_key;
+		}
+
+		// Fall back to legacy methods
 		global $wp_filesystem;
 
 		$agent_name = $this->get_name();
@@ -197,6 +337,6 @@ class Performance_Wizard_AI_Agent_Base {
 		include_once ABSPATH . 'wp-admin/includes/file.php';
 		WP_Filesystem();
 		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
-		return $keydata->apikey;
+		return isset( $keydata->apikey ) ? $keydata->apikey : '';
 	}
 }

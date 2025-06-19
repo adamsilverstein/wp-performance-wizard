@@ -13,20 +13,6 @@
  * The Gemini class.
  */
 class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Base {
-	/**
-	 * Encryption cipher method
-	 */
-	private const ENCRYPTION_CIPHER = 'aes-256-cbc';
-
-	/**
-	 * Number of iterations for key derivation
-	 */
-	private const PBKDF2_ITERATIONS = 10000;
-
-	/**
-	 * Length of derived key in bytes
-	 */
-	private const KEY_LENGTH = 32;
 
 	/**
 	 * A method to send a single prompt to the agent.

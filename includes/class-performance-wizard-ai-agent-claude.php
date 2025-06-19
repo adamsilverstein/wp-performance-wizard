@@ -22,20 +22,6 @@
  * @package wp-performance-wizard
  */
 class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Base {
-	/**
-	 * Encryption cipher method
-	 */
-	private const ENCRYPTION_CIPHER = 'aes-256-cbc';
-
-	/**
-	 * Number of iterations for key derivation
-	 */
-	private const PBKDF2_ITERATIONS = 10000;
-
-	/**
-	 * Length of derived key in bytes
-	 */
-	private const KEY_LENGTH = 32;
 
 	/**
 	 * Construct the agent.
@@ -178,103 +164,52 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	 * Handle the API key submission.
 	 */
 	public function handle_api_key_submission(): void {
-		if ( ! wp_verify_nonce( $_POST['claude_api_key_nonce'], 'save_claude_api_key' ) ) {
-			$url = $_POST['_wp_http_referer'];
-			wp_safe_redirect( add_query_arg( array( 'info' => 'error' ), $url ) );
+		// Validate nonce
+		if ( ! isset( $_POST['claude_api_key_nonce'] ) || ! wp_verify_nonce( $_POST['claude_api_key_nonce'], 'save_claude_api_key' ) ) {
+			$url = isset( $_POST['_wp_http_referer'] ) ? $_POST['_wp_http_referer'] : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'nonce_error' ), $url ) );
 			exit;
 		}
-		$api_key = sanitize_text_field( $_POST['claude-api-key'] );
-		$url     = esc_url_raw( $_POST['_wp_http_referer'] );
+
+		// Check user capabilities
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_safe_redirect( add_query_arg( array( 'info' => 'error' ), $url ) );
+			$url = isset( $_POST['_wp_http_referer'] ) ? $_POST['_wp_http_referer'] : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'permission_error' ), $url ) );
 			exit;
 		}
-		$default_api_key = sanitize_text_field( $_POST['default-claude-api-key'] );
+
+		// Get and validate form data
+		$api_key = isset( $_POST['claude-api-key'] ) ? sanitize_text_field( $_POST['claude-api-key'] ) : '';
+		$url     = isset( $_POST['_wp_http_referer'] ) ? esc_url_raw( $_POST['_wp_http_referer'] ) : admin_url( 'admin.php?page=wp-performance-wizard-claude' );
+		$default_api_key = isset( $_POST['default-claude-api-key'] ) ? sanitize_text_field( $_POST['default-claude-api-key'] ) : '';
+
+		// Check if the key was actually changed
 		if ( $default_api_key === $api_key ) {
-			wp_safe_redirect( add_query_arg( array( 'info' => 'error' ), $url ) );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'no_change' ), $url ) );
 			exit;
 		}
-		$this->save_key( $api_key );
-		wp_safe_redirect( add_query_arg( array( 'info' => 'saved' ), $url ) );
+
+		// Validate API key format.
+		if ( empty( $api_key ) || strlen( $api_key ) < 10 ) {
+			wp_safe_redirect( add_query_arg( array( 'info' => 'invalid_key' ), $url ) );
+			exit;
+		}
+
+		// Try to save the key
+		try {
+			$saved = $this->save_key( $api_key );
+			if ( $saved ) {
+				wp_safe_redirect( add_query_arg( array( 'info' => 'saved' ), $url ) );
+			} else {
+				wp_safe_redirect( add_query_arg( array( 'info' => 'save_failed' ), $url ) );
+			}
+		} catch ( Exception $e ) {
+			error_log( 'Claude API key save error: ' . $e->getMessage() );
+			wp_safe_redirect( add_query_arg( array( 'info' => 'exception' ), $url ) );
+		}
 		exit;
 	}
 
-	/**
-	 * Encrypt and save the key.
-	 *
-	 * @param string $key The key to save.
-	 * @return bool Whether the key was saved successfully.
-	 */
-	public function save_key( string $key ): bool {
-		$encrypted_key = $this->encrypt_key( $key );
-		return update_option( 'wp_performance_wizard_claude_api_key', $encrypted_key );
-	}
-
-	/**
-	 * Decrypt and retrieve the key.
-	 *
-	 * @return string The decrypted key.
-	 */
-	public function get_api_key(): string {
-		$encrypted_key = get_option( 'wp_performance_wizard_claude_api_key' );
-		return $this->decrypt_key( $encrypted_key );
-	}
-
-	/**
-	 * Encrypt the key.
-	 *
-	 * @param string $key The key to encrypt.
-	 * @return string The encrypted key.
-	 */
-	public function encrypt_key( string $key ): string {
-		$cipher = self::ENCRYPTION_CIPHER;
-		$ivlen  = openssl_cipher_iv_length( $cipher );
-		$iv     = openssl_random_pseudo_bytes( $ivlen );
-		$salt   = openssl_random_pseudo_bytes( 32 );
-		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
-			return '';
-		}
-		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, self::PBKDF2_ITERATIONS, self::KEY_LENGTH, true );
-		$encrypted      = openssl_encrypt( $key, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used for encryption, not obfuscation.
-		return base64_encode( $iv . $salt . $encrypted );
-	}
-
-	/**
-	 * Decrypt the key.
-	 *
-	 * @param string $encrypted_key The encrypted key to decrypt.
-	 * @return string The decrypted key.
-	 */
-	public function decrypt_key( string $encrypted_key ): string {
-		$cipher = self::ENCRYPTION_CIPHER;
-		$ivlen  = openssl_cipher_iv_length( $cipher );
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for decryption, not obfuscation.
-		$combined  = base64_decode( $encrypted_key, true );
-		$iv        = substr( $combined, 0, $ivlen );
-		$salt      = substr( $combined, $ivlen, 32 );
-		$encrypted = substr( $combined, $ivlen + 32 );
-		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
-			return '';
-		}
-		$encryption_key = hash_pbkdf2( 'sha256', SECURE_AUTH_KEY . SECURE_AUTH_SALT, $salt, self::PBKDF2_ITERATIONS, self::KEY_LENGTH, true );
-		$decrypted      = openssl_decrypt( $encrypted, $cipher, $encryption_key, OPENSSL_RAW_DATA, $iv );
-		return ( false === $decrypted ) ? '' : $decrypted;
-	}
-
-	/**
-	 * Load the API key from the database if available. Otherwise fall back to file loading
-	 *
-	 * @return string The API key.
-	 */
-	public function load_api_key(): string {
-		$stored_key = $this->get_api_key();
-		if ( '' !== $stored_key ) {
-			return $stored_key;
-		} else {
-			return parent::load_api_key();
-		}
-	}
 
 	/**
 	 * Request additional questions from the AI agent.
