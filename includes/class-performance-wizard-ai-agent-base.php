@@ -297,6 +297,45 @@ class Performance_Wizard_AI_Agent_Base {
 	}
 
 	/**
+	 * Render status messages based on the 'info' GET parameter.
+	 *
+	 * This method handles common status messages for API key operations
+	 * and can be called by child classes in their render_admin_page methods.
+	 */
+	protected function render_status_messages(): void {
+		if ( ! isset( $_GET['info'] ) ) {
+			return;
+		}
+
+		$info = sanitize_text_field( $_GET['info'] );
+		$agent_name = $this->get_name();
+
+		switch ( $info ) {
+			case 'saved':
+				echo '<div class="notice notice-success"><p>API key saved successfully!</p></div>';
+				break;
+			case 'nonce_error':
+				echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
+				break;
+			case 'permission_error':
+				echo '<div class="notice notice-error"><p>You do not have permission to perform this action.</p></div>';
+				break;
+			case 'no_change':
+				echo '<div class="notice notice-warning"><p>No changes were made to the API key.</p></div>';
+				break;
+			case 'invalid_key':
+				echo '<div class="notice notice-error"><p>Invalid API key format. Please enter a valid ' . esc_html( $agent_name ) . ' API key.</p></div>';
+				break;
+			case 'save_failed':
+				echo '<div class="notice notice-error"><p>Failed to save API key. Please try again.</p></div>';
+				break;
+			case 'exception':
+				echo '<div class="notice notice-error"><p>An error occurred while saving the API key. Please check the error logs.</p></div>';
+				break;
+		}
+	}
+
+	/**
 	 * Function to load the API key for an agent.
 	 *
 	 * First tries to load from the encrypted option, then falls back to
