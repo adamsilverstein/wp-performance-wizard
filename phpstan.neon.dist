@@ -1,9 +1,16 @@
-includes:
-	- phar://phpstan.phar/conf/bleedingEdge.neon
 parameters:
-	level: 4
-	treatPhpDocTypesAsCertain: false
+	level: 5
 	paths:
-		- includes
+		- wp-performance-wizard.php
+		- includes/
+	phpVersion: 70400
 	ignoreErrors:
 		- '#Path in require_once\(\) "\./wp-admin/includes/.*" is not a file or it does not exist\.#'
+	bootstrapFiles:
+		- wp-performance-wizard.php
+	excludePaths:
+		- includes/js/
+		- includes/css/
+		- vendor/
+		- releases/
+		- tools/
