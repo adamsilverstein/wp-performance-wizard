@@ -6,6 +6,14 @@
 
 	console.log( 'Ready' );
 
+	// Add event listener for model selection changes to save preference.
+	const modelSelect = document.getElementById( 'performance-wizard-model' );
+	if ( modelSelect && modelSelect.tagName === 'SELECT' ) {
+		modelSelect.addEventListener( 'change', function() {
+			saveModelPreference( this.value );
+		} );
+	}
+
 	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
 	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function() {
 		// @todo strings should be localized.
@@ -30,6 +38,37 @@
 	function getSelectedModel() {
 		const modelElement = document.getElementById( 'performance-wizard-model' );
 		return modelElement ? modelElement.value : '';
+	}
+
+	/**
+	 * Save the user's AI model preference via AJAX.
+	 *
+	 * @param {string} model The selected AI model name.
+	 */
+	function saveModelPreference( model ) {
+		if ( ! model || ! wpPerformanceWizard || ! wpPerformanceWizard.nonce ) {
+			console.error( 'Missing model or nonce for saving preference' );
+			return;
+		}
+
+		const params = {
+			'model': model,
+			'nonce': wpPerformanceWizard.nonce
+		};
+
+		wp.apiFetch( {
+			path  : '/performance-wizard/v1/save-model-preference/',
+			method: 'POST',
+			data  : params
+		} ).then( function( response ) {
+			if ( response.success ) {
+				console.log( 'Model preference saved successfully:', model );
+			} else {
+				console.error( 'Failed to save model preference:', response.error );
+			}
+		} ).catch( function( error ) {
+			console.error( 'Error saving model preference:', error );
+		} );
 	}
 
 	/**

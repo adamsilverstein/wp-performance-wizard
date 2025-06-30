@@ -224,4 +224,17 @@ class WP_Performance_Wizard {
 	public function get_option_name(): string {
 		return $this->option_name;
 	}
+
+	/**
+	 * Get the transient key for storing user's AI model preference.
+	 *
+	 * @param int|null $user_id The user ID. If null, uses current user.
+	 * @return string The transient key.
+	 */
+	public function get_model_preference_transient_key( ?int $user_id = null ): string {
+		if ( null === $user_id ) {
+			$user_id = get_current_user_id();
+		}
+		return 'performance_wizard_selected_model_user_' . $user_id;
+	}
 }

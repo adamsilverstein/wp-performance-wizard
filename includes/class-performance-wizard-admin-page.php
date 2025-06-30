@@ -109,6 +109,15 @@ class Performance_Wizard_Admin_Page {
 
 		echo '<h3>' . esc_html__( 'AI Model Selection:', 'wp-performance-wizard' ) . '</h3>';
 
+		// Get the user's preferred model from transient.
+		$transient_key   = $this->wizard->get_model_preference_transient_key();
+		$preferred_model = get_transient( $transient_key );
+
+		// Validate that the preferred model is still available.
+		if ( false !== $preferred_model && ! isset( $available_models[ $preferred_model ] ) ) {
+			$preferred_model = false;
+		}
+
 		if ( 1 === $model_count ) {
 			// Only one model available, show status text.
 			$model = reset( $available_models );
@@ -127,12 +136,18 @@ class Performance_Wizard_Admin_Page {
 			echo '<label for="performance-wizard-model">' . esc_html__( 'Select AI model:', 'wp-performance-wizard' ) . '</label> ';
 			echo '<select id="performance-wizard-model" name="performance-wizard-model">';
 
-			$first = true;
 			foreach ( $available_models as $model ) {
-				echo '<option value="' . esc_attr( $model['name'] ) . '"' . ( $first ? ' selected' : '' ) . '>';
+				$selected = '';
+				if ( false !== $preferred_model && $preferred_model === $model['name'] ) {
+					$selected = ' selected';
+				} elseif ( false === $preferred_model && reset( $available_models ) === $model ) {
+					// If no preference, select the first model.
+					$selected = ' selected';
+				}
+
+				echo '<option value="' . esc_attr( $model['name'] ) . '"' . esc_attr( $selected ) . '>';
 				echo esc_html( $model['name'] ) . ' - ' . esc_html( $model['description'] );
 				echo '</option>';
-				$first = false;
 			}
 
 			echo '</select>';
@@ -167,5 +182,14 @@ class Performance_Wizard_Admin_Page {
 
 		// Enqueue the bootstrap script.
 		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'wp-api-fetch', 'marked' ), '1.0.0' . $timestamp_version, array( 'strategy' => 'defer' ) );
+
+		// Localize script with nonce for AJAX requests.
+		wp_localize_script(
+			'wp-performance-wizard',
+			'wpPerformanceWizard',
+			array(
+				'nonce' => wp_create_nonce( 'save_model_preference' ),
+			)
+		);
 	}
 }
