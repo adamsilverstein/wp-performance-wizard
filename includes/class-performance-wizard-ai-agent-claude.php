@@ -91,7 +91,7 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 		);
 
 		$data = array(
-			'model'      => 'claude-3-sonnet-20240229', // Claude Sonnet 4.0 model.
+			'model'      => 'claude-3-7-sonnet-latest',
 			'system'     => $system_instruction,
 			'messages'   => $messages,
 			'max_tokens' => 2048,
