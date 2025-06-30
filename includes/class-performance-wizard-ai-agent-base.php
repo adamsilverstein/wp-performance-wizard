@@ -383,7 +383,7 @@ class Performance_Wizard_AI_Agent_Base {
 
 		// Next check the key file.
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . $agent_slug . '-key.json';
-		$path = ABSPATH . 'wp-admin/includes/file.php';
+		$path     = ABSPATH . 'wp-admin/includes/file.php';
 		if ( ! file_exists( $filename ) || ! is_readable( $filename ) ) {
 			return '';
 		}
