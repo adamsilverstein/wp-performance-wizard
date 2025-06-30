@@ -5,7 +5,6 @@ parameters:
 		- includes/
 	phpVersion: 70400
 	ignoreErrors:
-		- '#Path in require_once\(\) "\./wp-admin/includes/.*" is not a file or it does not exist\.#'
 	bootstrapFiles:
 		- wp-performance-wizard.php
 	excludePaths:

@@ -349,7 +349,11 @@ class Performance_Wizard_AI_Agent_Base {
 		// First try to get the encrypted key from options.
 		$option_name   = $this->get_api_key_option_name();
 		$encrypted_key = get_option( $option_name );
-		$decrypted_key = $this->decrypt_key( $encrypted_key );
+		$decrypted_key = '';
+
+		if ( is_string( $encrypted_key ) ) {
+			$decrypted_key = $this->decrypt_key( $encrypted_key );
+		}
 
 		if ( '' !== $decrypted_key ) {
 			return $decrypted_key;
@@ -369,13 +373,22 @@ class Performance_Wizard_AI_Agent_Base {
 
 		// First check the options table.
 		$api_key = get_option( 'performance-wizard-api-key-' . $agent_slug );
-		if ( '' !== $api_key && false !== $api_key ) {
+		if ( is_string( $api_key ) && '' !== $api_key ) {
 			return $api_key;
+		}
+
+		if ( ! defined( 'ABSPATH' ) || ! function_exists( 'WP_Filesystem' ) ) {
+			return '';
 		}
 
 		// Next check the key file.
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . $agent_slug . '-key.json';
-		require_once ABSPATH . 'wp-admin/includes/file.php';
+		$path = ABSPATH . 'wp-admin/includes/file.php';
+		if ( ! file_exists( $filename ) || ! is_readable( $filename ) ) {
+			return '';
+		}
+
+		require_once $path;
 		WP_Filesystem();
 		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
 		return isset( $keydata->apikey ) ? $keydata->apikey : '';
