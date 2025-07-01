@@ -26,7 +26,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 */
 	public function send_prompt( string $prompt, int $current_step, array $previous_steps, bool $additional_questions ): string {
 		if ( $additional_questions ) {
-			$prompt .= PHP_EOL . $this->getAdditionalQuestionsPrompt();
+			$prompt .= PHP_EOL . $this->get_additional_questions_prompt();
 		}
 
 		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps, $additional_questions );
@@ -132,12 +132,6 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		return $response_data['candidates'][0]['content']['parts'][0]['text'];
 	}
 
-	/**
-	 * Request additional questions from the AI agent.
-	 */
-	public function getAdditionalQuestionsPrompt(): string {
-		return 'Finally,  based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: "<button class="wp-wizard-follow-up-question">What is the best way to optimize my LCP image?</button>"';
-	}
 
 	/**
 	 * Construct the agent.
