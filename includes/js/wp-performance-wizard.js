@@ -137,7 +137,14 @@
 				// Hide spinner and show results
 				hideSpinner();
 				echoToTerminal( '<br><div class="info-chip agent-chip"></div><br>')
-				echoToTerminal( '<br><div class="dc">' + results + ' </div>' );
+				
+				// Use streaming effect for AI responses
+				const responseDiv = document.createElement( 'div' );
+				responseDiv.className = 'dc';
+				responseDiv.innerHTML = '<br>';
+				terminal.appendChild( responseDiv );
+				await streamText( responseDiv, '<br>' + results + ' ', 25 );
+				
 				addFollowUpQuestion();
 			}
 		} );
@@ -146,14 +153,26 @@
 			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip"></div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
 		}
 
-		function outputFormattedResults( result ) {
+		async function outputFormattedResults( result ) {
 			// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
 			if ( result.startsWith( '>Q: ' ) ) {
 				echoToTerminal( '<div class="info-chip user-chip"></div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 			}
 			// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
 			else if ( result.startsWith( '>A: ' ) ) {
-				echoToTerminal( '<div class="info-chip agent-chip"></div><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
+				echoToTerminal( '<div class="info-chip agent-chip"></div><br>' );
+				
+				// Use streaming effect for AI responses
+				const responseContent = result.replace( '>A: ', '' );
+				if ( responseContent.length > 100 ) {
+					const responseDiv = document.createElement( 'div' );
+					responseDiv.className = 'dc';
+					responseDiv.innerHTML = '<br>';
+					terminal.appendChild( responseDiv );
+					await streamText( responseDiv, '<br>' + responseContent, 25 );
+				} else {
+					echoToTerminal( '<div class="dc"><br>' + responseContent + '</div>' );
+				}
 			}
 		}
 
@@ -202,7 +221,7 @@
 					for( const resultIndex in results ) {
 						const result = results[ resultIndex ];
 						echoToTerminal();
-						outputFormattedResults( result );
+						await outputFormattedResults( result );
 					};
 
 					step++;
@@ -221,7 +240,15 @@
 					hideSpinner();
 					
 					echoToTerminal();
-					echoToTerminal( result );
+					
+					// Use streaming effect for longer AI responses
+					if ( result && result.length > 100 ) {
+						const responseDiv = document.createElement( 'div' );
+						terminal.appendChild( responseDiv );
+						await streamText( responseDiv, marked.marked( result ), 20 );
+					} else {
+						echoToTerminal( result );
+					}
 
 					break;
 				case 'continue':
@@ -268,6 +295,60 @@
 		statusDiv.className = 'status-update';
 		statusDiv.innerHTML = '💡 ' + message;
 		terminal.appendChild( statusDiv );
+	}
+
+	/**
+	 * Simulate streaming text effect by typing out characters
+	 */
+	function streamText( element, text, speed = 30 ) {
+		return new Promise( ( resolve ) => {
+			let index = 0;
+			element.innerHTML = '';
+			
+			const typeChar = () => {
+				if ( index < text.length ) {
+					element.innerHTML += text.charAt( index );
+					index++;
+					setTimeout( typeChar, speed );
+				} else {
+					resolve();
+				}
+			};
+			
+			typeChar();
+		} );
+	}
+
+	/**
+	 * Echo out a message with optional streaming effect
+	 */
+	function echoToTerminalWithStreaming( message, shouldStream = false ) {
+		if ( false === message ) {
+			const br = document.createElement( 'br' );
+			terminal.appendChild( br );
+			return Promise.resolve();
+		}
+		
+		const div = document.createElement( 'div' );
+		console.log( message );
+		
+		if ( shouldStream && message.length > 50 ) {
+			// For longer messages, use streaming effect
+			div.innerHTML = marked.marked( '' );
+			terminal.appendChild( div );
+			
+			const textContent = marked.marked( message );
+			const tempDiv = document.createElement( 'div' );
+			tempDiv.innerHTML = textContent;
+			const plainText = tempDiv.textContent || tempDiv.innerText || '';
+			
+			return streamText( div, textContent, 20 );
+		} else {
+			// For short messages, show immediately
+			div.innerHTML = marked.marked( message );
+			terminal.appendChild( div );
+			return Promise.resolve();
+		}
 	}
 
 	/**
