@@ -56,17 +56,18 @@ class WP_Performance_Wizard {
 	/**
 	 * The AI Agent.
 	 *
-	 * @var Performance_Wizard_AI_Agent_Base
+	 * @var Performance_Wizard_AI_Agent_Base|null
 	 */
 	private $ai_agent;
 
 	/**
-	 * Supported agents
+	 * Supported agents.
 	 *
 	 * @var array
 	 */
 	private $supported_agents = array(
 		'Gemini' => 'Performance_Wizard_AI_Agent_Gemini',
+		'Claude' => 'Performance_Wizard_AI_Agent_Claude',
 	);
 	/**
 	 * Get supported agents.
@@ -75,6 +76,55 @@ class WP_Performance_Wizard {
 	 */
 	public function get_supported_agents(): array {
 		return $this->supported_agents;
+	}
+
+	/**
+	 * Get available models (agents with valid API keys).
+	 *
+	 * @return array Array of available models with their details.
+	 */
+	public function get_available_models(): array {
+		$available_models = array();
+
+		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
+			$agent   = new $agent_class_name( $this );
+			$api_key = $agent->get_api_key();
+
+			if ( '' !== $api_key ) {
+				$available_models[ $agent_name ] = array(
+					'name'        => $agent_name,
+					'class'       => $agent_class_name,
+					'description' => $agent->get_description(),
+				);
+			}
+		}
+
+		return $available_models;
+	}
+
+	/**
+	 * Set the AI agent based on the selected model.
+	 *
+	 * @param string $model_name The name of the model to use.
+	 * @return bool True if the model was set successfully, false otherwise.
+	 */
+	public function set_ai_agent( string $model_name ): bool {
+		if ( ! isset( $this->supported_agents[ $model_name ] ) ) {
+			return false;
+		}
+
+		$agent_class_name = $this->supported_agents[ $model_name ];
+		$agent            = new $agent_class_name( $this );
+
+		// Check if the agent has a valid API key.
+		if ( '' === $agent->get_api_key() ) {
+			return false;
+		}
+
+		$this->ai_agent = $agent;
+		$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
+
+		return true;
 	}
 
 	/**
@@ -89,17 +139,24 @@ class WP_Performance_Wizard {
 		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
-		// Load the AI Agent.
-		$this->ai_agent = new Performance_Wizard_AI_Agent_Gemini( $this );
+		// Load the $supported_agents, eg. call new Performance_Wizard_AI_Agent_Gemini( $this ) for each agent.
+		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
+			$agent = new $agent_class_name( $this );
+
+			// Set $this->ai_agent if not set already.
+			if ( ! isset( $this->ai_agent ) && '' !== $agent->get_api_key() ) {
+				$this->ai_agent = $agent;
+			}
+		}
 
 		// Ignore WordPress.Security.NonceVerification.Recommended on the next line.
 		if ( ( ! isset( $_GET['page'] ) || 'wp-performance-wizard' !== $_GET['page'] ) && ! wp_is_json_request() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
-		$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
-		$api_key = $this->get_api_key( $this->ai_agent->get_name() );
-		$this->ai_agent->set_api_key( $api_key );
+		if ( null !== $this->ai_agent ) {
+			$this->ai_agent->set_system_instructions( $this->analysis_plan->get_system_instructions() );
+		}
 
 		// Load the REST API handler.
 		new Performance_Wizard_Rest_API( $this );
@@ -115,13 +172,14 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-claude.php';
 	}
 
 
 	/**
 	 * Function to get the api key for a specific AI agent.
 	 *
-	 * The key is stored in a JSON file with the key "apikey"
+	 * The key is stored in a JSON file with the key "apikey".
 	 *
 	 * @param string $agent_name The name of the agent to get the key for.
 	 *
@@ -134,10 +192,10 @@ class WP_Performance_Wizard {
 			return '';
 		}
 		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
-		include_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
 		WP_Filesystem();
 		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
-		return $keydata->apikey;
+		return isset( $keydata->apikey ) ? $keydata->apikey : '';
 	}
 
 	/**
@@ -152,9 +210,9 @@ class WP_Performance_Wizard {
 	/**
 	 * Get the ai agent.
 	 *
-	 * @return Performance_Wizard_AI_Agent_Base The AI agent.
+	 * @return Performance_Wizard_AI_Agent_Base|null The AI agent.
 	 */
-	public function get_ai_agent(): Performance_Wizard_AI_Agent_Base {
+	public function get_ai_agent(): ?Performance_Wizard_AI_Agent_Base {
 		return $this->ai_agent;
 	}
 
@@ -165,5 +223,18 @@ class WP_Performance_Wizard {
 	 */
 	public function get_option_name(): string {
 		return $this->option_name;
+	}
+
+	/**
+	 * Get the transient key for storing user's AI model preference.
+	 *
+	 * @param int|null $user_id The user ID. If null, uses current user.
+	 * @return string The transient key.
+	 */
+	public function get_model_preference_transient_key( ?int $user_id = null ): string {
+		if ( null === $user_id ) {
+			$user_id = get_current_user_id();
+		}
+		return 'performance_wizard_selected_model_user_' . $user_id;
 	}
 }
