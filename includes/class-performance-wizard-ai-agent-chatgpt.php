@@ -103,7 +103,7 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 		);
 
 		$data = array(
-			'model'       => 'gpt-4', // Using GPT-4 for better performance analysis capabilities.
+			'model'       => 'gpt-3.5-turbo', // Use the latest free model.
 			'messages'    => $messages,
 			'temperature' => 0.7,
 			'max_tokens'  => 4000,
