@@ -69,6 +69,17 @@ class Performance_Wizard_Admin_Page {
 		// Add the description.
 		echo '<p>' . esc_html__( 'The Performance Wizard will analyze your site using an AI agent, then make recommendations to improve performance.', 'wp-performance-wizard' ) . '</p>';
 
+		// Add layout toggle
+		echo '<div class="layout-toggle">';
+		echo '<label>' . esc_html__( 'Layout:', 'wp-performance-wizard' ) . '</label> ';
+		echo '<button id="layout-default" class="layout-btn active" data-layout="default">' . esc_html__( 'Default', 'wp-performance-wizard' ) . '</button>';
+		echo '<button id="layout-sidebar" class="layout-btn" data-layout="sidebar">' . esc_html__( 'Side Panel', 'wp-performance-wizard' ) . '</button>';
+		echo '</div>';
+
+		// Start container wrapper
+		echo '<div id="wp-performance-wizard-container" class="wp-performance-wizard-container">';
+		echo '<div class="wp-performance-wizard-main">';
+
 		// Show model selection or status.
 		$this->render_model_selection();
 
@@ -87,8 +98,16 @@ class Performance_Wizard_Admin_Page {
 		// Add a start button.
 		echo '<p><button id="performance-wizard-start" class="button button-primary">' . esc_html__( 'Start analysis', 'wp-performance-wizard' ) . '</button></p>';
 
-		// Add the terminal.
+		// Close main content div
+		echo '</div>';
+
+		// Add the terminal in sidebar div
+		echo '<div class="wp-performance-wizard-sidebar">';
 		echo '<div id="performance-wizard-terminal"></div>';
+		echo '</div>';
+
+		// Close container wrapper
+		echo '</div>';
 	}
 
 	/**

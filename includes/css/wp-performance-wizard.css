@@ -1,5 +1,10 @@
 #performance-wizard-terminal {
-	margin-right: 20px;
+	margin: 20px;
+	padding: 20px;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	background-color: #f9f9f9;
+	min-height: 400px;
 
 	p, div {
 		font-size: 14px;
@@ -17,15 +22,24 @@
 
 	.info-chip {
 		display: inline-block;
-		padding: 0 12px;
+		padding: 4px 12px;
 		border-radius: 32px;
 		color: white;
+		font-weight: bold;
+		font-size: 12px;
+		margin-bottom: 8px;
 	}
 	.user-chip {
 		background: darkcyan;
 	}
+	.user-chip::before {
+		content: "USER > ";
+	}
 	.agent-chip {
 		background: darkgreen;
+	}
+	.agent-chip::before {
+		content: "AGENT > ";
 	}
 	.step-chip {
 		background: #666;
@@ -71,4 +85,73 @@ button#performance-wizard-ask {
 	width: 80%;
 	float: left;
 	font-size: medium;
+}
+
+.loading-spinner {
+	display: inline-block;
+	font-family: monospace;
+	font-size: 16px;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	25% { transform: rotate(90deg); }
+	50% { transform: rotate(180deg); }
+	75% { transform: rotate(270deg); }
+	100% { transform: rotate(360deg); }
+}
+
+.status-update {
+	background-color: #e7f3ff;
+	border-left: 4px solid #0073aa;
+	padding: 10px;
+	margin: 10px 0;
+	font-style: italic;
+	color: #0073aa;
+}
+
+/* Side panel option */
+.wp-performance-wizard-container {
+	display: block; /* Default to block layout */
+}
+
+.wp-performance-wizard-container.sidebar-layout {
+	display: flex !important;
+	gap: 20px;
+}
+
+.wp-performance-wizard-main {
+	flex: 1;
+}
+
+.sidebar-layout .wp-performance-wizard-sidebar {
+	width: 400px;
+	min-width: 400px;
+}
+
+.sidebar-layout .wp-performance-wizard-sidebar #performance-wizard-terminal {
+	position: sticky;
+	top: 32px;
+	max-height: calc(100vh - 80px);
+	overflow-y: auto;
+}
+
+.layout-toggle {
+	margin: 10px 0;
+}
+
+.layout-toggle button {
+	margin-right: 10px;
+	padding: 5px 10px;
+	border: 1px solid #ccc;
+	background: white;
+	cursor: pointer;
+	border-radius: 3px;
+}
+
+.layout-toggle button.active {
+	background: #0073aa;
+	color: white;
+	border-color: #0073aa;
 }
