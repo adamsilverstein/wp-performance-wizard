@@ -46,7 +46,7 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 	 */
 	public function send_prompt( string $prompt, int $current_step, array $previous_steps, bool $additional_questions ): string {
 		if ( $additional_questions ) {
-			$prompt .= PHP_EOL . $this->getAdditionalQuestionsPrompt();
+			$prompt .= PHP_EOL . $this->get_additional_questions_prompt();
 		}
 		return $this->send_prompts( array( $prompt ), $current_step, $previous_steps, $additional_questions );
 	}
@@ -67,7 +67,7 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 
 		$messages = array();
 
-		// Add system instruction as the first message
+		// Add system instruction as the first message.
 		if ( '' !== $system_instruction ) {
 			$messages[] = array(
 				'role'    => 'system',
@@ -75,7 +75,7 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 			);
 		}
 
-		// Add previous conversation history
+		// Add previous conversation history.
 		$max_steps = $current_step;
 		for ( $i = 1; $i < $max_steps; $i++ ) {
 			if ( ! isset( $previous_steps[ $i ] ) ) {
@@ -96,14 +96,14 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 			}
 		}
 
-		// Add current prompts
+		// Add current prompts.
 		$messages[] = array(
 			'role'    => 'user',
 			'content' => implode( PHP_EOL, $prompts ),
 		);
 
 		$data = array(
-			'model'       => 'gpt-4', // Using GPT-4 for better performance analysis capabilities
+			'model'       => 'gpt-4', // Using GPT-4 for better performance analysis capabilities.
 			'messages'    => $messages,
 			'temperature' => 0.7,
 			'max_tokens'  => 4000,
@@ -136,7 +136,7 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 		$response_body = wp_remote_retrieve_body( $response );
 		$response_data = json_decode( $response_body, true );
 
-		// Check if we have a valid response structure
+		// Check if we have a valid response structure.
 		if ( isset( $response_data['choices'][0]['message']['content'] ) ) {
 			return $response_data['choices'][0]['message']['content'];
 		}
@@ -225,7 +225,7 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 			exit;
 		}
 
-		// Validate API key format - OpenAI keys typically start with 'sk-'
+		// Validate API key format - OpenAI keys typically start with 'sk-'.
 		if ( '' === $api_key || strlen( $api_key ) < 10 ) {
 			wp_safe_redirect( add_query_arg( array( 'info' => 'invalid_key' ), $url ) );
 			exit;
@@ -243,12 +243,5 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 			wp_safe_redirect( add_query_arg( array( 'info' => 'exception' ), $url ) );
 		}
 		exit;
-	}
-
-	/**
-	 * Request additional questions from the AI agent.
-	 */
-	public function getAdditionalQuestionsPrompt(): string {
-		return 'Finally, based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: "<button class=\"wp-wizard-follow-up-question\">What is the best way to optimize my LCP image?</button>"';
 	}
 }

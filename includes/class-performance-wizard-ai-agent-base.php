@@ -338,6 +338,15 @@ class Performance_Wizard_AI_Agent_Base {
 	}
 
 	/**
+	 * Request additional questions from the AI agent.
+	 *
+	 * @return string The additional questions prompt.
+	 */
+	protected function get_additional_questions_prompt(): string {
+		return 'Finally, based on the data collected and recommendations so far, provide two suggestions for follow up questions that the user could ask to get more information or further recommendations. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example: "<button class=\"wp-wizard-follow-up-question\">What is the best way to optimize my LCP image?</button>"';
+	}
+
+	/**
 	 * Function to load the API key for an agent.
 	 *
 	 * First tries to load from the encrypted option, then falls back to
