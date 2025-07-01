@@ -82,7 +82,7 @@
 			return;
 		}
 
-		echoToTerminal( '## <g>Running analysis with ' + selectedModel + '...</g>' );
+		echoToTerminal( `## <g>Running analysis with ${selectedModel}...</g>` );
 		// Get a description of the next step. Continue until the final step.
 		let complete = false;
 		const maxSteps = 25;
