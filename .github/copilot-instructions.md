@@ -11,5 +11,8 @@
   - Plugins - https://developer.wordpress.org/plugins/
   - WordPress playground - https://developer.wordpress.org/playground/
   - Common APIs - https://developer.wordpress.org/apis/
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
