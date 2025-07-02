@@ -69,6 +69,9 @@ class Performance_Wizard_Admin_Page {
 		// Add the description.
 		echo '<p>' . esc_html__( 'The Performance Wizard will analyze your site using an AI agent, then make recommendations to improve performance.', 'wp-performance-wizard' ) . '</p>';
 
+		// Show model selection or status.
+		$this->render_model_selection();
+
 		echo '<h3>' . esc_html__( 'Select the data sources to use for the analysis:', 'wp-performance-wizard' ) . '</h3>';
 		// Add checkboxes for all of the data sources.
 		$data_sources = $this->wizard->get_analysis_plan()->get_data_sources();
@@ -86,6 +89,70 @@ class Performance_Wizard_Admin_Page {
 
 		// Add the terminal.
 		echo '<div id="performance-wizard-terminal"></div>';
+	}
+
+	/**
+	 * Render the model selection UI or status.
+	 */
+	private function render_model_selection(): void {
+		$available_models = $this->wizard->get_available_models();
+		$model_count      = count( $available_models );
+
+		if ( 0 === $model_count ) {
+			echo '<div class="notice notice-warning"><p>';
+			echo esc_html__( 'No AI models are configured. Please configure at least one AI model to use the Performance Wizard.', 'wp-performance-wizard' );
+			echo ' <a href="' . esc_url( admin_url( 'admin.php?page=wp-performance-wizard-gemini' ) ) . '">' . esc_html__( 'Configure Gemini', 'wp-performance-wizard' ) . '</a>';
+			echo ' | <a href="' . esc_url( admin_url( 'admin.php?page=wp-performance-wizard-claude' ) ) . '">' . esc_html__( 'Configure Claude', 'wp-performance-wizard' ) . '</a>';
+			echo '</p></div>';
+			return;
+		}
+
+		echo '<h3>' . esc_html__( 'AI Model Selection:', 'wp-performance-wizard' ) . '</h3>';
+
+		// Get the user's preferred model from transient.
+		$transient_key   = $this->wizard->get_model_preference_transient_key();
+		$preferred_model = get_transient( $transient_key );
+
+		// Validate that the preferred model is still available.
+		if ( false !== $preferred_model && ! isset( $available_models[ $preferred_model ] ) ) {
+			$preferred_model = false;
+		}
+
+		if ( 1 === $model_count ) {
+			// Only one model available, show status text.
+			$model = reset( $available_models );
+			echo '<p>';
+			printf(
+				/* translators: %s: AI model name */
+				esc_html__( 'Using %s for analysis.', 'wp-performance-wizard' ),
+				'<strong>' . esc_html( $model['name'] ) . '</strong>'
+			);
+			echo ' <em>' . esc_html( $model['description'] ) . '</em>';
+			echo '</p>';
+			echo '<input type="hidden" id="performance-wizard-model" value="' . esc_attr( $model['name'] ) . '">';
+		} else {
+			// Multiple models available, show selection dropdown.
+			echo '<p>';
+			echo '<label for="performance-wizard-model">' . esc_html__( 'Select AI model:', 'wp-performance-wizard' ) . '</label> ';
+			echo '<select id="performance-wizard-model" name="performance-wizard-model">';
+
+			foreach ( $available_models as $model ) {
+				$selected = '';
+				if ( false !== $preferred_model && $preferred_model === $model['name'] ) {
+					$selected = ' selected';
+				} elseif ( false === $preferred_model && reset( $available_models ) === $model ) {
+					// If no preference, select the first model.
+					$selected = ' selected';
+				}
+
+				echo '<option value="' . esc_attr( $model['name'] ) . '"' . esc_attr( $selected ) . '>';
+				echo esc_html( $model['name'] ) . ' - ' . esc_html( $model['description'] );
+				echo '</option>';
+			}
+
+			echo '</select>';
+			echo '</p>';
+		}
 	}
 
 	/**
@@ -115,5 +182,14 @@ class Performance_Wizard_Admin_Page {
 
 		// Enqueue the bootstrap script.
 		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'wp-api-fetch', 'marked' ), '1.0.0' . $timestamp_version, array( 'strategy' => 'defer' ) );
+
+		// Localize script with nonce for AJAX requests.
+		wp_localize_script(
+			'wp-performance-wizard',
+			'wpPerformanceWizard',
+			array(
+				'nonce' => wp_create_nonce( 'save_model_preference' ),
+			)
+		);
 	}
 }

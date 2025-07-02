@@ -4,6 +4,7 @@ parameters:
 		- wp-performance-wizard.php
 		- includes/
 	phpVersion: 70400
+	ignoreErrors:
 	bootstrapFiles:
 		- wp-performance-wizard.php
 	excludePaths:
