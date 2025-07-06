@@ -6,6 +6,24 @@
 
 	console.log( 'Ready' );
 
+	// Handle layout toggle
+	document.addEventListener( 'click', function( event ) {
+		if ( event.target.classList.contains( 'layout-btn' ) ) {
+			const layout = event.target.dataset.layout;
+			const container = document.getElementById( 'wp-performance-wizard-container' );
+			
+			// Update button states
+			document.querySelectorAll( '.layout-btn' ).forEach( btn => btn.classList.remove( 'active' ) );
+			event.target.classList.add( 'active' );
+			
+			if ( layout === 'sidebar' ) {
+				container.classList.add( 'sidebar-layout' );
+			} else {
+				container.classList.remove( 'sidebar-layout' );
+			}
+		}
+	} );
+
 	// Add event listener for model selection changes to save preference.
 	const modelSelect = document.getElementById( 'performance-wizard-model' );
 	if ( modelSelect && modelSelect.tagName === 'SELECT' ) {
@@ -97,7 +115,7 @@
 			}
 			if ( 'performance-wizard-ask' === event.target.id ) {
 				const question = document.getElementById( 'performance-wizard-question' ).value;
-				echoToTerminal( '<div class="info-chip user-chip">USER</div><br>' );
+				echoToTerminal( '<div class="info-chip user-chip"></div><br>' );
 				echoToTerminal( '<div class="k"><br>' + question + '</div>' );
 				// Remove the question field and buttons.
 				document.getElementById( 'wp-performance-wizard-follow-up' ).remove();
@@ -108,28 +126,53 @@
 					button.remove();
 				} );
 
+				// Show spinner while processing
+				showSpinner( 'Processing your question...' );
+
 				// Ask the model for additional questions.
 				// Send the question to the server.
 				const selectedModel = getSelectedModel();
 				results = await runPerfomanceWizardPrompt( question, step, true, selectedModel );
-				echoToTerminal( '<br><div class="info-chip agent-chip">AGENT</div><br>')
-				echoToTerminal( '<br><div class="dc">' + results + ' </div>' );
+				
+				// Hide spinner and show results
+				hideSpinner();
+				echoToTerminal( '<br><div class="info-chip agent-chip"></div><br>')
+				
+				// Use streaming effect for AI responses
+				const responseDiv = document.createElement( 'div' );
+				responseDiv.className = 'dc';
+				responseDiv.innerHTML = '<br>';
+				terminal.appendChild( responseDiv );
+				await streamText( responseDiv, '<br>' + results + ' ', 25 );
+				
 				addFollowUpQuestion();
 			}
 		} );
 
 		function addFollowUpQuestion() {
-			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip">USER</div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
+			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip"></div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
 		}
 
-		function outputFormattedResults( result ) {
+		async function outputFormattedResults( result ) {
 			// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
 			if ( result.startsWith( '>Q: ' ) ) {
-				echoToTerminal( '<div class="info-chip user-chip">USER</div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
+				echoToTerminal( '<div class="info-chip user-chip"></div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 			}
 			// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
 			else if ( result.startsWith( '>A: ' ) ) {
-				echoToTerminal( '<div class="info-chip agent-chip">AGENT</div><br><div class="dc"><br>' + result.replace( '>A: ', '' ) + '</div>' );
+				echoToTerminal( '<div class="info-chip agent-chip"></div><br>' );
+				
+				// Use streaming effect for AI responses
+				const responseContent = result.replace( '>A: ', '' );
+				if ( responseContent.length > 100 ) {
+					const responseDiv = document.createElement( 'div' );
+					responseDiv.className = 'dc';
+					responseDiv.innerHTML = '<br>';
+					terminal.appendChild( responseDiv );
+					await streamText( responseDiv, '<br>' + responseContent, 25 );
+				} else {
+					echoToTerminal( '<div class="dc"><br>' + responseContent + '</div>' );
+				}
 			}
 		}
 
@@ -153,30 +196,158 @@
 				case 'run_action':
 					echoToTerminal( '<br><div class="info-chip step-chip">Collecting Data</div><br>' );
 					echoStep( promptForDisplay, nextStep.title );
+					
+					// Add status updates based on the step title
+					if ( nextStep.title.includes( 'Lighthouse' ) ) {
+						showStatusUpdate( 'Running Lighthouse analysis - this may take 30-45 seconds as we analyze your site\'s performance metrics...' );
+					} else if ( nextStep.title.includes( 'Theme' ) || nextStep.title.includes( 'Plugin' ) ) {
+						showStatusUpdate( 'Gathering plugin and theme data from WordPress.org API - this may take 10-15 seconds...' );
+					} else if ( nextStep.title.includes( 'Script' ) ) {
+						showStatusUpdate( 'Analyzing JavaScript performance and attribution data...' );
+					} else if ( nextStep.title.includes( 'HTML' ) ) {
+						showStatusUpdate( 'Fetching and analyzing your site\'s HTML structure...' );
+					}
+					
+					// Show spinner during data collection
+					showSpinner( 'Collecting ' + nextStep.title + ' data...' );
+					
 					results = await runPerformanceWizardNextStep( step, selectedModel );
+					
+					// Hide spinner before showing results
+					hideSpinner();
+					
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
 						const result = results[ resultIndex ];
 						echoToTerminal();
-						outputFormattedResults( result );
+						await outputFormattedResults( result );
 					};
 
 					step++;
 					break;
 				case 'prompt':
 					step++
-					echoToTerminal( '<br><div class="info-chip user-chip">USER</div><br>' );
+					echoToTerminal( '<br><div class="info-chip user-chip"></div><br>' );
 					echoToTerminal( '<div class="k"><br>' + promptForDisplay  + '</div>' );
+					
+					// Show spinner while AI processes the prompt
+					showSpinner( 'AI is analyzing and generating response...' );
+					
 					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step, false, selectedModel );
+					
+					// Hide spinner before showing results
+					hideSpinner();
+					
 					echoToTerminal();
-					echoToTerminal( result );
+					
+					// Use streaming effect for longer AI responses
+					if ( result && result.length > 100 ) {
+						const responseDiv = document.createElement( 'div' );
+						terminal.appendChild( responseDiv );
+						await streamText( responseDiv, marked.marked( result ), 20 );
+					} else {
+						echoToTerminal( result );
+					}
 
 					break;
 				case 'continue':
 					step++;
 					break;
 			}
+		}
+	}
+
+	/**
+	 * Show a loading spinner with optional message
+	 */
+	function showSpinner( message = 'Processing...' ) {
+		const spinnerId = 'wp-performance-wizard-spinner';
+		// Remove existing spinner if present
+		const existingSpinner = document.getElementById( spinnerId );
+		if ( existingSpinner ) {
+			existingSpinner.remove();
+		}
+		
+		const spinnerDiv = document.createElement( 'div' );
+		spinnerDiv.id = spinnerId;
+		spinnerDiv.innerHTML = '<div class="loading-spinner">⟲</div> ' + message;
+		terminal.appendChild( spinnerDiv );
+		
+		return spinnerId;
+	}
+
+	/**
+	 * Hide the loading spinner
+	 */
+	function hideSpinner() {
+		const spinner = document.getElementById( 'wp-performance-wizard-spinner' );
+		if ( spinner ) {
+			spinner.remove();
+		}
+	}
+
+	/**
+	 * Show a status update to the user
+	 */
+	function showStatusUpdate( message ) {
+		const statusDiv = document.createElement( 'div' );
+		statusDiv.className = 'status-update';
+		statusDiv.innerHTML = '💡 ' + message;
+		terminal.appendChild( statusDiv );
+	}
+
+	/**
+	 * Simulate streaming text effect by typing out characters
+	 */
+	function streamText( element, text, speed = 30 ) {
+		return new Promise( ( resolve ) => {
+			let index = 0;
+			element.innerHTML = '';
+			
+			const typeChar = () => {
+				if ( index < text.length ) {
+					element.innerHTML += text.charAt( index );
+					index++;
+					setTimeout( typeChar, speed );
+				} else {
+					resolve();
+				}
+			};
+			
+			typeChar();
+		} );
+	}
+
+	/**
+	 * Echo out a message with optional streaming effect
+	 */
+	function echoToTerminalWithStreaming( message, shouldStream = false ) {
+		if ( false === message ) {
+			const br = document.createElement( 'br' );
+			terminal.appendChild( br );
+			return Promise.resolve();
+		}
+		
+		const div = document.createElement( 'div' );
+		console.log( message );
+		
+		if ( shouldStream && message.length > 50 ) {
+			// For longer messages, use streaming effect
+			div.innerHTML = marked.marked( '' );
+			terminal.appendChild( div );
+			
+			const textContent = marked.marked( message );
+			const tempDiv = document.createElement( 'div' );
+			tempDiv.innerHTML = textContent;
+			const plainText = tempDiv.textContent || tempDiv.innerText || '';
+			
+			return streamText( div, textContent, 20 );
+		} else {
+			// For short messages, show immediately
+			div.innerHTML = marked.marked( message );
+			terminal.appendChild( div );
+			return Promise.resolve();
 		}
 	}
 
