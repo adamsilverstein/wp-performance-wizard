@@ -123,22 +123,40 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 					'role' => 'user',
 				);
 			} else {
-				// Upload conversation history as file.
-				$file_uri = $this->upload_conversation_file( $conversation_contents );
-				if ( false !== $file_uri ) {
-					$this->cache_file_uri( $conversation_hash, $file_uri );
-					$contents[] = array(
-						'parts' => array(
-							'file_data' => array(
-								'file_uri' => $file_uri,
-								'mime_type' => 'application/json',
-							),
-						),
-						'role' => 'user',
-					);
-				} else {
-					// Fall back to regular method if file upload fails.
+				// Check if another process is already uploading the same conversation.
+				$upload_lock_key = 'gemini_upload_lock_' . $conversation_hash;
+				$upload_in_progress = get_transient( $upload_lock_key );
+				
+				if ( false !== $upload_in_progress ) {
+					// Another upload is in progress, fall back to direct method.
 					$contents = $conversation_contents;
+					$use_file_upload = false;
+				} else {
+					// Set upload lock to prevent duplicate uploads.
+					set_transient( $upload_lock_key, true, 300 ); // 5 minute lock
+					
+					// Upload conversation history as file.
+					$file_uri = $this->upload_conversation_file( $conversation_contents );
+					
+					// Clear the lock regardless of success or failure.
+					delete_transient( $upload_lock_key );
+					
+					if ( false !== $file_uri ) {
+						$this->cache_file_uri( $conversation_hash, $file_uri );
+						$contents[] = array(
+							'parts' => array(
+								'file_data' => array(
+									'file_uri' => $file_uri,
+									'mime_type' => 'application/json',
+								),
+							),
+							'role' => 'user',
+						);
+					} else {
+						// Fall back to regular method if file upload fails.
+						$contents = $conversation_contents;
+						$use_file_upload = false;
+					}
 				}
 			}
 		} else {
@@ -166,7 +184,11 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 
 		// Log the size of the data payload for reference.
 		$payload_size = strlen( wp_json_encode( $data ) );
-		error_log( 'Gemini data payload size: ' . $payload_size . ( $use_file_upload ? ' (using file upload)' : ' (direct)' ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		$method_desc = $use_file_upload ? 'using file upload' : 'direct';
+		if ( ! $use_file_upload && $estimated_size > self::FILE_UPLOAD_THRESHOLD ) {
+			$method_desc = 'direct (file upload failed)';
+		}
+		error_log( 'Gemini data payload size: ' . $payload_size . ' bytes (' . $method_desc . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 		$response = wp_remote_post(
 			add_query_arg( $query_params, $api_base ),
@@ -201,7 +223,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @param array $contents The conversation contents to upload.
 	 * @return string|false The file URI if successful, false on failure.
 	 */
-	private function upload_conversation_file( array $contents ): string|false {
+	private function upload_conversation_file( array $contents ) {
 		$api_base = 'https://generativelanguage.googleapis.com/v1beta/files';
 		$query_params = array(
 			'key' => $this->get_api_key(),
@@ -209,7 +231,10 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 
 		// Create a JSON file with the conversation history.
 		$file_content = wp_json_encode( array( 'contents' => $contents ) );
-		$file_name = 'conversation_' . time() . '_' . wp_generate_password( 8, false );
+		
+		// Use hash-based filename to make it more predictable and avoid duplicates.
+		$content_hash = $this->get_conversation_hash( $contents );
+		$file_name = 'conversation_' . substr( $content_hash, 0, 16 ) . '_' . time();
 
 		// Create multipart form data for file upload.
 		$boundary = wp_generate_password( 16, false );
@@ -235,8 +260,13 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 			)
 		);
 
-		if ( is_wp_error( $response ) || 200 !== $response['response']['code'] ) {
-			error_log( 'Gemini file upload failed: ' . wp_json_encode( $response ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		if ( is_wp_error( $response ) ) {
+			error_log( 'Gemini file upload failed (WP Error): ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return false;
+		}
+
+		if ( 200 !== $response['response']['code'] ) {
+			error_log( 'Gemini file upload failed (HTTP ' . $response['response']['code'] . '): ' . wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return false;
 		}
 
@@ -247,6 +277,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 			return $response_data['file']['uri'];
 		}
 
+		error_log( 'Gemini file upload failed: Invalid response format' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		return false;
 	}
 
@@ -256,7 +287,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @param string $conversation_hash Hash of the conversation contents.
 	 * @return string|false The cached file URI or false if not found.
 	 */
-	private function get_cached_file_uri( string $conversation_hash ): string|false {
+	private function get_cached_file_uri( string $conversation_hash ) {
 		$cache_key = 'gemini_file_' . $conversation_hash;
 		$cached_data = get_transient( $cache_key );
 
@@ -297,14 +328,43 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * This method should be called periodically to prevent accumulation.
 	 */
 	public function cleanup_old_files(): void {
-		// Note: Actual file deletion would require additional API calls to the Files API
-		// For now, we rely on the transient expiration to clean up cache references.
-		// In a production implementation, you would also call the Files API to delete expired files.
+		global $wpdb;
 		
-		// Clean up expired transients (WordPress handles this automatically)
-		// But we could add custom logic here if needed.
+		// Clean up expired file cache transients.
+		// WordPress automatically handles transient expiration, but we can also manually clean up.
+		$transient_keys = $wpdb->get_col(
+			"SELECT option_name FROM $wpdb->options WHERE option_name LIKE '_transient_gemini_file_%'"
+		);
 		
-		error_log( 'Gemini file cleanup completed' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		$cleaned_count = 0;
+		foreach ( $transient_keys as $transient_key ) {
+			$key = str_replace( '_transient_', '', $transient_key );
+			if ( false === get_transient( $key ) ) {
+				delete_option( $transient_key );
+				delete_option( '_transient_timeout_' . $key );
+				$cleaned_count++;
+			}
+		}
+		
+		// Also clean up upload locks that may have been left behind.
+		$lock_keys = $wpdb->get_col(
+			"SELECT option_name FROM $wpdb->options WHERE option_name LIKE '_transient_gemini_upload_lock_%'"
+		);
+		
+		foreach ( $lock_keys as $lock_key ) {
+			$key = str_replace( '_transient_', '', $lock_key );
+			if ( false === get_transient( $key ) ) {
+				delete_option( $lock_key );
+				delete_option( '_transient_timeout_' . $key );
+				$cleaned_count++;
+			}
+		}
+		
+		error_log( 'Gemini file cleanup completed: ' . $cleaned_count . ' expired entries removed' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		
+		// Note: Actual file deletion from the Gemini Files API would require additional API calls
+		// This is not implemented here as it would require tracking all uploaded file URIs
+		// and making DELETE requests to the Files API.
 	}
 
 
@@ -379,9 +439,6 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 		// Add a submit button.
 		echo '<input type="submit" class="button button-primary" value="Save">';
 		echo '</form>';
-		if ( '' !== $api_key ) {
-			$default_api_key = str_repeat( '*', strlen( $api_key ) );
-		}
 	}
 
 	/**
