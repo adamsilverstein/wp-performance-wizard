@@ -32,14 +32,14 @@
 	.user-chip {
 		background: darkcyan;
 	}
-	.user-chip::before {
-		content: "USER > ";
+	.user-chip::after {
+		content: " >";
 	}
 	.agent-chip {
 		background: darkgreen;
 	}
-	.agent-chip::before {
-		content: "AGENT > ";
+	.agent-chip::after {
+		content: " >";
 	}
 	.step-chip {
 		background: #666;
@@ -135,6 +135,24 @@ button#performance-wizard-ask {
 	top: 32px;
 	max-height: calc(100vh - 80px);
 	overflow-y: auto;
+}
+
+/* Stack panes on narrower admin viewports so the fixed-width sidebar
+ * does not force horizontal overflow. */
+@media (max-width: 1100px) {
+	.wp-performance-wizard-container.sidebar-layout {
+		display: block !important;
+	}
+
+	.sidebar-layout .wp-performance-wizard-sidebar {
+		width: auto;
+		min-width: 0;
+	}
+
+	.sidebar-layout .wp-performance-wizard-sidebar #performance-wizard-terminal {
+		position: static;
+		max-height: none;
+	}
 }
 
 .layout-toggle {
