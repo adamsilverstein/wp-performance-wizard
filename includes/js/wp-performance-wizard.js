@@ -115,7 +115,7 @@
 			}
 			if ( 'performance-wizard-ask' === event.target.id ) {
 				const question = document.getElementById( 'performance-wizard-question' ).value;
-				echoToTerminal( '<div class="info-chip user-chip"></div><br>' );
+				echoToTerminal( '<div class="info-chip user-chip" aria-label="User">USER</div><br>' );
 				echoToTerminal( '<div class="k"><br>' + question + '</div>' );
 				// Remove the question field and buttons.
 				document.getElementById( 'wp-performance-wizard-follow-up' ).remove();
@@ -129,47 +129,52 @@
 				// Show spinner while processing
 				showSpinner( 'Processing your question...' );
 
-				// Ask the model for additional questions.
-				// Send the question to the server.
-				const selectedModel = getSelectedModel();
-				results = await runPerfomanceWizardPrompt( question, step, true, selectedModel );
-				
-				// Hide spinner and show results
-				hideSpinner();
-				echoToTerminal( '<br><div class="info-chip agent-chip"></div><br>')
-				
-				// Use streaming effect for AI responses
+				let results;
+				try {
+					// Ask the model for additional questions.
+					// Send the question to the server.
+					const selectedModel = getSelectedModel();
+					results = await runPerfomanceWizardPrompt( question, step, true, selectedModel );
+				} finally {
+					hideSpinner();
+				}
+
+				echoToTerminal( '<br><div class="info-chip agent-chip" aria-label="Agent">AGENT</div><br>' );
+
+				// Use streaming effect for AI responses, routed through the
+				// same Markdown renderer used for non-streamed replies so the
+				// output looks identical regardless of length.
 				const responseDiv = document.createElement( 'div' );
 				responseDiv.className = 'dc';
-				responseDiv.innerHTML = '<br>';
 				terminal.appendChild( responseDiv );
-				await streamText( responseDiv, '<br>' + results + ' ', 25 );
-				
+				await streamText( responseDiv, results || '', 25 );
+
 				addFollowUpQuestion();
 			}
 		} );
 
 		function addFollowUpQuestion() {
-			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip"></div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
+			echoToTerminal( '<div id="wp-performance-wizard-follow-up"><div class="info-chip user-chip" aria-label="User">USER</div><br><input type="text" id="performance-wizard-question" placeholder="Ask a question..."><button id="performance-wizard-ask">Ask</button></div>' );
 		}
 
 		async function outputFormattedResults( result ) {
 			// If the results start with "Q: ", then it is a question. Remove that part and format as a question.
 			if ( result.startsWith( '>Q: ' ) ) {
-				echoToTerminal( '<div class="info-chip user-chip"></div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
+				echoToTerminal( '<div class="info-chip user-chip" aria-label="User">USER</div><br><div class="k"><br>' + result.replace( '>Q: ', '' ) + '</div>' );
 			}
 			// Similarly, results starting with ">A: " are answers. Remove that part format as an answer.
 			else if ( result.startsWith( '>A: ' ) ) {
-				echoToTerminal( '<div class="info-chip agent-chip"></div><br>' );
-				
-				// Use streaming effect for AI responses
+				echoToTerminal( '<div class="info-chip agent-chip" aria-label="Agent">AGENT</div><br>' );
+
+				// Use streaming effect for AI responses. Both streamed and
+				// non-streamed branches go through the Markdown renderer so
+				// formatting is consistent regardless of response length.
 				const responseContent = result.replace( '>A: ', '' );
 				if ( responseContent.length > 100 ) {
 					const responseDiv = document.createElement( 'div' );
 					responseDiv.className = 'dc';
-					responseDiv.innerHTML = '<br>';
 					terminal.appendChild( responseDiv );
-					await streamText( responseDiv, '<br>' + responseContent, 25 );
+					await streamText( responseDiv, responseContent, 25 );
 				} else {
 					echoToTerminal( '<div class="dc"><br>' + responseContent + '</div>' );
 				}
@@ -210,12 +215,13 @@
 					
 					// Show spinner during data collection
 					showSpinner( 'Collecting ' + nextStep.title + ' data...' );
-					
-					results = await runPerformanceWizardNextStep( step, selectedModel );
-					
-					// Hide spinner before showing results
-					hideSpinner();
-					
+
+					try {
+						results = await runPerformanceWizardNextStep( step, selectedModel );
+					} finally {
+						hideSpinner();
+					}
+
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 					// Iterate thru all of the results returned in the response
 					for( const resultIndex in results ) {
@@ -228,26 +234,31 @@
 					break;
 				case 'prompt':
 					step++
-					echoToTerminal( '<br><div class="info-chip user-chip"></div><br>' );
+					echoToTerminal( '<br><div class="info-chip user-chip" aria-label="User">USER</div><br>' );
 					echoToTerminal( '<div class="k"><br>' + promptForDisplay  + '</div>' );
-					
+
 					// Show spinner while AI processes the prompt
 					showSpinner( 'AI is analyzing and generating response...' );
-					
-					result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step, false, selectedModel );
-					
-					// Hide spinner before showing results
-					hideSpinner();
-					
-					echoToTerminal();
-					
-					// Use streaming effect for longer AI responses
+
+					let result;
+					try {
+						result = await runPerfomanceWizardPrompt( nextStep.user_prompt, step, false, selectedModel );
+					} finally {
+						hideSpinner();
+					}
+
+					echoToTerminal( '<br><div class="info-chip agent-chip" aria-label="Agent">AGENT</div><br>' );
+
+					// Use streaming effect for longer AI responses. Both
+					// branches go through the Markdown renderer so formatting
+					// is consistent regardless of response length.
 					if ( result && result.length > 100 ) {
 						const responseDiv = document.createElement( 'div' );
+						responseDiv.className = 'dc';
 						terminal.appendChild( responseDiv );
-						await streamText( responseDiv, marked.marked( result ), 20 );
+						await streamText( responseDiv, result, 20 );
 					} else {
-						echoToTerminal( result );
+						echoToTerminal( '<div class="dc">' + ( result || '' ) + '</div>' );
 					}
 
 					break;
@@ -298,23 +309,33 @@
 	}
 
 	/**
-	 * Simulate streaming text effect by typing out characters
+	 * Simulate a streaming text effect while keeping Markdown rendering intact.
+	 *
+	 * The accumulated substring is passed through the same Markdown renderer
+	 * used for non-streamed replies on each tick, so formatting (headings,
+	 * lists, links, code) matches the non-streamed path exactly.
+	 *
+	 * @param {HTMLElement} element  Target element to render into.
+	 * @param {string}      markdown Raw Markdown source to stream.
+	 * @param {number}      speed    Milliseconds between characters.
 	 */
-	function streamText( element, text, speed = 30 ) {
+	function streamText( element, markdown, speed = 30 ) {
 		return new Promise( ( resolve ) => {
+			const source = String( markdown || '' );
 			let index = 0;
 			element.innerHTML = '';
-			
+
 			const typeChar = () => {
-				if ( index < text.length ) {
-					element.innerHTML += text.charAt( index );
+				if ( index < source.length ) {
 					index++;
+					element.innerHTML = marked.marked( source.substring( 0, index ) );
 					setTimeout( typeChar, speed );
 				} else {
+					element.innerHTML = marked.marked( source );
 					resolve();
 				}
 			};
-			
+
 			typeChar();
 		} );
 	}
