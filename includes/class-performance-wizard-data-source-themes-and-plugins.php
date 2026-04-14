@@ -24,11 +24,59 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		Lighthouse provides a path to scripts that are causing performance issues and for assets enqueued by plugins, this will usually include the plugin slug as part of the path (typically /wp-content/plugins/{slug}/path...). Use this information to correlate plugins to the assets they enqueue.
 		The plugin meta data returned includes additional quality signals, such as an overall rating, counts of 1-5 star reviews, and fields for support_threads and support_threads_resolved which indicate support responsiveness. Use this information when comparing plugins or considering disabling a plugin.'
 		);
-		$this->set_data_shape( "The returned data for each plugin includes the name, slug, version, author, description, URI  and a field named 'plugin_api_data' which contains the metadata about the plugin from the wordpress.org plugin API. This metadata includes a rating field with an overall rating (0-100) of the plugin, as well as a ratings object with the number of 1 star (worst) thru 5 star (best) reviews, as well as fields for support_threads and support_threads_resolved ." );
+		$this->set_data_shape( "The returned data includes an 'active_theme' object and an 'active_plugins' array. The active_theme object contains name, slug, version, author, description, is_block_theme (boolean indicating Full Site Editing support), and a 'theme_api_data' field with metadata from the wordpress.org theme API. Each entry in active_plugins includes the name, slug, version, author, description, URI and a field named 'plugin_api_data' which contains the metadata about the plugin from the wordpress.org plugin API. This metadata includes a rating field with an overall rating (0-100) of the plugin, as well as a ratings object with the number of 1 star (worst) thru 5 star (best) reviews, as well as fields for support_threads and support_threads_resolved ." );
+	}
+
+	/**
+	 * Helper function to retrieve all of the meta data about the plugin that is available from the wordpress.org plugin REST API.
+	 *
+	 * @param string $slug The slug of the plugin to get the data for.
+	 *
+	 * @return string The meta data about the plugin.
+	 */
+	public function get_plugin_data_from_dotorg_api( string $slug ): string {
+		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
+		$response = wp_remote_get( $api_base . $slug . '.json' );
+
+		// Check for errors.
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+
+		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return '';
+		}
+
+		// Return the data.
+		$results = wp_remote_retrieve_body( $response );
+
+		return $results;
+	}
+
+	/**
+	 * Helper function to retrieve all of the meta data about the theme that is available from the wordpress.org theme REST API.
+	 *
+	 * @param string $slug The slug of the theme to get the data for.
+	 * @return string The meta data about the theme.
+	 */
+	public function get_theme_data_from_dotorg_api( string $slug ): string {
+		$api_base = 'https://api.wordpress.org/themes/info/1.2/?action=theme_information&request[slug]=';
+		$response = wp_remote_get( $api_base . $slug );
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return '';
+		}
+		return wp_remote_retrieve_body( $response );
 	}
 
 	/**
 	 * Get the active theme and plugins data and return in a structured data object.
+	 *
+	 * The returned JSON contains an 'active_theme' object (including wordpress.org
+	 * theme API metadata and a block theme indicator) and an 'active_plugins' array
+	 * with per-plugin metadata augmented by wordpress.org plugin API data.
 	 *
 	 * @return string JSON encoded string of the active theme and plugins data.
 	 */
@@ -52,7 +100,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 				continue;
 			}
 
-			$plugins_data[] = array(
+			$plugin_entry = array(
 				'name'        => $plugin_data['Name'],
 				'slug'        => $plugin_slug,
 				'version'     => $plugin_data['Version'],
@@ -63,44 +111,34 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 
 			// Also, get the data from the Plugin API.
 			$plugin_api_data = $this->get_plugin_data_from_dotorg_api( $plugin_slug );
-
 			if ( '' !== $plugin_api_data ) {
-				$plugins_data['plugin_api_data'] = $plugin_api_data;
+				$plugin_entry['plugin_api_data'] = $plugin_api_data;
 			}
+			$plugins_data[] = $plugin_entry;
 		}
+
+		// Theme slug is usually the stylesheet (directory) name.
+		$theme_slug     = $active_theme->get_stylesheet();
+		$theme_api_data = $this->get_theme_data_from_dotorg_api( $theme_slug );
+
+		// Detect if the theme is a block theme (WP 5.9+).
+		$is_block_theme = function_exists( 'wp_is_block_theme' ) ? wp_is_block_theme() : ( file_exists( get_theme_root() . '/' . $theme_slug . '/theme.json' ) );
+
 		$theme_data = array(
-			'name'        => $active_theme->get( 'Name' ),
-			'version'     => $active_theme->get( 'Version' ),
-			'author'      => $active_theme->get( 'Author' ),
-			'description' => $active_theme->get( 'Description' ),
+			'name'           => $active_theme->get( 'Name' ),
+			'version'        => $active_theme->get( 'Version' ),
+			'author'         => $active_theme->get( 'Author' ),
+			'description'    => $active_theme->get( 'Description' ),
+			'slug'           => $theme_slug,
+			'is_block_theme' => $is_block_theme,
+			'theme_api_data' => $theme_api_data,
 		);
-		$to_return  = array(
+
+		$to_return = array(
 			'active_theme'   => $theme_data,
 			'active_plugins' => $plugins_data,
 		);
 
 		return wp_json_encode( $to_return );
-	}
-
-	/**
-	 * Helper function to retrieve all of the meta data about the plugin that is available from the wordpress.org plugin REST API.
-	 *
-	 * @param string $slug The slug of the plugin to get the data for.
-	 *
-	 * @return string The meta data about the plugin.
-	 */
-	public function get_plugin_data_from_dotorg_api( string $slug ): string {
-		$api_base = 'https://api.wordpress.org/plugins/info/1.0/';
-		$response = wp_remote_get( $api_base . $slug . '.json' );
-
-		// Check for errors.
-		if ( is_wp_error( $response ) ) {
-			return '';
-		}
-
-		// Return the data.
-		$results = wp_remote_retrieve_body( $response );
-
-		return $results;
 	}
 }
