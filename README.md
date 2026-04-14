@@ -20,7 +20,33 @@ Visit Performance Wizard -> Gemini to enter your API key, or manually create a f
 ```
 ## Usage
 
-After installing and activating the plugin, navigate to the 'Performance Wizard' settings page in your WordPress admin dashboard.  Here, you can enter your API key for the Gemini agent.  You can then initiate a performance analysis of your site. The results and recommendations will be displayed on the same page.
+After installing and activating the plugin, navigate to Performance Wizard -> Gemini in your WordPress admin dashboard.  Here, you can enter your API key for the Gemini agent.  You can then initiate a performance analysis of your site. The results and recommendations will be displayed on the same page.
+
+## Development
+
+### Code Quality
+This project uses automated code quality checks via GitHub Actions:
+
+- **PHPStan**: Static analysis at level 5 with WordPress-specific rules
+- **PHPCS**: WordPress Coding Standards compliance
+- **Multi-PHP Testing**: Compatibility testing across PHP 7.4-8.2
+
+#### Local Development Commands
+```bash
+# Install dependencies
+composer install
+
+# Run coding standards check
+composer run lint
+
+# Run static analysis
+composer run phpstan
+
+# Auto-fix coding standards issues
+composer run format
+```
+
+See [docs/github-actions.md](docs/github-actions.md) for detailed information about the CI/CD setup.
 
 ## Versions
 * 1.3.1 - Added Gemini key entry in admin.
