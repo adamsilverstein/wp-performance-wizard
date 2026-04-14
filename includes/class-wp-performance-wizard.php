@@ -137,6 +137,9 @@ class WP_Performance_Wizard {
 		// Load the wp-admin page.
 		new Performance_Wizard_Admin_Page( $this );
 
+		// Load the settings page.
+		new Performance_Wizard_Settings_Page();
+
 		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
@@ -169,6 +172,7 @@ class WP_Performance_Wizard {
 	private function load_required_files(): void {
 		// Load all required files.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-settings-page.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
