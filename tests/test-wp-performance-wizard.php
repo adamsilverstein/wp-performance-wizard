@@ -1,28 +1,36 @@
 <?php
+/**
+ * Unit tests for WP_Performance_Wizard::get_api_key.
+ *
+ * @package wp-performance-wizard
+ */
 
 use PHPUnit\Framework\TestCase;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', '/' );
+}
+
+require_once dirname( __DIR__ ) . '/includes/class-wp-performance-wizard.php';
+
 class WP_Performance_Wizard_Test extends TestCase {
 
-    public function testGetApiKey() {
-        global \$wp_filesystem;
+	public function testGetApiKey(): void {
+		global $wp_filesystem;
 
-        define('ABSPATH', '/');
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        \$wp_filesystem = \$this->createMock('WP_Filesystem_Base');
-        \$GLOBALS['wp_filesystem'] = \$wp_filesystem;
+		$wp_filesystem = $this->createMock( 'WP_Filesystem_Base' );
 
-        \$mock_key_data = '{"apikey": "test_api_key"}';
+		$mock_key_data = '{"apikey": "test_api_key"}';
 
-        \$wp_filesystem->method('get_contents')
-            ->willReturn(\$mock_key_data);
+		$wp_filesystem->method( 'get_contents' )
+			->willReturn( $mock_key_data );
 
-        \$pw = new WP_Performance_Wizard();
-        \$api_key = \$pw->get_api_key('Gemini');
+		$pw      = new WP_Performance_Wizard();
+		$api_key = $pw->get_api_key( 'Gemini' );
 
-        \$this->assertEquals('test_api_key', \$api_key);
+		$this->assertEquals( 'test_api_key', $api_key );
 
-        \$api_key_empty = \$pw->get_api_key('');
-        \$this->assertEquals('', \$api_key_empty);
-    }
+		$api_key_empty = $pw->get_api_key( '' );
+		$this->assertEquals( '', $api_key_empty );
+	}
 }
