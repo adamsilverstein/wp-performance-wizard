@@ -72,8 +72,8 @@ class Performance_Wizard_Admin_Page {
 		// Add layout toggle.
 		echo '<div class="layout-toggle">';
 		echo '<label>' . esc_html__( 'Layout:', 'wp-performance-wizard' ) . '</label> ';
-		echo '<button id="layout-default" class="layout-btn active" data-layout="default">' . esc_html__( 'Default', 'wp-performance-wizard' ) . '</button>';
-		echo '<button id="layout-sidebar" class="layout-btn" data-layout="sidebar">' . esc_html__( 'Side Panel', 'wp-performance-wizard' ) . '</button>';
+		echo '<button type="button" id="layout-default" class="layout-btn active" data-layout="default">' . esc_html__( 'Default', 'wp-performance-wizard' ) . '</button>';
+		echo '<button type="button" id="layout-sidebar" class="layout-btn" data-layout="sidebar">' . esc_html__( 'Side Panel', 'wp-performance-wizard' ) . '</button>';
 		echo '</div>';
 
 		// Start container wrapper.

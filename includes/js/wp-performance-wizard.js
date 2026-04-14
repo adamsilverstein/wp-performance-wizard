@@ -4,8 +4,6 @@
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
-	console.log( 'Ready' );
-
 	// Handle layout toggle
 	document.addEventListener( 'click', function( event ) {
 		if ( event.target.classList.contains( 'layout-btn' ) ) {
@@ -33,7 +31,7 @@
 	}
 
 	// Wait until the performance-wizard-start button has been click, then proceed with analysis.
-	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function() {
+	document.getElementById( 'performance-wizard-start' ).addEventListener( 'click', function( event ) {
 		// @todo strings should be localized.
 		// Collect the checkbox data from performance-wizard-data-source class checkboxes.
 		const dataSources = document.querySelectorAll( '.performance-wizard-data-source' );
@@ -45,6 +43,11 @@
 				checkedDataSources.push( dataSource.value );
 			}
 		} );
+
+		// Disable so a second click cannot stack another analysis run (and
+		// another terminal click listener inside runAnalysis) on top of the
+		// first.
+		event.target.disabled = true;
 
 		// Run the analysis....
 		runAnalysis( checkedDataSources );
@@ -183,8 +186,7 @@
 
 		while ( ! complete && step <= maxSteps ) {
 			const nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
-			console.log( nextStep );
-			console.log( dataSources );
+			let results;
 			// If the next step isn't in the checked data sources, skip it.
 			if ( ! dataSources.includes( nextStep.title ) ) {
 				step++;
@@ -322,14 +324,15 @@
 	function streamText( element, markdown, speed = 30 ) {
 		return new Promise( ( resolve ) => {
 			const source = String( markdown || '' );
-			let index = 0;
+			const chunk  = 5; // Re-render every N chars to avoid O(n^2) full Markdown parses on long responses.
+			let index    = 0;
 			element.innerHTML = '';
 
 			const typeChar = () => {
 				if ( index < source.length ) {
-					index++;
+					index = Math.min( index + chunk, source.length );
 					element.innerHTML = marked.marked( source.substring( 0, index ) );
-					setTimeout( typeChar, speed );
+					setTimeout( typeChar, speed * chunk );
 				} else {
 					element.innerHTML = marked.marked( source );
 					resolve();
@@ -338,38 +341,6 @@
 
 			typeChar();
 		} );
-	}
-
-	/**
-	 * Echo out a message with optional streaming effect
-	 */
-	function echoToTerminalWithStreaming( message, shouldStream = false ) {
-		if ( false === message ) {
-			const br = document.createElement( 'br' );
-			terminal.appendChild( br );
-			return Promise.resolve();
-		}
-		
-		const div = document.createElement( 'div' );
-		console.log( message );
-		
-		if ( shouldStream && message.length > 50 ) {
-			// For longer messages, use streaming effect
-			div.innerHTML = marked.marked( '' );
-			terminal.appendChild( div );
-			
-			const textContent = marked.marked( message );
-			const tempDiv = document.createElement( 'div' );
-			tempDiv.innerHTML = textContent;
-			const plainText = tempDiv.textContent || tempDiv.innerText || '';
-			
-			return streamText( div, textContent, 20 );
-		} else {
-			// For short messages, show immediately
-			div.innerHTML = marked.marked( message );
-			terminal.appendChild( div );
-			return Promise.resolve();
-		}
 	}
 
 	/**
@@ -396,7 +367,6 @@
 			return;
 		}
 		const div = document.createElement( 'div' );
-		console.log( message );
 		div.innerHTML = marked.marked( message );
 		terminal.appendChild( div );
 	}

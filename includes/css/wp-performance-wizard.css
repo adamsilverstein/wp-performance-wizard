@@ -117,7 +117,7 @@ button#performance-wizard-ask {
 }
 
 .wp-performance-wizard-container.sidebar-layout {
-	display: flex !important;
+	display: flex;
 	gap: 20px;
 }
 
@@ -141,7 +141,7 @@ button#performance-wizard-ask {
  * does not force horizontal overflow. */
 @media (max-width: 1100px) {
 	.wp-performance-wizard-container.sidebar-layout {
-		display: block !important;
+		display: block;
 	}
 
 	.sidebar-layout .wp-performance-wizard-sidebar {
