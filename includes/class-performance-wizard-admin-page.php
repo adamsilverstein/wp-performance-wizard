@@ -75,8 +75,13 @@ class Performance_Wizard_Admin_Page {
 		echo '<h3>' . esc_html__( 'Select the data sources to use for the analysis:', 'wp-performance-wizard' ) . '</h3>';
 		// Add checkboxes for all of the data sources.
 		$data_sources = $this->wizard->get_analysis_plan()->get_data_sources();
+		$settings_url = admin_url( 'admin.php?page=wp-performance-wizard-settings' );
 		foreach ( $data_sources as $data_source ) {
-			echo '<label><input type="checkbox" class="performance-wizard-data-source" name="data_source" value="' . esc_attr( $data_source['name'] ) . '" checked>' . esc_html( $data_source['name'] ) . '</label><br>';
+			echo '<label><input type="checkbox" class="performance-wizard-data-source" name="data_source" value="' . esc_attr( $data_source['name'] ) . '" checked>' . esc_html( $data_source['name'] ) . '</label>';
+			if ( 'Themes and Plugins' === $data_source['name'] ) {
+				echo ' <a href="' . esc_url( $settings_url ) . '">' . esc_html__( '(Settings)', 'wp-performance-wizard' ) . '</a>';
+			}
+			echo '<br>';
 		}
 
 		// Add hidden elements for steps that always run. Summarize Results, Wrap Up and Introduction.
