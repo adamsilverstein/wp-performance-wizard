@@ -78,7 +78,7 @@ class Performance_Wizard_Admin_Page {
 		$settings_url = admin_url( 'admin.php?page=wp-performance-wizard-settings' );
 		foreach ( $data_sources as $data_source ) {
 			echo '<label><input type="checkbox" class="performance-wizard-data-source" name="data_source" value="' . esc_attr( $data_source['name'] ) . '" checked>' . esc_html( $data_source['name'] ) . '</label>';
-			if ( 'Themes and Plugins' === $data_source['name'] ) {
+			if ( isset( $data_source['class_name'] ) && 'Performance_Wizard_Data_Source_Themes_And_Plugins' === $data_source['class_name'] ) {
 				echo ' <a href="' . esc_url( $settings_url ) . '">' . esc_html__( '(Settings)', 'wp-performance-wizard' ) . '</a>';
 			}
 			echo '<br>';

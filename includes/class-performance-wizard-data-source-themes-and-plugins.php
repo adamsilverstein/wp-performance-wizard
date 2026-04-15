@@ -201,8 +201,6 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	 * @return array<int,array<string,string>> List of {relative_path, source} entries.
 	 */
 	private function collect_plugin_source_files( string $slug, string $download_link, array $languages, int &$total_bytes_budget ): array {
-		global $wp_filesystem;
-
 		$collected = array();
 
 		$parsed_host = wp_parse_url( $download_link, PHP_URL_HOST );
@@ -263,12 +261,15 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 					continue;
 				}
 
-				$source = $wp_filesystem->get_contents( $file->getPathname() );
+				// Local temp file: read with native PHP rather than the WP_Filesystem
+				// abstraction, which may be initialized with FTP/SSH on some hosts and
+				// would fail on local paths.
+				$source = file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 				if ( false === $source || '' === $source ) {
 					continue;
 				}
 
-				$relative_path = ltrim( str_replace( $iterate_from, '', $file->getPathname() ), '/\\' );
+				$relative_path = ltrim( substr( $file->getPathname(), strlen( $iterate_from ) ), '/\\' );
 
 				$collected[] = array(
 					'relative_path' => $relative_path,
@@ -291,14 +292,14 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 	/**
 	 * Recursively remove a directory created by this data source.
 	 *
-	 * Restricted to paths under the system temp dir to avoid accidental
-	 * deletion of anything else.
+	 * Uses native PHP rather than WP_Filesystem because the directory always
+	 * lives under the local system temp dir, where the FTP/SSH transports
+	 * WP_Filesystem may select would fail. Restricted to paths under the
+	 * temp base to prevent accidental deletion of anything else.
 	 *
 	 * @param string $dir Absolute path to the directory to remove.
 	 */
 	private function recursive_rmdir( string $dir ): void {
-		global $wp_filesystem;
-
 		if ( '' === $dir || ! is_dir( $dir ) ) {
 			return;
 		}
@@ -307,8 +308,17 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 			return;
 		}
 
-		if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
-			$wp_filesystem->delete( $dir, true, 'd' );
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+			RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach ( $iterator as $entry ) {
+			if ( $entry->isDir() ) {
+				@rmdir( $entry->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+			} else {
+				wp_delete_file( $entry->getPathname() );
+			}
 		}
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
 	}
 }

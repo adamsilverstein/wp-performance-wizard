@@ -93,9 +93,13 @@ class Performance_Wizard_Settings_Page {
 		/**
 		 * Filters the list of plugin source languages to collect.
 		 *
-		 * @param string[] $languages Current list from settings.
+		 * @param mixed $languages Current list from settings (string[]).
 		 */
 		$languages = apply_filters( 'wp_performance_wizard_plugin_source_languages', $languages );
+		if ( ! is_array( $languages ) ) {
+			$languages = array( 'php' );
+		}
+		$languages = array_map( 'sanitize_key', $languages );
 		$languages = array_values( array_intersect( self::SUPPORTED_LANGUAGES, $languages ) );
 		return 0 === count( $languages ) ? array( 'php' ) : $languages;
 	}
