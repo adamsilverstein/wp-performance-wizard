@@ -11,6 +11,21 @@
 class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wizard_Data_Source_Base {
 
 	/**
+	 * Maximum size in bytes for a single source file included in the prompt.
+	 */
+	const MAX_SOURCE_FILE_BYTES = 65536;
+
+	/**
+	 * Maximum number of source files collected per plugin.
+	 */
+	const MAX_SOURCE_FILES_PER_PLUGIN = 50;
+
+	/**
+	 * Maximum total bytes of source code across all plugins for one collection run.
+	 */
+	const MAX_SOURCE_TOTAL_BYTES = 524288;
+
+	/**
 	 * Construct the class, setting key variables
 	 */
 	public function __construct() {
@@ -24,7 +39,7 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		Lighthouse provides a path to scripts that are causing performance issues and for assets enqueued by plugins, this will usually include the plugin slug as part of the path (typically /wp-content/plugins/{slug}/path...). Use this information to correlate plugins to the assets they enqueue.
 		The plugin meta data returned includes additional quality signals, such as an overall rating, counts of 1-5 star reviews, and fields for support_threads and support_threads_resolved which indicate support responsiveness. Use this information when comparing plugins or considering disabling a plugin.'
 		);
-		$this->set_data_shape( "The returned data includes an 'active_theme' object and an 'active_plugins' array. The active_theme object contains name, slug, version, author, description, is_block_theme (boolean indicating Full Site Editing support), and a 'theme_api_data' field with metadata from the wordpress.org theme API. Each entry in active_plugins includes the name, slug, version, author, description, URI and a field named 'plugin_api_data' which contains the metadata about the plugin from the wordpress.org plugin API. This metadata includes a rating field with an overall rating (0-100) of the plugin, as well as a ratings object with the number of 1 star (worst) thru 5 star (best) reviews, as well as fields for support_threads and support_threads_resolved ." );
+		$this->set_data_shape( "The returned data includes an 'active_theme' object and an 'active_plugins' array. The active_theme object contains name, slug, version, author, description, is_block_theme (boolean indicating Full Site Editing support), and a 'theme_api_data' field with metadata from the wordpress.org theme API. Each entry in active_plugins includes the name, slug, version, author, description, URI and a field named 'plugin_api_data' which contains the metadata about the plugin from the wordpress.org plugin API. This metadata includes a rating field with an overall rating (0-100) of the plugin, as well as a ratings object with the number of 1 star (worst) thru 5 star (best) reviews, as well as fields for support_threads and support_threads_resolved. When the site administrator has opted into plugin source collection, a plugin entry may also include an optional 'source_files' array, where each entry has a 'relative_path' (path within the plugin) and 'source' (file contents). Source files are capped in size and count and only included for plugins hosted on WordPress.org." );
 	}
 
 	/**
@@ -89,6 +104,18 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		// bootstrap wp-admin/includes/plugin.php so we can use it to get plugin data.
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
+		// Determine whether to collect plugin source code, and prepare the
+		// filesystem and budget once for the whole loop.
+		$collect_sources    = class_exists( 'Performance_Wizard_Settings_Page' )
+			&& Performance_Wizard_Settings_Page::collect_plugin_sources();
+		$source_languages   = $collect_sources ? Performance_Wizard_Settings_Page::plugin_source_languages() : array();
+		$total_bytes_budget = self::MAX_SOURCE_TOTAL_BYTES;
+		$filesystem_ready   = false;
+		if ( $collect_sources ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			$filesystem_ready = WP_Filesystem();
+		}
+
 		$plugins_data = array();
 		foreach ( $active_plugins as $plugin ) {
 			$plugin_file = WP_PLUGIN_DIR . '/' . $plugin;
@@ -113,6 +140,23 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 			$plugin_api_data = $this->get_plugin_data_from_dotorg_api( $plugin_slug );
 			if ( '' !== $plugin_api_data ) {
 				$plugin_entry['plugin_api_data'] = $plugin_api_data;
+
+				// Optionally, collect the plugin source code from WordPress.org.
+				if ( $collect_sources && $filesystem_ready && $total_bytes_budget > 0 ) {
+					$decoded       = json_decode( $plugin_api_data );
+					$download_link = is_object( $decoded ) && isset( $decoded->download_link ) ? (string) $decoded->download_link : '';
+					if ( '' !== $download_link ) {
+						$source_files = $this->collect_plugin_source_files(
+							$plugin_slug,
+							$download_link,
+							$source_languages,
+							$total_bytes_budget
+						);
+						if ( count( $source_files ) > 0 ) {
+							$plugin_entry['source_files'] = $source_files;
+						}
+					}
+				}
 			}
 			$plugins_data[] = $plugin_entry;
 		}
@@ -140,5 +184,141 @@ class Performance_Wizard_Data_Source_Themes_And_Plugins extends Performance_Wiza
 		);
 
 		return wp_json_encode( $to_return );
+	}
+
+	/**
+	 * Download a plugin zip from WordPress.org and collect selected source files.
+	 *
+	 * Only downloads URLs hosted on downloads.wordpress.org. The slug is
+	 * sanitized before being used in any path. The temp directory is always
+	 * cleaned up, regardless of how this method exits.
+	 *
+	 * @param string   $slug                The plugin slug.
+	 * @param string   $download_link       The download URL reported by the plugin API.
+	 * @param string[] $languages           File extensions to collect (e.g. ['php', 'js']).
+	 * @param int      $total_bytes_budget  Remaining byte budget across the whole run; updated by reference.
+	 *
+	 * @return array<int,array<string,string>> List of {relative_path, source} entries.
+	 */
+	private function collect_plugin_source_files( string $slug, string $download_link, array $languages, int &$total_bytes_budget ): array {
+		$collected = array();
+
+		$parsed_host = wp_parse_url( $download_link, PHP_URL_HOST );
+		if ( 'downloads.wordpress.org' !== $parsed_host ) {
+			return $collected;
+		}
+
+		$safe_slug = sanitize_key( $slug );
+		if ( '' === $safe_slug ) {
+			return $collected;
+		}
+
+		$temp_root = trailingslashit( get_temp_dir() ) . 'wp-perf-wizard-' . wp_generate_password( 8, false, false );
+		if ( ! wp_mkdir_p( $temp_root ) ) {
+			return $collected;
+		}
+
+		$zip_file = '';
+		try {
+			$download_result = download_url( $download_link );
+			if ( is_wp_error( $download_result ) ) {
+				return $collected;
+			}
+			$zip_file = $download_result;
+
+			$unzip = unzip_file( $zip_file, $temp_root );
+			if ( is_wp_error( $unzip ) ) {
+				return $collected;
+			}
+
+			$plugin_root  = trailingslashit( $temp_root ) . $safe_slug;
+			$iterate_from = is_dir( $plugin_root ) ? $plugin_root : $temp_root;
+
+			$iterator    = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $iterate_from, FilesystemIterator::SKIP_DOTS ) );
+			$files_count = 0;
+
+			foreach ( $iterator as $file ) {
+				if ( $file->isDir() ) {
+					continue;
+				}
+				if ( $files_count >= self::MAX_SOURCE_FILES_PER_PLUGIN ) {
+					break;
+				}
+				if ( $total_bytes_budget <= 0 ) {
+					break;
+				}
+
+				$extension = strtolower( pathinfo( $file->getFilename(), PATHINFO_EXTENSION ) );
+				if ( ! in_array( $extension, $languages, true ) ) {
+					continue;
+				}
+
+				$size = (int) $file->getSize();
+				if ( $size <= 0 || $size > self::MAX_SOURCE_FILE_BYTES ) {
+					continue;
+				}
+				if ( $size > $total_bytes_budget ) {
+					continue;
+				}
+
+				// Local temp file: read with native PHP rather than the WP_Filesystem
+				// abstraction, which may be initialized with FTP/SSH on some hosts and
+				// would fail on local paths.
+				$source = file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				if ( false === $source || '' === $source ) {
+					continue;
+				}
+
+				$relative_path = ltrim( substr( $file->getPathname(), strlen( $iterate_from ) ), '/\\' );
+
+				$collected[] = array(
+					'relative_path' => $relative_path,
+					'source'        => $source,
+				);
+
+				$total_bytes_budget -= $size;
+				++$files_count;
+			}
+		} finally {
+			if ( '' !== $zip_file && file_exists( $zip_file ) ) {
+				wp_delete_file( $zip_file );
+			}
+			$this->recursive_rmdir( $temp_root );
+		}
+
+		return $collected;
+	}
+
+	/**
+	 * Recursively remove a directory created by this data source.
+	 *
+	 * Uses native PHP rather than WP_Filesystem because the directory always
+	 * lives under the local system temp dir, where the FTP/SSH transports
+	 * WP_Filesystem may select would fail. Restricted to paths under the
+	 * temp base to prevent accidental deletion of anything else.
+	 *
+	 * @param string $dir Absolute path to the directory to remove.
+	 */
+	private function recursive_rmdir( string $dir ): void {
+		if ( '' === $dir || ! is_dir( $dir ) ) {
+			return;
+		}
+		$temp_base = trailingslashit( get_temp_dir() );
+		if ( 0 !== strpos( $dir, $temp_base ) ) {
+			return;
+		}
+
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+			RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach ( $iterator as $entry ) {
+			if ( $entry->isDir() ) {
+				@rmdir( $entry->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+			} else {
+				wp_delete_file( $entry->getPathname() );
+			}
+		}
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
 	}
 }
