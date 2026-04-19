@@ -134,6 +134,9 @@ class WP_Performance_Wizard {
 	public function __construct() {
 		$this->load_required_files();
 
+		// Register AI provider connectors with the core Connectors API.
+		new Performance_Wizard_Connectors();
+
 		// Load the wp-admin page.
 		new Performance_Wizard_Admin_Page( $this );
 
@@ -172,6 +175,7 @@ class WP_Performance_Wizard {
 	private function load_required_files(): void {
 		// Load all required files.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-connectors.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-settings-page.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
@@ -181,28 +185,6 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-chatgpt.php';
 	}
 
-
-	/**
-	 * Function to get the api key for a specific AI agent.
-	 *
-	 * The key is stored in a JSON file with the key "apikey".
-	 *
-	 * @param string $agent_name The name of the agent to get the key for.
-	 *
-	 * @return string The API key.
-	 */
-	public function get_api_key( string $agent_name ): string {
-		global $wp_filesystem;
-
-		if ( '' === $agent_name ) {
-			return '';
-		}
-		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . strtolower( $agent_name ) . '-key.json';
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		WP_Filesystem();
-		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
-		return isset( $keydata->apikey ) ? $keydata->apikey : '';
-	}
 
 	/**
 	 * Get the analysis plan class.

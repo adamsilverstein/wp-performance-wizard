@@ -1,6 +1,11 @@
 ## About
 Performance Wizard employs an AI agent to analyze your site performance and offer recommendations.
 
+## Requirements
+
+* WordPress 7.0 or later (required for the core Connectors API).
+* PHP 7.4 or later.
+
 ## Installation
 
 This plugin can be installed like any other WordPress plugin.
@@ -8,19 +13,19 @@ This plugin can be installed like any other WordPress plugin.
 1. Upload the `wp-performance-wizard` directory to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 
-## API Key
-To use the Gemini agent currently included in the project, you need to obtain an API key by visiting https://aistudio.google.com/app/apikey.
+## Connecting an AI provider
 
-Visit Performance Wizard -> Gemini to enter your API key, or manually create a file in the `.keys` directory dnamed `.keys/gemini-key.json` with this content:
+Performance Wizard uses WordPress 7.0's Connectors API for all provider credentials. It no longer stores API keys itself.
 
-```
-{
-	"apikey": "[YOUR_API_KEY]"
-}
-```
+1. In wp-admin, open the core **Connectors** screen.
+2. Find the connector that matches the AI provider you want to use (Google Gemini, OpenAI, or Anthropic) and add your API key.
+3. Return to **Performance Wizard** — any connector with a configured key is automatically offered as an analysis model.
+
+Credentials can also be supplied via environment variable or PHP constant using the Connectors API convention, e.g. `GEMINI_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY`. Values defined this way take precedence over database-stored keys.
+
 ## Usage
 
-After installing and activating the plugin, navigate to Performance Wizard -> Gemini in your WordPress admin dashboard.  Here, you can enter your API key for the Gemini agent.  You can then initiate a performance analysis of your site. The results and recommendations will be displayed on the same page.
+After installing and activating the plugin and connecting at least one AI provider, navigate to **Performance Wizard** in your WordPress admin dashboard. Choose the data sources to include, pick a configured AI model if more than one is available, and run the analysis. Results and recommendations are rendered inline.
 
 ## Development
 
@@ -49,6 +54,7 @@ composer run format
 See [docs/github-actions.md](docs/github-actions.md) for detailed information about the CI/CD setup.
 
 ## Versions
+* 2.0.0 - Require WordPress 7.0. Removed built-in API key UI; credentials are now supplied via the core Connectors API.
 * 1.3.1 - Added Gemini key entry in admin.
 * 1.3.0 - Added checkboxes to select which data sources to use.
 * 1.2.0 - Added the Script Attribution data source.
