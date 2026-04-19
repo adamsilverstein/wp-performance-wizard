@@ -56,6 +56,7 @@ class Performance_Wizard_Settings_Page {
 		$defaults = array(
 			'collect_plugin_sources'  => false,
 			'plugin_source_languages' => array( 'php' ),
+			'use_expert_skills'       => true,
 		);
 		if ( ! is_array( $stored ) ) {
 			$stored = array();
@@ -115,6 +116,7 @@ class Performance_Wizard_Settings_Page {
 		$options            = self::get_options();
 		$collect_enabled    = (bool) $options['collect_plugin_sources'];
 		$selected_languages = (array) $options['plugin_source_languages'];
+		$skills_enabled     = (bool) $options['use_expert_skills'];
 
 		$notice = isset( $_GET['info'] ) ? sanitize_key( wp_unslash( $_GET['info'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
@@ -159,6 +161,23 @@ class Performance_Wizard_Settings_Page {
 
 		echo '</tbody></table>';
 
+		echo '<h2>' . esc_html__( 'Expert Reference Skills', 'wp-performance-wizard' ) . '</h2>';
+		echo '<p>';
+		printf(
+			/* translators: 1: link to addyosmani/web-quality-skills, 2: link to WordPress/agent-skills */
+			esc_html__( 'When enabled, each analysis step includes bundled expert reference material from %1$s (MIT) and %2$s (GPL-2.0-or-later) so recommendations stay grounded in well-known web performance and WordPress best practices. This adds some tokens to each prompt. Disable to reduce cost or if your chosen model already includes equivalent guidance.', 'wp-performance-wizard' ),
+			'<a href="https://github.com/addyosmani/web-quality-skills" target="_blank" rel="noreferrer noopener">addyosmani/web-quality-skills</a>',
+			'<a href="https://github.com/WordPress/agent-skills" target="_blank" rel="noreferrer noopener">WordPress/agent-skills</a>'
+		);
+		echo '</p>';
+		echo '<table class="form-table" role="presentation"><tbody>';
+		echo '<tr><th scope="row">' . esc_html__( 'Include expert skills', 'wp-performance-wizard' ) . '</th><td>';
+		echo '<label><input type="checkbox" name="use_expert_skills" value="1"' . checked( $skills_enabled, true, false ) . '> ';
+		echo esc_html__( 'Inject expert reference skills as context in each analysis step.', 'wp-performance-wizard' );
+		echo '</label>';
+		echo '</td></tr>';
+		echo '</tbody></table>';
+
 		submit_button();
 		echo '</form>';
 		echo '</div>';
@@ -196,9 +215,12 @@ class Performance_Wizard_Settings_Page {
 			$submitted_languages = array( 'php' );
 		}
 
+		$skills_enabled = isset( $_POST['use_expert_skills'] );
+
 		$options                            = self::get_options();
 		$options['collect_plugin_sources']  = $collect;
 		$options['plugin_source_languages'] = array_values( array_unique( $submitted_languages ) );
+		$options['use_expert_skills']       = $skills_enabled;
 
 		update_option( self::OPTION_NAME, $options );
 

@@ -158,6 +158,13 @@ class Performance_Wizard_Analysis_Plan {
 	private $wizard;
 
 	/**
+	 * Skills provider used to inject expert reference material into prompts.
+	 *
+	 * @var Performance_Wizard_Skills
+	 */
+	private $skills;
+
+	/**
 	 * Helper to get the current step.
 	 *
 	 * @return int The current step.
@@ -174,8 +181,16 @@ class Performance_Wizard_Analysis_Plan {
 	public function __construct( WP_Performance_Wizard $wizard ) {
 		$this->wizard = $wizard;
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-data-source-base.php';
+		$this->skills = new Performance_Wizard_Skills();
 		$this->set_up_plan();
 		add_option( $this->wizard->get_option_name(), array() );
+	}
+
+	/**
+	 * Get the skills provider.
+	 */
+	public function get_skills(): Performance_Wizard_Skills {
+		return $this->skills;
 	}
 
 	/**
@@ -344,6 +359,25 @@ Finally, based on the data collected and recommendations so far, provide two uni
 		}
 		array_push( $prompts, $prompt );
 		array_push( $prompts_for_display, $prompt );
+
+		// Inject expert skill reference material so recommendations are grounded in
+		// well-known patterns (Core Web Vitals, WP-CLI diagnostics, 10up best practices, etc.).
+		$step_key = '';
+		if ( is_object( $data_source ) && method_exists( $data_source, 'get_name' ) ) {
+			$step_key = $data_source->get_name();
+		} elseif ( isset( $action['title'] ) ) {
+			$step_key = (string) $action['title'];
+		}
+		if ( '' !== $step_key ) {
+			$reference_prompt = $this->skills->build_reference_prompt( $step_key );
+			if ( '' !== $reference_prompt ) {
+				array_push( $prompts, $reference_prompt );
+				array_push(
+					$prompts_for_display,
+					'<em>' . esc_html__( 'Reference guidance from bundled expert skills was included in the prompt.', 'wp-performance-wizard' ) . '</em>'
+				);
+			}
+		}
 
 		$prompt = $data_source->get_prompt();
 		if ( '' !== $prompt ) {

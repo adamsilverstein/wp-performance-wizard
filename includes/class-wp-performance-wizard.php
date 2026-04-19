@@ -173,6 +173,7 @@ class WP_Performance_Wizard {
 		// Load all required files.
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-admin-page.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-settings-page.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-skills.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
