@@ -2,7 +2,9 @@
 /**
  * A base class for AI agents, eg. Gemini, ChatGPT, etc.
  *
- * Includes the name of the agent, a way to store the API key and a method to invoke the API.
+ * Credentials are resolved through the WordPress 7.0 Connectors API. Agents
+ * declare a connector ID and the base class handles the env var / constant /
+ * option lookup order defined by that API.
  *
  * @package wp-performance-wizard
  */
@@ -11,25 +13,11 @@
  * The agent base class.
  */
 class Performance_Wizard_AI_Agent_Base {
-	/**
-	 * Encryption cipher method.
-	 */
-	protected const ENCRYPTION_CIPHER = 'aes-256-cbc';
 
 	/**
-	 * Number of iterations for key derivation.
-	 */
-	protected const PBKDF2_ITERATIONS = 10000;
-
-	/**
-	 * Length of derived key in bytes.
-	 */
-	protected const KEY_LENGTH = 32;
-
-	/**
-	 * The private API key.
+	 * Cached API key lookup result.
 	 *
-	 * @var string
+	 * @var string|null
 	 */
 	private $api_key;
 
@@ -60,6 +48,13 @@ class Performance_Wizard_AI_Agent_Base {
 	 * @var string
 	 */
 	private $description;
+
+	/**
+	 * The Connectors API connector ID this agent reads credentials from.
+	 *
+	 * @var string
+	 */
+	private $connector_id = '';
 
 	/**
 	 * A method for calling the API of the AI agent.
@@ -162,179 +157,33 @@ class Performance_Wizard_AI_Agent_Base {
 	}
 
 	/**
-	 * Get the api key.
+	 * Get the Connectors API connector ID this agent uses.
 	 *
-	 * @return string The api key.
+	 * @return string The connector ID (e.g. 'anthropic', 'openai', 'gemini').
+	 */
+	public function get_connector_id(): string {
+		return $this->connector_id;
+	}
+
+	/**
+	 * Set the Connectors API connector ID this agent uses.
+	 *
+	 * @param string $connector_id The connector ID.
+	 */
+	public function set_connector_id( string $connector_id ): void {
+		$this->connector_id = $connector_id;
+	}
+
+	/**
+	 * Get the api key for this agent, resolved through the Connectors API.
+	 *
+	 * @return string The api key, or an empty string if not configured.
 	 */
 	public function get_api_key(): string {
 		if ( null === $this->api_key ) {
 			$this->api_key = $this->load_api_key();
 		}
 		return $this->api_key;
-	}
-
-	/**
-	 * Set the api key.
-	 *
-	 * @param string $api_key The api key.
-	 */
-	public function set_api_key( string $api_key ): void {
-		$this->api_key = $api_key;
-	}
-
-	/**
-	 * Encrypt and save the key.
-	 *
-	 * @param string $key The key to save.
-	 *
-	 * @return bool Whether the key was saved successfully.
-	 */
-	public function save_key( string $key ): bool {
-		$encrypted_key = $this->encrypt_key( $key );
-		$option_name   = $this->get_api_key_option_name();
-		return update_option( $option_name, $encrypted_key );
-	}
-
-	/**
-	 * Get the standardized option name for storing the API key.
-	 *
-	 * @return string The option name.
-	 */
-	protected function get_api_key_option_name(): string {
-		$agent_name = $this->get_name();
-		if ( '' === $agent_name ) {
-			return '';
-		}
-		$agent_slug = str_replace( ' ', '_', strtolower( $agent_name ) );
-		return 'wp_performance_wizard_' . $agent_slug . '_api_key';
-	}
-
-	/**
-	 * Encrypt the key.
-	 *
-	 * @param string $key The key to encrypt.
-	 *
-	 * @return string The encrypted key.
-	 */
-	public function encrypt_key( string $key ): string {
-		$cipher = self::ENCRYPTION_CIPHER;
-		$ivlen  = openssl_cipher_iv_length( $cipher );
-		$iv     = openssl_random_pseudo_bytes( $ivlen );
-		$salt   = openssl_random_pseudo_bytes( 32 );
-
-		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
-			return '';
-		}
-
-		$encryption_key = hash_pbkdf2(
-			'sha256',
-			SECURE_AUTH_KEY . SECURE_AUTH_SALT,
-			$salt,
-			self::PBKDF2_ITERATIONS,
-			self::KEY_LENGTH,
-			true
-		);
-
-		$encrypted = openssl_encrypt(
-			$key,
-			$cipher,
-			$encryption_key,
-			OPENSSL_RAW_DATA,
-			$iv
-		);
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		return base64_encode( $iv . $salt . $encrypted );
-	}
-
-	/**
-	 * Decrypt the key.
-	 *
-	 * @param string $encrypted_key The encrypted key to decrypt.
-	 *
-	 * @return string The decrypted key.
-	 */
-	public function decrypt_key( string $encrypted_key ): string {
-		if ( '' === $encrypted_key ) {
-			return '';
-		}
-
-		$cipher = self::ENCRYPTION_CIPHER;
-		$ivlen  = openssl_cipher_iv_length( $cipher );
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-		$combined = base64_decode( $encrypted_key, true );
-		if ( false === $combined ) {
-			return '';
-		}
-
-		$iv        = substr( $combined, 0, $ivlen );
-		$salt      = substr( $combined, $ivlen, 32 );
-		$encrypted = substr( $combined, $ivlen + 32 );
-
-		if ( ! defined( 'SECURE_AUTH_KEY' ) || ! defined( 'SECURE_AUTH_SALT' ) ) {
-			return '';
-		}
-
-		$encryption_key = hash_pbkdf2(
-			'sha256',
-			SECURE_AUTH_KEY . SECURE_AUTH_SALT,
-			$salt,
-			self::PBKDF2_ITERATIONS,
-			self::KEY_LENGTH,
-			true
-		);
-
-		$decrypted = openssl_decrypt(
-			$encrypted,
-			$cipher,
-			$encryption_key,
-			OPENSSL_RAW_DATA,
-			$iv
-		);
-
-		return ( false === $decrypted ) ? '' : $decrypted;
-	}
-
-	/**
-	 * Render status messages based on the 'info' GET parameter.
-	 *
-	 * This method handles common status messages for API key operations
-	 * and can be called by child classes in their render_admin_page methods.
-	 */
-	protected function render_status_messages(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just reading status parameter for display.
-		if ( ! isset( $_GET['info'] ) ) {
-			return;
-		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just reading status parameter for display.
-		$info       = sanitize_text_field( $_GET['info'] );
-		$agent_name = $this->get_name();
-
-		switch ( $info ) {
-			case 'saved':
-				echo '<div class="notice notice-success"><p>API key saved successfully!</p></div>';
-				break;
-			case 'nonce_error':
-				echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
-				break;
-			case 'permission_error':
-				echo '<div class="notice notice-error"><p>You do not have permission to perform this action.</p></div>';
-				break;
-			case 'no_change':
-				echo '<div class="notice notice-warning"><p>No changes were made to the API key.</p></div>';
-				break;
-			case 'invalid_key':
-				echo '<div class="notice notice-error"><p>Invalid API key format. Please enter a valid ' . esc_html( $agent_name ) . ' API key.</p></div>';
-				break;
-			case 'save_failed':
-				echo '<div class="notice notice-error"><p>Failed to save API key. Please try again.</p></div>';
-				break;
-			case 'exception':
-				echo '<div class="notice notice-error"><p>An error occurred while saving the API key. Please check the error logs.</p></div>';
-				break;
-		}
 	}
 
 	/**
@@ -347,59 +196,36 @@ class Performance_Wizard_AI_Agent_Base {
 	}
 
 	/**
-	 * Function to load the API key for an agent.
+	 * Load the API key for this agent from the Connectors API.
 	 *
-	 * First tries to load from the encrypted option, then falls back to
-	 * the legacy option or JSON file.
+	 * Resolution order matches the Connectors API contract:
+	 *   1. Environment variable `{CONNECTOR_ID}_API_KEY`.
+	 *   2. PHP constant `{CONNECTOR_ID}_API_KEY`.
+	 *   3. Database option `connectors_ai_{connector_id}_api_key`.
 	 *
-	 * @return string The API key.
+	 * @return string The API key, or an empty string if none is configured.
 	 */
 	public function load_api_key(): string {
-		// First try to get the encrypted key from options.
-		$option_name   = $this->get_api_key_option_name();
-		$encrypted_key = get_option( $option_name );
-		$decrypted_key = '';
-
-		if ( is_string( $encrypted_key ) ) {
-			$decrypted_key = $this->decrypt_key( $encrypted_key );
-		}
-
-		if ( '' !== $decrypted_key ) {
-			return $decrypted_key;
-		}
-
-		// Fall back to legacy methods.
-		global $wp_filesystem;
-
-		$agent_name = $this->get_name();
-
-		if ( '' === $agent_name ) {
+		$connector_id = $this->get_connector_id();
+		if ( '' === $connector_id ) {
 			return '';
 		}
 
-		// Construct the slug from the name.
-		$agent_slug = str_replace( ' ', '-', strtolower( $agent_name ) );
+		$env_name = strtoupper( $connector_id ) . '_API_KEY';
 
-		// First check the options table.
-		$api_key = get_option( 'performance-wizard-api-key-' . $agent_slug );
-		if ( is_string( $api_key ) && '' !== $api_key ) {
-			return $api_key;
+		$env_value = getenv( $env_name );
+		if ( is_string( $env_value ) && '' !== $env_value ) {
+			return $env_value;
 		}
 
-		if ( ! defined( 'ABSPATH' ) || ! function_exists( 'WP_Filesystem' ) ) {
-			return '';
+		if ( defined( $env_name ) ) {
+			$constant_value = constant( $env_name );
+			if ( is_string( $constant_value ) && '' !== $constant_value ) {
+				return $constant_value;
+			}
 		}
 
-		// Next check the key file.
-		$filename = plugin_dir_path( __FILE__ ) . '../.keys/' . $agent_slug . '-key.json';
-		$path     = ABSPATH . 'wp-admin/includes/file.php';
-		if ( ! file_exists( $filename ) || ! is_readable( $filename ) ) {
-			return '';
-		}
-
-		require_once $path;
-		WP_Filesystem();
-		$keydata = json_decode( $wp_filesystem->get_contents( $filename ) );
-		return isset( $keydata->apikey ) ? $keydata->apikey : '';
+		$option_value = get_option( 'connectors_ai_' . $connector_id . '_api_key', '' );
+		return is_string( $option_value ) ? $option_value : '';
 	}
 }

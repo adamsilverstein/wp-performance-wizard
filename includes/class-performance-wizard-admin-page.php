@@ -42,14 +42,25 @@ class Performance_Wizard_Admin_Page {
 			'dashicons-performance',
 			90
 		);
-		// Add submenu pages for all supported agents that have them.
-		$supported_agents = $this->wizard->get_supported_agents();
-		foreach ( $supported_agents as $agent_name => $agent_class_name ) {
-			$agent_class = new $agent_class_name( $this->wizard );
-			if ( method_exists( $agent_class, 'add_submenu_page' ) ) {
-				$agent_class->add_submenu_page();
-			}
-		}
+	}
+
+	/**
+	 * Return a URL to the core Connectors admin screen.
+	 *
+	 * The precise slug is filterable so sites can point users at whatever
+	 * screen their WordPress install exposes the Connectors API on.
+	 *
+	 * @return string Admin URL to the Connectors screen.
+	 */
+	private function get_connectors_screen_url(): string {
+		$default = admin_url( 'admin.php?page=connectors' );
+		/**
+		 * Filters the URL of the core Connectors admin screen.
+		 *
+		 * @param mixed $url Default admin URL for the Connectors screen (string).
+		 */
+		$url = apply_filters( 'wp_performance_wizard_connectors_screen_url', $default );
+		return is_string( $url ) ? $url : $default;
 	}
 
 	/**
@@ -124,9 +135,8 @@ class Performance_Wizard_Admin_Page {
 
 		if ( 0 === $model_count ) {
 			echo '<div class="notice notice-warning"><p>';
-			echo esc_html__( 'No AI models are configured. Please configure at least one AI model to use the Performance Wizard.', 'wp-performance-wizard' );
-			echo ' <a href="' . esc_url( admin_url( 'admin.php?page=wp-performance-wizard-gemini' ) ) . '">' . esc_html__( 'Configure Gemini', 'wp-performance-wizard' ) . '</a>';
-			echo ' | <a href="' . esc_url( admin_url( 'admin.php?page=wp-performance-wizard-claude' ) ) . '">' . esc_html__( 'Configure Claude', 'wp-performance-wizard' ) . '</a>';
+			echo esc_html__( 'No AI models are configured. Connect an AI provider from the core Connectors screen to use the Performance Wizard.', 'wp-performance-wizard' );
+			echo ' <a href="' . esc_url( $this->get_connectors_screen_url() ) . '">' . esc_html__( 'Open Connectors', 'wp-performance-wizard' ) . '</a>';
 			echo '</p></div>';
 			return;
 		}

@@ -1,36 +1,49 @@
 <?php
 /**
- * Unit tests for WP_Performance_Wizard::get_api_key.
+ * Unit tests for the AI agent base class key resolution via the Connectors API.
  *
  * @package wp-performance-wizard
  */
 
 use PHPUnit\Framework\TestCase;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', '/' );
-}
+require_once __DIR__ . '/bootstrap.php';
 
-require_once dirname( __DIR__ ) . '/includes/class-wp-performance-wizard.php';
-
+/**
+ * Covers Performance_Wizard_AI_Agent_Base::load_api_key().
+ */
 class WP_Performance_Wizard_Test extends TestCase {
 
-	public function testGetApiKey(): void {
-		global $wp_filesystem;
+	/**
+	 * Reset option store and relevant env vars before each test.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$GLOBALS['wp_performance_wizard_test_options'] = array();
+		putenv( 'GEMINI_API_KEY' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv
+	}
 
-		$wp_filesystem = $this->createMock( 'WP_Filesystem_Base' );
+	public function testReturnsEmptyStringWhenConnectorIdMissing(): void {
+		$agent = new Performance_Wizard_AI_Agent_Base();
+		$this->assertSame( '', $agent->load_api_key() );
+	}
 
-		$mock_key_data = '{"apikey": "test_api_key"}';
+	public function testFallsBackToConnectorOption(): void {
+		$GLOBALS['wp_performance_wizard_test_options']['connectors_ai_gemini_api_key'] = 'option-key';
 
-		$wp_filesystem->method( 'get_contents' )
-			->willReturn( $mock_key_data );
+		$agent = new Performance_Wizard_AI_Agent_Base();
+		$agent->set_connector_id( 'gemini' );
 
-		$pw      = new WP_Performance_Wizard();
-		$api_key = $pw->get_api_key( 'Gemini' );
+		$this->assertSame( 'option-key', $agent->load_api_key() );
+	}
 
-		$this->assertEquals( 'test_api_key', $api_key );
+	public function testEnvironmentVariableBeatsOption(): void {
+		$GLOBALS['wp_performance_wizard_test_options']['connectors_ai_gemini_api_key'] = 'option-key';
+		putenv( 'GEMINI_API_KEY=env-key' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv
 
-		$api_key_empty = $pw->get_api_key( '' );
-		$this->assertEquals( '', $api_key_empty );
+		$agent = new Performance_Wizard_AI_Agent_Base();
+		$agent->set_connector_id( 'gemini' );
+
+		$this->assertSame( 'env-key', $agent->load_api_key() );
 	}
 }
