@@ -7,9 +7,12 @@ parameters:
 	ignoreErrors:
 	bootstrapFiles:
 		- wp-performance-wizard.php
+	scanFiles:
+		- stubs/wp-connectors.php
 	excludePaths:
 		- includes/js/
 		- includes/css/
 		- vendor/
 		- releases/
 		- tools/
+		- stubs/

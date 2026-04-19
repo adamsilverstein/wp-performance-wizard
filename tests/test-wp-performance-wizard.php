@@ -46,4 +46,18 @@ class WP_Performance_Wizard_Test extends TestCase {
 
 		$this->assertSame( 'env-key', $agent->load_api_key() );
 	}
+
+	public function testPhpConstantBeatsOption(): void {
+		// Use a dedicated connector id so the defined constant does not leak into other tests.
+		$GLOBALS['wp_performance_wizard_test_options']['connectors_ai_wpperfconsttest_api_key'] = 'option-key';
+
+		if ( ! defined( 'WPPERFCONSTTEST_API_KEY' ) ) {
+			define( 'WPPERFCONSTTEST_API_KEY', 'constant-key' );
+		}
+
+		$agent = new Performance_Wizard_AI_Agent_Base();
+		$agent->set_connector_id( 'wpperfconsttest' );
+
+		$this->assertSame( 'constant-key', $agent->load_api_key() );
+	}
 }

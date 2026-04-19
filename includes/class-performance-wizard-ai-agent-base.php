@@ -168,10 +168,16 @@ class Performance_Wizard_AI_Agent_Base {
 	/**
 	 * Set the Connectors API connector ID this agent uses.
 	 *
+	 * Resets the cached key so the next get_api_key() call re-resolves against
+	 * the new connector's env var, constant, and option.
+	 *
 	 * @param string $connector_id The connector ID.
 	 */
 	public function set_connector_id( string $connector_id ): void {
-		$this->connector_id = $connector_id;
+		if ( $this->connector_id !== $connector_id ) {
+			$this->connector_id = $connector_id;
+			$this->api_key      = null;
+		}
 	}
 
 	/**

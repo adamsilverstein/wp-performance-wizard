@@ -64,13 +64,9 @@ class Performance_Wizard_Connectors {
 	/**
 	 * Register any AI connectors that are not already present in the registry.
 	 *
-	 * @param object $registry The WP_Connector_Registry passed by wp_connectors_init.
+	 * @param \WP_Connector_Registry $registry Registry passed by wp_connectors_init.
 	 */
-	public function register_connectors( object $registry ): void {
-		if ( ! method_exists( $registry, 'register' ) || ! method_exists( $registry, 'is_registered' ) ) {
-			return;
-		}
-
+	public function register_connectors( \WP_Connector_Registry $registry ): void {
 		foreach ( self::get_default_connectors() as $id => $args ) {
 			if ( $registry->is_registered( $id ) ) {
 				continue;
