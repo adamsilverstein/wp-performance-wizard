@@ -17,7 +17,7 @@ at commit `fed9617111260e19f4f54b72a2874a3f3de8ff94`.
 - `web-quality/best-practices.md` — from `skills/best-practices/SKILL.md`
 
 License: **MIT** — Copyright (c) 2026 Addy Osmani. See
-<https://github.com/addyosmani/web-quality-skills/blob/main/LICENSE>.
+<https://github.com/addyosmani/web-quality-skills/blob/fed9617111260e19f4f54b72a2874a3f3de8ff94/LICENSE>.
 
 ### `wordpress/`
 
@@ -28,7 +28,7 @@ at commit `c5c0697b120ec00e8fcf6a265f161c61dbc2581c`.
 - `wordpress/wp-plugin-development.md` — from `skills/wp-plugin-development/SKILL.md`
 
 License: **GPL-2.0-or-later** — Copyright (C) 2026 WordPress Contributors. See
-<https://github.com/WordPress/agent-skills/blob/trunk/LICENSE>.
+<https://github.com/WordPress/agent-skills/blob/c5c0697b120ec00e8fcf6a265f161c61dbc2581c/LICENSE>.
 
 ## Refreshing
 

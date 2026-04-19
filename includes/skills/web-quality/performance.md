@@ -358,4 +358,4 @@ onCLS(console.log);
 
 ## References
 
-For Core Web Vitals specific optimizations, see [Core Web Vitals](../core-web-vitals/SKILL.md).
+For Core Web Vitals specific optimizations, see [Core Web Vitals](./core-web-vitals.md).

@@ -127,10 +127,13 @@ class Performance_Wizard_Skills {
 		/**
 		 * Filters the skill slugs selected for a given analysis step.
 		 *
-		 * @param string[] $slugs    The default skill slugs for this step.
-		 * @param string   $step_key The step title or data source name.
+		 * @param mixed  $slugs    The default skill slugs for this step (string[]).
+		 * @param string $step_key The step title or data source name.
 		 */
 		$filtered = apply_filters( 'wp_performance_wizard_skill_slugs_for_step', $slugs, $step_key );
+		if ( ! is_array( $filtered ) ) {
+			return array();
+		}
 		// Drop unknown slugs so callers can trust the list.
 		return array_values( array_intersect( array_keys( $this->skills ), $filtered ) );
 	}

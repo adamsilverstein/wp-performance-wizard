@@ -79,7 +79,7 @@ Bundled skills live under `includes/skills/` and map to steps as follows:
 * **HTML** → `best-practices`, `performance`
 * **Script Attribution** → `performance`, `best-practices`
 * **Themes and Plugins** → `wp-performance`, `wp-plugin-development`
-* **Summary step** → `core-web-vitals`, `wp-performance`
+* **Summarize Results** → `core-web-vitals`, `wp-performance`
 
 Sources:
 * [addyosmani/web-quality-skills](https://github.com/addyosmani/web-quality-skills) — MIT
