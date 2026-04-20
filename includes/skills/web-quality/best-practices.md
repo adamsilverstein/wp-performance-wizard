@@ -30,7 +30,8 @@ Modern web development standards based on Lighthouse best practices audits. Cove
 ```
 
 **HSTS Header:**
-```
+
+```http
 Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 ```
 
@@ -49,7 +50,8 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 ```
 
 **CSP Header (recommended):**
-```
+
+```http
 Content-Security-Policy: 
   default-src 'self';
   script-src 'self' 'nonce-abc123' https://trusted.com;
@@ -70,7 +72,7 @@ Content-Security-Policy:
 
 ### Security headers
 
-```
+```http
 # Prevent clickjacking
 X-Frame-Options: DENY
 
@@ -232,7 +234,10 @@ if ('IntersectionObserver' in window) {
 <!-- Load polyfills conditionally -->
 <script>
   if (!('fetch' in window)) {
-    document.write('<script src="/polyfills/fetch.js"><\/script>');
+    const polyfill = document.createElement('script');
+    polyfill.src = '/polyfills/fetch.js';
+    polyfill.defer = true;
+    document.head.appendChild(polyfill);
   }
 </script>
 

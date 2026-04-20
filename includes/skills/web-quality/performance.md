@@ -109,6 +109,7 @@ debounce(fn, 300);
 ## Image optimization
 
 ### Format selection
+
 | Format | Use case | Browser support |
 |--------|----------|-----------------|
 | AVIF | Photos, best compression | 92%+ |
@@ -208,7 +209,8 @@ body {
 ## Caching strategy
 
 ### Cache-Control headers
-```
+
+```http
 # HTML (short or no cache)
 Cache-Control: no-cache, must-revalidate
 
@@ -336,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ## Measurement
 
 ### Key metrics
+
 | Metric | Target | Tool |
 |--------|--------|------|
 | LCP | < 2.5s | Lighthouse, CrUX |
@@ -345,12 +348,15 @@ document.addEventListener('DOMContentLoaded', () => {
 | TTI | < 3.8s | Lighthouse |
 
 ### Testing commands
+
 ```bash
 # Lighthouse CLI
 npx lighthouse https://example.com --output html --output-path report.html
+```
 
-# Web Vitals library
-import {onLCP, onINP, onCLS} from 'web-vitals';
+```javascript
+// Web Vitals library
+import { onLCP, onINP, onCLS } from 'web-vitals';
 onLCP(console.log);
 onINP(console.log);
 onCLS(console.log);

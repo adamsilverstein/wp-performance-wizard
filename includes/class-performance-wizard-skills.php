@@ -134,8 +134,14 @@ class Performance_Wizard_Skills {
 		if ( ! is_array( $filtered ) ) {
 			return array();
 		}
-		// Drop unknown slugs so callers can trust the list.
-		return array_values( array_intersect( array_keys( $this->skills ), $filtered ) );
+		// Drop non-strings and unknown slugs so callers can trust the list.
+		$valid = array();
+		foreach ( $filtered as $slug ) {
+			if ( is_string( $slug ) && isset( $this->skills[ $slug ] ) && ! in_array( $slug, $valid, true ) ) {
+				$valid[] = $slug;
+			}
+		}
+		return $valid;
 	}
 
 	/**
@@ -154,7 +160,12 @@ class Performance_Wizard_Skills {
 			return '';
 		}
 		$contents = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a bundled read-only file.
-		return false === $contents ? '' : $contents;
+		if ( false === $contents ) {
+			return '';
+		}
+		// Strip leading YAML frontmatter block so it doesn't leak into the prompt.
+		$stripped = preg_replace( '/\A---\R.*?\R---\R/s', '', $contents, 1 );
+		return is_string( $stripped ) ? trim( $stripped ) : trim( $contents );
 	}
 
 	/**
