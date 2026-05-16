@@ -100,8 +100,11 @@ class Performance_Wizard_Admin_Page {
 			echo '<input type="hidden" class="performance-wizard-data-source" value="' . esc_attr( $step ) . '" checked>';
 		}
 
-		// Add a start button.
-		echo '<p><button id="performance-wizard-start" class="button button-primary">' . esc_html__( 'Start analysis', 'wp-performance-wizard' ) . '</button></p>';
+		// Add a start button and a button to reset and start a new conversation.
+		echo '<p>';
+		echo '<button id="performance-wizard-start" class="button button-primary">' . esc_html__( 'Start analysis', 'wp-performance-wizard' ) . '</button> ';
+		echo '<button id="performance-wizard-new-conversation" class="button button-secondary">' . esc_html__( 'Start New Conversation', 'wp-performance-wizard' ) . '</button>';
+		echo '</p>';
 
 		// Close main content div.
 		echo '</div>';
@@ -212,7 +215,8 @@ class Performance_Wizard_Admin_Page {
 			'wp-performance-wizard',
 			'wpPerformanceWizard',
 			array(
-				'nonce' => wp_create_nonce( 'save_model_preference' ),
+				'nonce'      => wp_create_nonce( 'save_model_preference' ),
+				'resetNonce' => wp_create_nonce( 'reset_conversation' ),
 			)
 		);
 	}
