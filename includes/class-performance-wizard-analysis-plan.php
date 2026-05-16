@@ -78,20 +78,20 @@ class Performance_Wizard_Analysis_Plan {
 	 *
 	 * @var string
 	 */
-	private $data_point_prompt = 'You will now analyze a new data point. Remember the analysis for this data point so you can refer to it in future steps.';
+	private $data_point_prompt = 'You will now analyze a new data point. Base your analysis strictly on the data provided in this step and the findings retained from previous steps. Do not invent metrics, file names, plugins, or values that are not present in the data. Remember the key facts and your analysis for this data point so you can refer back to them accurately in later steps.';
 
 	/**
 	 * The prompt to send before each data point comparison analysis,
 	 *
 	 * @var string
 	 */
-	private $data_point_comparison_prompt = 'You will now analyze a new data point. You will then compare this datapoint to the previous one. Report on how specific metrics have changed, highlighting the most notable improvements or regressions.';
+	private $data_point_comparison_prompt = 'You will now analyze a new data point and then compare it directly to the previous comparable data point. Report only on metrics that appear in both data sets, citing the specific before and after values and the direction and size of each change. Clearly highlight the most notable improvements and regressions. Do not speculate about changes you cannot verify from the data.';
 	/**
 	 * The prompt to send after each data point analysis.
 	 *
 	 * @var string
 	 */
-	private $data_point_summary_prompt = 'Analyze the data, while also considering analysis from previous steps. Provide a high level summary of the information received - 2-3 paragraphs at most - and how it reflects on the performance of the site. Highlight the most important findings.';
+	private $data_point_summary_prompt = 'Analyze the data above, while also considering the analysis retained from previous steps. Provide a concise, high level summary - 2-3 paragraphs at most - of what this data reveals about the site\'s performance and its likely impact on user experience. Ground every statement in specific values, audits, files, or plugins found in the data; do not generalize or guess. Highlight the most important findings and call out anything that warrants a recommendation in a later step.';
 
 
 	/**
@@ -100,7 +100,9 @@ class Performance_Wizard_Analysis_Plan {
 	 * @var string
 	 */
 	private $system_instructions =
-	"As a web performance expert, you will analyze provided data points and give a summary and recommendations for each step. You will retain information from each step and provide an overall summary and set of actionable recommendations with testing methods at the end. You will not hallucinate or make up facts about the site. If you don't know or something you will say so. Use plain language an average developer or site builder would understand. Use a professional, positive and friendly tone. Only discuss performance related issues. Do not discuss security, design, or other non-performance related issues.
+	"You are a web performance expert analyzing a single WordPress site. You will be given a series of data points, one per step. For each step you will analyze the data and provide a summary and recommendations, retaining the key facts and findings so you can build on them in later steps. At the end you will provide an overall summary and a prioritized, actionable set of recommendations with testing methods.
+
+Ground every statement, finding, and recommendation in the specific data you have been given or in findings you retained from previous steps. Never invent or assume metrics, audit results, file paths, script names, plugins, themes, or numeric values that are not present in the data. If the data is missing, ambiguous, or insufficient to answer something, say so explicitly rather than guessing. Always make recommendations specific and actionable, naming the exact plugin, theme, script, audit, or setting involved and the concrete change to make - never give generic advice. Use plain language an average developer or site builder would understand, and a professional, positive and friendly tone. Only discuss performance related issues. Do not discuss security, design, or other non-performance related issues.
 
 **Data Point Analysis:**
 
@@ -401,10 +403,10 @@ Finally, based on the data collected and recommendations so far, provide two uni
 			$for_user          = 'Here is the data: {DATA} <br>'; // A string to show to the user.
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt           .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . '<br>';
-			$for_user         .= '' !== $data_shape ? '' : 'Here is the data shape: ' . $data_shape . '<br>';
-			$prompt           .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
-			$for_user         .= '' !== $analysis_strategy ? '' : 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
+			$prompt           .= '' !== $data_shape ? 'Here is the data shape: ' . $data_shape . '<br>' : '';
+			$for_user         .= '' !== $data_shape ? 'Here is the data shape: ' . $data_shape . '<br>' : '';
+			$prompt           .= '' !== $analysis_strategy ? 'Here is the analysis strategy: ' . $analysis_strategy . '<br>' : '';
+			$for_user         .= '' !== $analysis_strategy ? 'Here is the analysis strategy: ' . $analysis_strategy . '<br>' : '';
 
 			array_push( $prompts, $prompt );
 			array_push( $prompts_for_display, $for_user );

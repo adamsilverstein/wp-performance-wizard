@@ -29,9 +29,9 @@ class Performance_Wizard_Data_Source_Script_Attribution extends Performance_Wiza
 		parent::__construct();
 		$this->set_name( 'Script Attribution' );
 		$this->set_prompt( 'Collecting data about the scripts on the site...' );
-		$this->set_description( 'The Script Attribution data source provides a list of scripts on the page. For each script it provides the path (or URL), as well as the slug and name of the plugin that enqueued the script.' );
-		$this->set_analysis_strategy( 'The Script Attribution data source can be combined with the Lighthouse data to include the plugin name when making recommendations. When a Lighthouse audit identifies a script as a performance issue, the script attribution data can be used to identify the specific plugin that is causing the issue.' );
-		$this->set_data_shape( 'The returned data is a JSON object with a list of scripts. Each script object includes the path (or URL) of the script, the slug and name of the plugin that enqueued the script' );
+		$this->set_description( 'The Script Attribution data source maps the JavaScript files loaded on the site\'s front end back to the plugin (or WordPress core) that added them. It covers both scripts enqueued through the WordPress script API and scripts printed directly by callbacks on the wp_head and wp_footer hooks, attributing the latter via reflection on the responsible function or method.' );
+		$this->set_data_shape( 'The data is a JSON array of script objects. Each object has three string fields: "path" (the script URL or site-relative path), "slug" (the attributed plugin slug, or "core" for WordPress core), and "name" (the human-readable plugin name, or "Core"). The list may contain duplicate paths and may be empty if no scripts were captured.' );
+		$this->set_analysis_strategy( 'Use this data to attribute scripts flagged in the earlier Lighthouse and HTML steps to a specific plugin by matching on the script path. When a Lighthouse audit (for example unused JavaScript, render-blocking resources, or long main-thread tasks) implicates a script, name the owning plugin from this data so the recommendation is specific and actionable. Group scripts by plugin to identify which plugins contribute the most front-end JavaScript. Do not attribute a script to a plugin unless its path or slug appears in this data; if a problematic script is unattributed here, say so rather than guessing.' );
 
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
