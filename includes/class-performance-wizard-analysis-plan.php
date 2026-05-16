@@ -62,6 +62,11 @@ class Performance_Wizard_Analysis_Plan {
 			'class_name' => 'Performance_Wizard_Data_Source_Themes_And_Plugins',
 			'file_name'  => 'class-performance-wizard-data-source-themes-and-plugins.php',
 		),
+		array(
+			'name'       => 'Site Metrics',
+			'class_name' => 'Performance_Wizard_Data_Source_Site_Metrics',
+			'file_name'  => 'class-performance-wizard-data-source-site-metrics.php',
+		),
 	);
 
 	/**
