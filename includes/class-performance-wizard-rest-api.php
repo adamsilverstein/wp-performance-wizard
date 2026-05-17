@@ -126,6 +126,34 @@ class Performance_Wizard_Rest_API {
 				} else {
 					$response = $this->wizard->get_ai_agent()->send_prompt( $prompt, $step, $previous_steps, $additional_questions );
 				}
+				break;
+			case '_archive_session_':
+				$data_sources = $request->get_param( 'data_sources' );
+				$transcript   = $request->get_param( 'transcript' );
+
+				$data_sources = is_array( $data_sources ) ? $data_sources : array();
+				$transcript   = is_array( $transcript ) ? $transcript : array();
+				$model        = is_string( $model ) ? $model : '';
+
+				$response = $this->wizard->get_history()->archive( $model, $data_sources, $transcript );
+				break;
+			case '_get_sessions_':
+				$response = $this->wizard->get_history()->get_sessions();
+				break;
+			case '_get_session_':
+				$session_id = $request->get_param( 'session_id' );
+				$session_id = is_string( $session_id ) ? sanitize_text_field( $session_id ) : '';
+				$session    = $this->wizard->get_history()->get_session( $session_id );
+
+				if ( null === $session ) {
+					return new WP_REST_Response(
+						array( 'error' => 'Session not found.' ),
+						404
+					);
+				}
+
+				$response = $session;
+				break;
 		}
 
 		return new WP_REST_Response( $response, 200 );

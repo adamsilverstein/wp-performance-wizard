@@ -4,6 +4,26 @@
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
+	// Module-scoped transcript of the current run. Each entry is
+	// { type: 'step'|'recommendations'|'qa', title, content } where content is
+	// the raw Markdown string (not HTML) so it can be re-rendered later.
+	let currentTranscript = [];
+
+	/**
+	 * Record a transcript entry for the current run.
+	 *
+	 * @param {string} type    One of 'step', 'recommendations', 'qa'.
+	 * @param {string} title   A short heading for the entry.
+	 * @param {string} content The raw Markdown content.
+	 */
+	function recordTranscript( type, title, content ) {
+		currentTranscript.push( {
+			type   : type,
+			title  : String( title || '' ),
+			content: String( content || '' )
+		} );
+	}
+
 	// Handle layout toggle
 	document.addEventListener( 'click', function( event ) {
 		if ( event.target.classList.contains( 'layout-btn' ) ) {
@@ -48,6 +68,9 @@
 		// another terminal click listener inside runAnalysis) on top of the
 		// first.
 		event.target.disabled = true;
+
+		// Start a fresh transcript for this run.
+		currentTranscript = [];
 
 		// Run the analysis....
 		runAnalysis( checkedDataSources );
@@ -104,6 +127,9 @@
 			console.error( 'Error resetting conversation:', error );
 		} );
 	}
+
+	// Load the history panel on page load.
+	loadHistory();
 
 	/**
 	 * Get the selected AI model from the form.
@@ -204,6 +230,9 @@
 				terminal.appendChild( responseDiv );
 				await streamText( responseDiv, results || '', 25 );
 
+				// Record the follow-up question and answer as raw Markdown.
+				recordTranscript( 'qa', 'Q: ' + question, 'Q: ' + question + '\n\nA: ' + ( results || '' ) );
+
 				addFollowUpQuestion();
 			}
 		} );
@@ -247,6 +276,12 @@
 			const promptForDisplay = nextStep.display_prompt ? nextStep.display_prompt : nextStep.user_prompt;
 			switch ( nextStep.action ) {
 				case 'complete':
+					// Archive the completed run as a non-destructive snapshot.
+					// The transcript is captured client-side because the final
+					// recommendations and follow-up Q&A are not persisted
+					// server-side.
+					archiveSession( selectedModel, dataSources, currentTranscript );
+
 					// Output the input field so users can ask follow up questions.
 					addFollowUpQuestion();
 
@@ -278,11 +313,16 @@
 
 					echoToTerminal( '### <div class="dc">Analysis...</div>' );
 					// Iterate thru all of the results returned in the response
+					const stepResults = [];
 					for( const resultIndex in results ) {
 						const result = results[ resultIndex ];
+						stepResults.push( String( result || '' ) );
 						echoToTerminal();
 						await outputFormattedResults( result );
 					};
+
+					// Record the concatenated raw Markdown for this data-source step.
+					recordTranscript( 'step', nextStep.title, stepResults.join( '\n\n' ) );
 
 					step++;
 					break;
@@ -302,6 +342,9 @@
 					}
 
 					echoToTerminal( '<br><div class="info-chip agent-chip" aria-label="Agent">AGENT</div><br>' );
+
+					// Record the final recommendations response as raw Markdown.
+					recordTranscript( 'recommendations', nextStep.title || 'Recommendations', result || '' );
 
 					// Use streaming effect for longer AI responses. Both
 					// branches go through the Markdown renderer so formatting
@@ -489,6 +532,158 @@
 			path  : '/performance-wizard/v1/command/',
 			method: 'POST',
 			data  : params
+		} );
+	}
+
+	/**
+	 * Archive the completed run, then refresh the history panel.
+	 *
+	 * @param {string} model       The selected AI model.
+	 * @param {Array}  dataSources  The data source names used for the run.
+	 * @param {Array}  transcript   The captured transcript entries.
+	 */
+	function archiveSession( model, dataSources, transcript ) {
+		if ( ! transcript || transcript.length === 0 ) {
+			return;
+		}
+		wp.apiFetch( {
+			path  : '/performance-wizard/v1/command/',
+			method: 'POST',
+			data  : {
+				'command'     : '_archive_session_',
+				'model'       : model,
+				'data_sources': dataSources,
+				'transcript'  : transcript
+			}
+		} ).then( function() {
+			loadHistory();
+		} ).catch( function( error ) {
+			console.error( 'Error archiving analysis session:', error );
+		} );
+	}
+
+	/**
+	 * Load the list of stored sessions and render the history panel.
+	 */
+	function loadHistory() {
+		const container = document.getElementById( 'performance-wizard-history' );
+		if ( ! container ) {
+			return;
+		}
+		wp.apiFetch( {
+			path  : '/performance-wizard/v1/command/',
+			method: 'POST',
+			data  : { 'command': '_get_sessions_' }
+		} ).then( function( sessions ) {
+			renderHistoryList( container, sessions || [] );
+		} ).catch( function( error ) {
+			console.error( 'Error loading analysis history:', error );
+		} );
+	}
+
+	/**
+	 * Render the history list into the given container.
+	 *
+	 * @param {HTMLElement} container The container element.
+	 * @param {Array}       sessions  The list of session summaries.
+	 */
+	function renderHistoryList( container, sessions ) {
+		container.innerHTML = '';
+
+		if ( ! sessions.length ) {
+			const empty = document.createElement( 'p' );
+			empty.textContent = 'No past analyses yet.';
+			container.appendChild( empty );
+			return;
+		}
+
+		const list = document.createElement( 'ul' );
+		list.className = 'performance-wizard-history-list';
+
+		sessions.forEach( function( session ) {
+			const item = document.createElement( 'li' );
+
+			const label = document.createElement( 'span' );
+			const sourceCount = Array.isArray( session.data_sources ) ? session.data_sources.length : 0;
+			label.textContent = session.created + ' — ' + ( session.model || 'Unknown model' ) +
+				' — ' + sourceCount + ' data source(s)';
+
+			const view = document.createElement( 'button' );
+			view.type = 'button';
+			view.className = 'button performance-wizard-history-view';
+			view.textContent = 'View';
+			view.setAttribute( 'data-session-id', session.id );
+
+			item.appendChild( label );
+			item.appendChild( document.createTextNode( ' ' ) );
+			item.appendChild( view );
+			list.appendChild( item );
+		} );
+
+		container.appendChild( list );
+	}
+
+	// Delegated handler for "View" buttons in the history panel.
+	document.addEventListener( 'click', function( event ) {
+		if ( ! event.target.classList.contains( 'performance-wizard-history-view' ) ) {
+			return;
+		}
+		const sessionId = event.target.getAttribute( 'data-session-id' );
+		if ( ! sessionId ) {
+			return;
+		}
+		wp.apiFetch( {
+			path  : '/performance-wizard/v1/command/',
+			method: 'POST',
+			data  : {
+				'command'   : '_get_session_',
+				'session_id': sessionId
+			}
+		} ).then( function( session ) {
+			if ( ! session || session.error ) {
+				console.error( 'Error loading session:', session && session.error );
+				return;
+			}
+			renderStoredTranscript( session );
+		} ).catch( function( error ) {
+			console.error( 'Error loading session:', error );
+		} );
+	} );
+
+	/**
+	 * Render a stored session transcript read-only into the terminal.
+	 *
+	 * Stored content is Markdown and is rendered through the same marked()
+	 * renderer used by the live terminal (same trust model). Raw HTML is never
+	 * persisted or re-injected.
+	 *
+	 * @param {Object} session The full stored session record.
+	 */
+	function renderStoredTranscript( session ) {
+		if ( ! terminal ) {
+			return;
+		}
+		// Clear the terminal for the read-only view.
+		terminal.innerHTML = '';
+
+		const header = document.createElement( 'div' );
+		header.innerHTML = marked.marked(
+			'## Viewing past analysis (' + ( session.created || '' ) + ')\n\n' +
+			'_Model: ' + ( session.model || 'Unknown' ) + ' — read-only_'
+		);
+		terminal.appendChild( header );
+
+		const transcript = Array.isArray( session.transcript ) ? session.transcript : [];
+		transcript.forEach( function( entry ) {
+			if ( entry.title ) {
+				const heading = document.createElement( 'div' );
+				heading.innerHTML = marked.marked( '### ' + String( entry.title ) );
+				terminal.appendChild( heading );
+			}
+			const body = document.createElement( 'div' );
+			body.className = 'dc';
+			body.innerHTML = marked.marked( String( entry.content || '' ) );
+			terminal.appendChild( body );
 		} );
 	}
 } )();

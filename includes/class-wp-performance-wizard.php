@@ -54,6 +54,13 @@ class WP_Performance_Wizard {
 	private $analysis_plan;
 
 	/**
+	 * The analysis history store.
+	 *
+	 * @var Performance_Wizard_History
+	 */
+	private $history;
+
+	/**
 	 * The AI Agent.
 	 *
 	 * @var Performance_Wizard_AI_Agent_Base|null
@@ -146,6 +153,9 @@ class WP_Performance_Wizard {
 		// Load the Analysis plan.
 		$this->analysis_plan = new Performance_Wizard_Analysis_Plan( $this );
 
+		// Load the analysis history store.
+		$this->history = new Performance_Wizard_History();
+
 		// Load the $supported_agents, eg. call new Performance_Wizard_AI_Agent_Gemini( $this ) for each agent.
 		foreach ( $this->supported_agents as $agent_name => $agent_class_name ) {
 			$agent = new $agent_class_name( $this );
@@ -179,6 +189,7 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-settings-page.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-skills.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-history.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
@@ -194,6 +205,15 @@ class WP_Performance_Wizard {
 	 */
 	public function get_analysis_plan(): Performance_Wizard_Analysis_Plan {
 		return $this->analysis_plan;
+	}
+
+	/**
+	 * Get the analysis history store.
+	 *
+	 * @return Performance_Wizard_History The analysis history store.
+	 */
+	public function get_history(): Performance_Wizard_History {
+		return $this->history;
 	}
 
 	/**
