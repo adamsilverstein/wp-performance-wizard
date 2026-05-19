@@ -230,6 +230,8 @@ class Performance_Wizard_Admin_Page {
 			array(
 				'nonce'      => wp_create_nonce( 'save_model_preference' ),
 				'resetNonce' => wp_create_nonce( 'reset_conversation' ),
+				'siteUrl'    => get_site_url(),
+				'siteName'   => get_bloginfo( 'name' ),
 			)
 		);
 	}
