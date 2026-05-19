@@ -7,4 +7,7 @@
 
 	<file>.</file>
 
+	<!-- Stubs exist only for static analysis and are not shipped code. -->
+	<exclude-pattern>*/stubs/*</exclude-pattern>
+
 </ruleset>
