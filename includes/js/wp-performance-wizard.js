@@ -53,6 +53,58 @@
 		runAnalysis( checkedDataSources );
 	} );
 
+	// Wait until the performance-wizard-new-conversation button has been
+	// clicked, then reset the stored conversation and clear the terminal.
+	const newConversationButton = document.getElementById( 'performance-wizard-new-conversation' );
+	if ( newConversationButton ) {
+		newConversationButton.addEventListener( 'click', function() {
+			resetConversation();
+		} );
+	}
+
+	/**
+	 * Reset the conversation by clearing the stored prompts/responses on the
+	 * server, then clearing the terminal and re-enabling the start button so
+	 * a fresh analysis can be run.
+	 */
+	function resetConversation() {
+		if ( ! wpPerformanceWizard || ! wpPerformanceWizard.resetNonce ) {
+			console.error( 'Missing nonce for resetting conversation' );
+			return;
+		}
+
+		const params = {
+			'nonce': wpPerformanceWizard.resetNonce
+		};
+
+		wp.apiFetch( {
+			path  : '/performance-wizard/v1/reset-conversation/',
+			method: 'POST',
+			data  : params
+		} ).then( function( response ) {
+			if ( response.success ) {
+				// Clear the terminal output.
+				terminal.innerHTML = '';
+
+				// Remove any lingering follow-up question input.
+				const followUp = document.getElementById( 'wp-performance-wizard-follow-up' );
+				if ( followUp ) {
+					followUp.remove();
+				}
+
+				// Re-enable the start button so a fresh analysis can be run.
+				const startButton = document.getElementById( 'performance-wizard-start' );
+				if ( startButton ) {
+					startButton.disabled = false;
+				}
+			} else {
+				console.error( 'Failed to reset conversation:', response.error );
+			}
+		} ).catch( function( error ) {
+			console.error( 'Error resetting conversation:', error );
+		} );
+	}
+
 	/**
 	 * Get the selected AI model from the form.
 	 */

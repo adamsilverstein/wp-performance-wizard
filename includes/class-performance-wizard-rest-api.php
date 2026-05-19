@@ -60,6 +60,19 @@ class Performance_Wizard_Rest_API {
 						},
 					)
 				);
+
+				// Register the reset conversation route.
+				register_rest_route(
+					'performance-wizard/v1',
+					'/reset-conversation/',
+					array(
+						'methods'             => array( 'POST' ),
+						'callback'            => array( $this, 'reset_conversation' ),
+						'permission_callback' => static function () {
+							return current_user_can( 'manage_options' );
+						},
+					)
+				);
 			}
 		);
 	}
@@ -172,5 +185,37 @@ class Performance_Wizard_Rest_API {
 				500
 			);
 		}
+	}
+
+	/**
+	 * Reset the current conversation.
+	 *
+	 * Deletes the stored analysis plan steps option so a fresh analysis
+	 * starts with a clean slate.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response The response object.
+	 */
+	public function reset_conversation( WP_REST_Request $request ): WP_REST_Response {
+		// Verify nonce for security.
+		$nonce = $request->get_param( 'nonce' );
+		if ( ! wp_verify_nonce( $nonce, 'reset_conversation' ) ) {
+			return new WP_REST_Response(
+				array( 'error' => 'Invalid nonce' ),
+				403
+			);
+		}
+
+		// Delete the stored conversation so the next analysis starts clean.
+		delete_option( $this->wizard->get_option_name() );
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'message' => 'Conversation reset successfully',
+			),
+			200
+		);
 	}
 }
