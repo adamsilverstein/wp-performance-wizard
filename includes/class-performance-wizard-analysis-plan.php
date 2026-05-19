@@ -246,6 +246,21 @@ Important: Do not provide generic recommendations like "consider adding caching"
 
 Next, provide a testing strategy for measuring the impact of the recommendations.
 
+After the prose recommendations, also include a fenced JSON code block (using triple backticks and the language tag `json`) that lists the same recommendations in a structured form so the UI can render them as a checklist. The block MUST be valid JSON of this exact shape:
+```json
+{
+  "recommendations": [
+    {
+      "title": "Short imperative title, max 80 characters",
+      "rationale": "One concise sentence explaining the recommendation.",
+      "audit": "The specific Lighthouse audit ID or problem this addresses, or an empty string when not applicable.",
+      "plugin": "The specific plugin or theme involved, or an empty string when not applicable."
+    }
+  ]
+}
+```
+Do not invent recommendations only to fill the JSON; the JSON entries must correspond 1:1 to the prose recommendations above. Output the JSON block in addition to, not instead of, the prose recommendations.
+
 Finally, based on the data collected and recommendations so far, provide two unique suggestions for follow up questions the user can ask that are for performance related. These questions should help them the user more information or further recommendations, provide more details or drill down to a specific issue. For these questions, provide them as HTML buttons that the user can click to ask the question. Keep the questions succinct, a maximum of 16 words. For example:"<button class="wp-wizard-follow-up-question">What is LCP image and how can I fix it?</button>" or "<button class="wp-wizard-follow-up-question">What is the most impactful blocking script?</button>"',
 			'display_prompt' => 'Considering all of the analysis of the previous steps, provide recommendations for improving the performance of the site including a testing strategy for measuring the impact of the recommendations.',
 			'source'         => null,

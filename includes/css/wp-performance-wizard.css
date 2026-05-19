@@ -190,3 +190,76 @@ button#performance-wizard-ask {
 .performance-wizard-export-bar .performance-wizard-export-button {
 	margin-right: 6px;
 }
+
+.performance-wizard-checklist {
+	margin: 16px 0;
+	padding: 14px 18px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.performance-wizard-checklist-title {
+	margin: 0 0 6px;
+	font-size: 16px;
+}
+
+.performance-wizard-checklist-help {
+	margin: 0 0 12px;
+	color: #50575e;
+	font-size: 13px;
+}
+
+.performance-wizard-checklist-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.performance-wizard-checklist-item {
+	border-top: 1px solid #f0f0f1;
+	padding: 10px 0;
+}
+
+.performance-wizard-checklist-item:first-child {
+	border-top: 0;
+}
+
+.performance-wizard-checklist-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.performance-wizard-checklist-checkbox {
+	margin-top: 3px;
+	flex: 0 0 auto;
+}
+
+.performance-wizard-checklist-item-title {
+	flex: 1 1 auto;
+}
+
+.performance-wizard-checklist-item.is-done .performance-wizard-checklist-item-title {
+	text-decoration: line-through;
+	color: #50575e;
+}
+
+.performance-wizard-checklist-rationale {
+	margin: 4px 0 0 26px;
+	color: #1d2327;
+	font-size: 13px;
+}
+
+.performance-wizard-checklist-meta {
+	margin: 2px 0 0 26px;
+	color: #50575e;
+	font-size: 12px;
+	font-style: italic;
+}
+
+.performance-wizard-checklist-retest {
+	margin: 6px 0 0 26px;
+}
