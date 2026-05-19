@@ -126,6 +126,10 @@ class Performance_Wizard_Admin_Page {
 
 		// Close container wrapper.
 		echo '</div>';
+
+		// Add the analysis history panel, populated client-side via REST.
+		echo '<h3>' . esc_html__( 'Analysis History', 'wp-performance-wizard' ) . '</h3>';
+		echo '<div id="performance-wizard-history"></div>';
 	}
 
 	/**
