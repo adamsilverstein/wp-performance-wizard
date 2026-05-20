@@ -1,6 +1,19 @@
 
 ( function() {
 
+	// Pull i18n helpers if available. Fall back to identity when running in a
+	// context where wp.i18n is not loaded (e.g. tests or older WP).
+	const __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ )
+		? window.wp.i18n.__
+		: function( s ) { return s; };
+	const sprintf = ( window.wp && window.wp.i18n && window.wp.i18n.sprintf )
+		? window.wp.i18n.sprintf
+		: function( s ) {
+			const args = Array.prototype.slice.call( arguments, 1 );
+			let i = 0;
+			return String( s ).replace( /%s/g, function() { return args[ i++ ]; } );
+		};
+
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
@@ -722,12 +735,12 @@
 
 		const label = document.createElement( 'span' );
 		label.className = 'performance-wizard-export-label';
-		label.textContent = 'Export report: ';
+		label.textContent = __( 'Export report:', 'wp-performance-wizard' ) + ' ';
 		bar.appendChild( label );
 
 		const formats = [
-			{ key: 'md',   label: 'Markdown' },
-			{ key: 'html', label: 'HTML' }
+			{ key: 'md',   label: __( 'Markdown', 'wp-performance-wizard' ) },
+			{ key: 'html', label: __( 'HTML', 'wp-performance-wizard' ) }
 		];
 
 		formats.forEach( function( format ) {
@@ -781,24 +794,24 @@
 	 * @returns {string} Markdown source.
 	 */
 	function buildExportMarkdown( sessionData, transcript ) {
-		const siteUrl  = ( wpPerformanceWizard && wpPerformanceWizard.siteUrl ) || '';
-		const siteName = ( wpPerformanceWizard && wpPerformanceWizard.siteName ) || '';
-		const created  = sessionData.created || new Date().toString();
-		const model    = sessionData.model || 'Unknown';
+		const siteUrl  = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteUrl ) || '';
+		const siteName = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteName ) || '';
+		const created  = sessionData.created || new Date().toISOString();
+		const model    = sessionData.model || __( 'Unknown', 'wp-performance-wizard' );
 		const sources  = Array.isArray( sessionData.data_sources ) ? sessionData.data_sources : [];
 
 		const lines = [];
-		lines.push( '# Performance Wizard Report' );
+		lines.push( '# ' + __( 'Performance Wizard Report', 'wp-performance-wizard' ) );
 		lines.push( '' );
 		if ( siteName ) {
-			lines.push( '- **Site:** ' + siteName + ( siteUrl ? ' (' + siteUrl + ')' : '' ) );
+			lines.push( '- **' + __( 'Site:', 'wp-performance-wizard' ) + '** ' + siteName + ( siteUrl ? ' (' + siteUrl + ')' : '' ) );
 		} else if ( siteUrl ) {
-			lines.push( '- **Site:** ' + siteUrl );
+			lines.push( '- **' + __( 'Site:', 'wp-performance-wizard' ) + '** ' + siteUrl );
 		}
-		lines.push( '- **Date:** ' + created );
-		lines.push( '- **Model:** ' + model );
+		lines.push( '- **' + __( 'Date:', 'wp-performance-wizard' ) + '** ' + created );
+		lines.push( '- **' + __( 'Model:', 'wp-performance-wizard' ) + '** ' + model );
 		if ( sources.length ) {
-			lines.push( '- **Data sources:** ' + sources.join( ', ' ) );
+			lines.push( '- **' + __( 'Data sources:', 'wp-performance-wizard' ) + '** ' + sources.join( ', ' ) );
 		}
 		lines.push( '' );
 		lines.push( '---' );
@@ -829,14 +842,17 @@
 	 * @returns {string} A complete HTML document.
 	 */
 	function buildExportHtml( sessionData, markdown ) {
-		const siteName  = ( wpPerformanceWizard && wpPerformanceWizard.siteName ) || '';
-		const titleBits = [ 'Performance Wizard Report' ];
+		const siteName  = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteName ) || '';
+		const titleBits = [ __( 'Performance Wizard Report', 'wp-performance-wizard' ) ];
 		if ( siteName ) {
 			titleBits.push( siteName );
 		}
-		const docTitle = titleBits.join( ' — ' );
+		const docTitle = titleBits.join( ' - ' );
 
-		const body = marked.marked( markdown );
+		// Render to HTML with raw HTML pass-through disabled and javascript:
+		// links neutralised. The exported file may be shared, so AI-generated
+		// content cannot be trusted to be free of script payloads.
+		const body = renderSafeMarkdown( markdown );
 
 		const styles = [
 			'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:780px;margin:2em auto;padding:0 1em;color:#1d2327;line-height:1.55;}',
@@ -935,5 +951,30 @@
 			}
 			return c;
 		} );
+	}
+
+	// Render Markdown to HTML for an exported, potentially-shared document.
+	// Drops raw HTML pass-through and unsafe link/image protocols so
+	// AI-generated content cannot inject scripts when the file is opened.
+	function renderSafeMarkdown( markdown ) {
+		const renderer = new marked.Renderer();
+		renderer.html = function() { return ''; };
+
+		return marked.marked( String( markdown || '' ), {
+			renderer: renderer,
+			walkTokens: function( token ) {
+				if ( ( 'link' === token.type || 'image' === token.type ) && ! isSafeUrl( token.href ) ) {
+					token.href = '';
+				}
+			}
+		} );
+	}
+
+	function isSafeUrl( href ) {
+		const trimmed = String( href || '' ).trim().toLowerCase();
+		if ( ! trimmed ) {
+			return false;
+		}
+		return ! /^(javascript|data|vbscript|file):/i.test( trimmed );
 	}
 } )();

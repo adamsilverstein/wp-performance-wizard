@@ -221,7 +221,9 @@ class Performance_Wizard_Admin_Page {
 		wp_enqueue_script( 'marked', plugin_dir_url( __FILE__ ) . 'js/marked.min.js', array(), '1.0.0' . $timestamp_version, true );
 
 		// Enqueue the bootstrap script.
-		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'wp-api-fetch', 'marked' ), '1.0.0' . $timestamp_version, array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( 'wp-performance-wizard', plugin_dir_url( __FILE__ ) . 'js/wp-performance-wizard.js', array( 'wp-api-fetch', 'wp-i18n', 'marked' ), '1.0.0' . $timestamp_version, array( 'strategy' => 'defer' ) );
+
+		wp_set_script_translations( 'wp-performance-wizard', 'wp-performance-wizard' );
 
 		// Localize script with nonce for AJAX requests.
 		wp_localize_script(
