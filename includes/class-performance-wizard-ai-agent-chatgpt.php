@@ -3,13 +3,16 @@
  * Performance Wizard AI Agent for ChatGPT.
  *
  * This file contains the ChatGPT AI agent implementation for the WordPress Performance Wizard.
- * It handles API connections to OpenAI's ChatGPT/GPT service.
- *
- * Credentials are supplied through the WordPress 7.0 Connectors API. Users
- * configure their key from the core Connectors admin screen.
+ * Requests go through the WordPress 7.0 AI Client API (wp_ai_client_prompt) so credentials
+ * resolved by the Connectors API are applied automatically and model selection is delegated
+ * to the registry instead of being hardcoded.
  *
  * @package wp-performance-wizard
  */
+
+use WordPress\AiClient\Messages\DTO\Message;
+use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
  * A class that enables connections to OpenAI ChatGPT.
@@ -29,11 +32,11 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 	}
 
 	/**
-	 * Send a single prompt to the ChatGPT API.
+	 * Send a single prompt to ChatGPT via the WordPress AI Client API.
 	 *
-	 * @param string $prompt The prompt to pass to the agent.
-	 * @param int    $current_step The current step in the process.
-	 * @param array  $previous_steps The previous steps in the process.
+	 * @param string $prompt               The prompt to pass to the agent.
+	 * @param int    $current_step         The current step in the process.
+	 * @param array  $previous_steps       The previous steps in the process.
 	 * @param bool   $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
@@ -45,95 +48,58 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 	}
 
 	/**
-	 * Send prompts to the ChatGPT API.
+	 * Send prompts to ChatGPT via the WordPress AI Client API.
 	 *
-	 * @param array $prompts The prompts to pass to the agent.
-	 * @param int   $current_step The current step in the process.
-	 * @param array $previous_steps The previous steps in the process.
+	 * @param array $prompts              The prompts to pass to the agent.
+	 * @param int   $current_step         The current step in the process.
+	 * @param array $previous_steps       The previous steps in the process.
 	 * @param bool  $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
 	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
-		$api_url            = 'https://api.openai.com/v1/chat/completions';
-		$api_key            = $this->get_api_key();
-		$system_instruction = $this->get_system_instructions();
-
-		$messages = array();
-
-		// Add system instruction as the first message.
-		if ( '' !== $system_instruction ) {
-			$messages[] = array(
-				'role'    => 'system',
-				'content' => $system_instruction,
-			);
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.';
 		}
 
-		// Add previous conversation history.
-		$max_steps = $current_step;
-		for ( $i = 1; $i < $max_steps; $i++ ) {
+		$history = array();
+		for ( $i = 1; $i < $current_step; $i++ ) {
 			if ( ! isset( $previous_steps[ $i ] ) ) {
 				continue;
 			}
 			$step = $previous_steps[ $i ];
-			if ( isset( $step['prompts'] ) ) {
-				$messages[] = array(
-					'role'    => 'user',
-					'content' => $step['prompts'],
+			if ( isset( $step['prompts'] ) && '' !== $step['prompts'] ) {
+				$history[] = new Message(
+					MessageRoleEnum::user(),
+					array( new MessagePart( (string) $step['prompts'] ) )
 				);
 			}
-			if ( isset( $step['response'] ) ) {
-				$messages[] = array(
-					'role'    => 'assistant',
-					'content' => $step['response'],
+			if ( isset( $step['response'] ) && '' !== $step['response'] ) {
+				$history[] = new Message(
+					MessageRoleEnum::model(),
+					array( new MessagePart( (string) $step['response'] ) )
 				);
 			}
 		}
 
-		// Add current prompts.
-		$messages[] = array(
-			'role'    => 'user',
-			'content' => implode( PHP_EOL, $prompts ),
-		);
+		$current_prompt = implode( PHP_EOL, $prompts );
 
-		$data = array(
-			'model'       => 'gpt-3.5-turbo', // Use the latest free model.
-			'messages'    => $messages,
-			'temperature' => 0.7,
-			'max_tokens'  => 4000,
-		);
+		$builder = wp_ai_client_prompt( $current_prompt )
+			->using_provider( $this->get_connector_id() )
+			->using_system_instruction( $this->get_system_instructions() )
+			->using_temperature( 0.7 )
+			->using_max_tokens( 4000 );
 
-		// Log the size of the data payload for reference.
-		error_log( 'ChatGPT data payload size: ' . strlen( wp_json_encode( $data ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-
-		$response = wp_remote_post(
-			$api_url,
-			array(
-				'body'    => wp_json_encode( $data ),
-				'timeout' => 180, // Allow up to 3 minutes.
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer ' . $api_key,
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response->get_error_message();
+		if ( count( $history ) > 0 ) {
+			$builder = $builder->with_history( ...$history );
 		}
 
-		// Check for errors, then return the response parameters.
-		if ( 200 !== $response['response']['code'] ) {
-			return $response['response']['message'];
+		$result = $builder->generate_text();
+
+		if ( is_wp_error( $result ) ) {
+			error_log( '[WP Performance Wizard][ChatGPT] generate_text WP_Error: ' . $result->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return 'ChatGPT API error: ' . $result->get_error_message();
 		}
 
-		$response_body = wp_remote_retrieve_body( $response );
-		$response_data = json_decode( $response_body, true );
-
-		// Check if we have a valid response structure.
-		if ( isset( $response_data['choices'][0]['message']['content'] ) ) {
-			return $response_data['choices'][0]['message']['content'];
-		}
-
-		return 'No response from ChatGPT.';
+		return $result;
 	}
 }

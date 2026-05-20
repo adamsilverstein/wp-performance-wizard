@@ -3,13 +3,16 @@
  * Performance Wizard AI Agent for Claude.
  *
  * This file contains the Claude AI agent implementation for the WordPress Performance Wizard.
- * It handles API connections to Anthropic's Claude AI service.
- *
- * Credentials are supplied through the WordPress 7.0 Connectors API. Users
- * configure their key from the core Connectors admin screen.
+ * Requests go through the WordPress 7.0 AI Client API (wp_ai_client_prompt) so credentials
+ * resolved by the Connectors API are applied automatically and model selection is delegated
+ * to the registry instead of being hardcoded.
  *
  * @package wp-performance-wizard
  */
+
+use WordPress\AiClient\Messages\DTO\Message;
+use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
  * A class that enables connections to Anthropic Claude AI.
@@ -29,11 +32,11 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	}
 
 	/**
-	 * Send a single prompt to the Claude API.
+	 * Send a single prompt to Claude via the WordPress AI Client API.
 	 *
-	 * @param string $prompt The prompt to pass to the agent.
-	 * @param int    $current_step The current step in the process.
-	 * @param array  $previous_steps The previous steps in the process.
+	 * @param string $prompt               The prompt to pass to the agent.
+	 * @param int    $current_step         The current step in the process.
+	 * @param array  $previous_steps       The previous steps in the process.
 	 * @param bool   $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
@@ -45,75 +48,57 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	}
 
 	/**
-	 * Send prompts to the Claude API.
+	 * Send prompts to Claude via the WordPress AI Client API.
 	 *
-	 * @param array $prompts The prompts to pass to the agent.
-	 * @param int   $current_step The current step in the process.
-	 * @param array $previous_steps The previous steps in the process.
+	 * @param array $prompts              The prompts to pass to the agent.
+	 * @param int   $current_step         The current step in the process.
+	 * @param array $previous_steps       The previous steps in the process.
 	 * @param bool  $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
 	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
-		$api_url            = 'https://api.anthropic.com/v1/messages';
-		$api_key            = $this->get_api_key();
-		$system_instruction = $this->get_system_instructions();
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.';
+		}
 
-		$messages  = array();
-		$max_steps = $current_step;
-		for ( $i = 1; $i < $max_steps; $i++ ) {
+		$history = array();
+		for ( $i = 1; $i < $current_step; $i++ ) {
 			if ( ! isset( $previous_steps[ $i ] ) ) {
 				continue;
 			}
 			$step = $previous_steps[ $i ];
-			if ( isset( $step['prompts'] ) ) {
-				$messages[] = array(
-					'role'    => 'user',
-					'content' => $step['prompts'],
+			if ( isset( $step['prompts'] ) && '' !== $step['prompts'] ) {
+				$history[] = new Message(
+					MessageRoleEnum::user(),
+					array( new MessagePart( (string) $step['prompts'] ) )
 				);
 			}
-			if ( isset( $step['response'] ) ) {
-				$messages[] = array(
-					'role'    => 'assistant',
-					'content' => $step['response'],
+			if ( isset( $step['response'] ) && '' !== $step['response'] ) {
+				$history[] = new Message(
+					MessageRoleEnum::model(),
+					array( new MessagePart( (string) $step['response'] ) )
 				);
 			}
 		}
-		$messages[] = array(
-			'role'    => 'user',
-			'content' => implode( PHP_EOL, $prompts ),
-		);
 
-		$data = array(
-			'model'      => 'claude-3-7-sonnet-latest',
-			'system'     => $system_instruction,
-			'messages'   => $messages,
-			'max_tokens' => 2048,
-		);
+		$current_prompt = implode( PHP_EOL, $prompts );
 
-		$response = wp_remote_post(
-			$api_url,
-			array(
-				'body'    => wp_json_encode( $data ),
-				'headers' => array(
-					'Content-Type'      => 'application/json',
-					'X-API-Key'         => $api_key,
-					'Anthropic-Version' => '2023-06-01',
-				),
-				'timeout' => 180,
-			)
-		);
+		$builder = wp_ai_client_prompt( $current_prompt )
+			->using_provider( $this->get_connector_id() )
+			->using_system_instruction( $this->get_system_instructions() )
+			->using_max_tokens( 2048 );
 
-		if ( is_wp_error( $response ) ) {
-			return $response->get_error_message();
+		if ( count( $history ) > 0 ) {
+			$builder = $builder->with_history( ...$history );
 		}
-		if ( 200 !== $response['response']['code'] ) {
-			return $response['response']['message'];
+
+		$result = $builder->generate_text();
+
+		if ( is_wp_error( $result ) ) {
+			error_log( '[WP Performance Wizard][Claude] generate_text WP_Error: ' . $result->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return 'Claude API error: ' . $result->get_error_message();
 		}
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-		if ( isset( $data['content'][0]['text'] ) ) {
-			return $data['content'][0]['text'];
-		}
-		return 'No response from Claude.';
+
+		return $result;
 	}
 }
