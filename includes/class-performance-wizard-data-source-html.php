@@ -46,9 +46,22 @@ class Performance_Wizard_Data_Source_HTML extends Performance_Wizard_Data_Source
 				if ( array_key_exists( $url, $cache ) ) {
 					$body = $cache[ $url ];
 				} else {
-					$response = wp_remote_get( $url, array( 'timeout' => 30 ) );
-					if ( ! is_wp_error( $response ) ) {
+					// The plugin fetches the site's own URL, so disabling SSL
+					// verification is safe and necessary for local dev setups
+					// (*.localhost, *.test, *.local) using self-signed certs.
+					$args     = array(
+						'timeout'   => 30,
+						'sslverify' => false,
+					);
+					$response = wp_remote_get( $url, $args );
+					if ( is_wp_error( $response ) ) {
+						error_log( '[WP Performance Wizard][HTML] wp_remote_get failed for ' . $url . ': ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					} else {
+						$code = (int) wp_remote_retrieve_response_code( $response );
 						$body = wp_remote_retrieve_body( $response );
+						if ( 200 !== $code || '' === $body ) {
+							error_log( sprintf( '[WP Performance Wizard][HTML] %s returned HTTP %d, body length %d', $url, $code, strlen( $body ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						}
 					}
 					$cache[ $url ] = $body;
 				}
