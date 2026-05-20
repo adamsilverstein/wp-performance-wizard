@@ -25,6 +25,20 @@ class Performance_Wizard_Settings_Page {
 	const SUPPORTED_LANGUAGES = array( 'php', 'js', 'css', 'html' );
 
 	/**
+	 * Page types that the URL-dependent data sources can analyze.
+	 *
+	 * Keyed by the slug stored in the option, with a human-readable label as
+	 * the value.
+	 *
+	 * @var array<string,string>
+	 */
+	const SUPPORTED_PAGE_TYPES = array(
+		'home'    => 'Home page',
+		'archive' => 'Posts archive',
+		'post'    => 'Most recent post',
+	);
+
+	/**
 	 * Wire up admin hooks.
 	 */
 	public function __construct() {
@@ -57,6 +71,7 @@ class Performance_Wizard_Settings_Page {
 			'collect_plugin_sources'  => false,
 			'plugin_source_languages' => array( 'php' ),
 			'use_expert_skills'       => true,
+			'page_types'              => array( 'home' ),
 		);
 		if ( ! is_array( $stored ) ) {
 			$stored = array();
@@ -106,6 +121,80 @@ class Performance_Wizard_Settings_Page {
 	}
 
 	/**
+	 * The page types that URL-dependent data sources (Lighthouse, HTML) should
+	 * analyze on each run.
+	 *
+	 * Filterable via `wp_performance_wizard_page_types`. Always constrained to
+	 * SUPPORTED_PAGE_TYPES; if filtering yields an empty list, falls back to
+	 * `home` to guarantee at least one URL.
+	 *
+	 * @return string[] The selected page type slugs.
+	 */
+	public static function page_types(): array {
+		$options    = self::get_options();
+		$page_types = is_array( $options['page_types'] ) ? $options['page_types'] : array( 'home' );
+		/**
+		 * Filters the list of page types to analyze.
+		 *
+		 * @param mixed $page_types Current list from settings (string[]).
+		 */
+		$page_types = apply_filters( 'wp_performance_wizard_page_types', $page_types );
+		if ( ! is_array( $page_types ) ) {
+			$page_types = array( 'home' );
+		}
+		$page_types = array_map( 'sanitize_key', $page_types );
+		$page_types = array_values( array_intersect( array_keys( self::SUPPORTED_PAGE_TYPES ), $page_types ) );
+		return 0 === count( $page_types ) ? array( 'home' ) : $page_types;
+	}
+
+	/**
+	 * Resolve the URL to fetch for a given page type slug.
+	 *
+	 * Returns an empty string when a representative URL cannot be resolved
+	 * (for example, no published posts yet).
+	 *
+	 * @param string $page_type One of the SUPPORTED_PAGE_TYPES keys.
+	 *
+	 * @return string The URL, or an empty string when unresolved.
+	 */
+	public static function get_page_type_url( string $page_type ): string {
+		$url = '';
+
+		switch ( $page_type ) {
+			case 'home':
+				$url = get_site_url();
+				break;
+
+			case 'post':
+				$posts = get_posts( array( 'numberposts' => 1 ) );
+				if ( count( $posts ) > 0 ) {
+					$permalink = get_permalink( $posts[0]->ID );
+					$url       = is_string( $permalink ) ? $permalink : '';
+				}
+				break;
+
+			case 'archive':
+				$archive = get_post_type_archive_link( 'post' );
+				$url     = is_string( $archive ) ? $archive : '';
+				break;
+		}
+
+		/**
+		 * Filter the URL used for performance wizard analysis.
+		 *
+		 * Use this to point the wizard at a staging URL or override the URL
+		 * resolved for a specific page type before it is fetched. The filter
+		 * runs for every supported page type so staging-site overrides cover
+		 * the home page, the posts archive, and individual post permalinks.
+		 *
+		 * @param string $url       The resolved URL, or an empty string when none could be resolved.
+		 * @param string $page_type The page type slug being resolved (one of the SUPPORTED_PAGE_TYPES keys).
+		 * @return string The filtered URL.
+		 */
+		return apply_filters( 'wp_performance_wizard_site_url', $url, $page_type );
+	}
+
+	/**
 	 * Render the settings page.
 	 */
 	public function render_page(): void {
@@ -113,10 +202,11 @@ class Performance_Wizard_Settings_Page {
 			return;
 		}
 
-		$options            = self::get_options();
-		$collect_enabled    = (bool) $options['collect_plugin_sources'];
-		$selected_languages = (array) $options['plugin_source_languages'];
-		$skills_enabled     = (bool) $options['use_expert_skills'];
+		$options             = self::get_options();
+		$collect_enabled     = (bool) $options['collect_plugin_sources'];
+		$selected_languages  = (array) $options['plugin_source_languages'];
+		$skills_enabled      = (bool) $options['use_expert_skills'];
+		$selected_page_types = (array) $options['page_types'];
 
 		$notice = isset( $_GET['info'] ) ? sanitize_key( wp_unslash( $_GET['info'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
@@ -159,6 +249,21 @@ class Performance_Wizard_Settings_Page {
 		echo '<p class="description">' . esc_html__( 'PHP is recommended for the best signal-to-cost ratio. All file types are capped by size to keep prompt size manageable.', 'wp-performance-wizard' ) . '</p>';
 		echo '</fieldset></td></tr>';
 
+		echo '</tbody></table>';
+
+		echo '<h2>' . esc_html__( 'Page Types to Analyze', 'wp-performance-wizard' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Performance characteristics differ between templates. The URL-dependent data sources (Lighthouse, HTML) will run against each selected page type and label the results so the AI can compare template-specific issues. Selecting more page types increases analysis time and Lighthouse API usage.', 'wp-performance-wizard' ) . '</p>';
+		echo '<table class="form-table" role="presentation"><tbody>';
+		echo '<tr><th scope="row">' . esc_html__( 'Page types', 'wp-performance-wizard' ) . '</th><td><fieldset>';
+		echo '<legend class="screen-reader-text">' . esc_html__( 'Page types', 'wp-performance-wizard' ) . '</legend>';
+		foreach ( self::SUPPORTED_PAGE_TYPES as $page_type => $label ) {
+			$checked = in_array( $page_type, $selected_page_types, true );
+			echo '<label style="margin-right:1em;"><input type="checkbox" name="page_types[]" value="' . esc_attr( $page_type ) . '"' . checked( $checked, true, false ) . '> ';
+			echo esc_html( $label );
+			echo '</label>';
+		}
+		echo '<p class="description">' . esc_html__( 'Home page is selected by default. Archive and Most recent post may not resolve to a URL on a brand-new site with no published posts.', 'wp-performance-wizard' ) . '</p>';
+		echo '</fieldset></td></tr>';
 		echo '</tbody></table>';
 
 		echo '<h2>' . esc_html__( 'Expert Reference Skills', 'wp-performance-wizard' ) . '</h2>';
@@ -217,10 +322,24 @@ class Performance_Wizard_Settings_Page {
 
 		$skills_enabled = isset( $_POST['use_expert_skills'] );
 
+		$submitted_page_types = array();
+		if ( isset( $_POST['page_types'] ) && is_array( $_POST['page_types'] ) ) {
+			foreach ( wp_unslash( $_POST['page_types'] ) as $page_type ) {
+				$page_type = sanitize_key( (string) $page_type );
+				if ( isset( self::SUPPORTED_PAGE_TYPES[ $page_type ] ) ) {
+					$submitted_page_types[] = $page_type;
+				}
+			}
+		}
+		if ( 0 === count( $submitted_page_types ) ) {
+			$submitted_page_types = array( 'home' );
+		}
+
 		$options                            = self::get_options();
 		$options['collect_plugin_sources']  = $collect;
 		$options['plugin_source_languages'] = array_values( array_unique( $submitted_languages ) );
 		$options['use_expert_skills']       = $skills_enabled;
+		$options['page_types']              = array_values( array_unique( $submitted_page_types ) );
 
 		update_option( self::OPTION_NAME, $options );
 
