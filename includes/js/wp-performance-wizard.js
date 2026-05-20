@@ -1073,7 +1073,7 @@
 	 * @returns {string} The site key.
 	 */
 	function checklistSiteKey() {
-		const siteUrl = ( wpPerformanceWizard && wpPerformanceWizard.siteUrl ) || '';
+		const siteUrl = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteUrl ) || '';
 		return siteUrl || '__no_site_url__';
 	}
 
@@ -1136,12 +1136,12 @@
 
 		const heading = document.createElement( 'h3' );
 		heading.className = 'performance-wizard-checklist-title';
-		heading.textContent = 'Recommendations checklist';
+		heading.textContent = __( 'Recommendations checklist', 'wp-performance-wizard' );
 		wrap.appendChild( heading );
 
 		const help = document.createElement( 'p' );
 		help.className = 'performance-wizard-checklist-help';
-		help.textContent = 'Track which recommendations you have applied. Completion state is saved locally in your browser for this site.';
+		help.textContent = __( 'Track which recommendations you have applied. Completion state is saved locally in your browser for this site.', 'wp-performance-wizard' );
 		wrap.appendChild( help );
 
 		const list = document.createElement( 'ul' );
@@ -1179,10 +1179,18 @@
 
 			const meta = [];
 			if ( item.audit ) {
-				meta.push( 'Audit: ' + String( item.audit ) );
+				meta.push( sprintf(
+					/* translators: %s: Lighthouse audit name. */
+					__( 'Audit: %s', 'wp-performance-wizard' ),
+					String( item.audit )
+				) );
 			}
 			if ( item.plugin ) {
-				meta.push( 'Plugin/theme: ' + String( item.plugin ) );
+				meta.push( sprintf(
+					/* translators: %s: plugin or theme slug. */
+					__( 'Plugin/theme: %s', 'wp-performance-wizard' ),
+					String( item.plugin )
+				) );
 			}
 			if ( meta.length ) {
 				const metaEl = document.createElement( 'p' );
@@ -1194,7 +1202,7 @@
 			const retest = document.createElement( 'button' );
 			retest.type = 'button';
 			retest.className = 'button button-secondary performance-wizard-checklist-retest';
-			retest.textContent = 'Re-test';
+			retest.textContent = __( 'Re-test', 'wp-performance-wizard' );
 			retest.style.display = done ? 'inline-block' : 'none';
 			retest.addEventListener( 'click', function() {
 				askChecklistFollowUp( item );
@@ -1237,7 +1245,11 @@
 			return;
 		}
 		const title = String( item.title || '' );
-		input.value = 'I implemented this recommendation: "' + title + '". Based on the data already gathered, how should I verify the change is working and what specific metrics should improve?';
+		input.value = sprintf(
+			/* translators: %s: the recommendation title. */
+			__( 'I implemented this recommendation: "%s". Based on the data already gathered, how should I verify the change is working and what specific metrics should improve?', 'wp-performance-wizard' ),
+			title
+		);
 		askBtn.click();
 	}
 } )();
