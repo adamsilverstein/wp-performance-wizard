@@ -1,6 +1,19 @@
 
 ( function() {
 
+	// Pull i18n helpers if available. Fall back to identity when running in a
+	// context where wp.i18n is not loaded (e.g. tests or older WP).
+	const __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ )
+		? window.wp.i18n.__
+		: function( s ) { return s; };
+	const sprintf = ( window.wp && window.wp.i18n && window.wp.i18n.sprintf )
+		? window.wp.i18n.sprintf
+		: function( s ) {
+			const args = Array.prototype.slice.call( arguments, 1 );
+			let i = 0;
+			return String( s ).replace( /%s/g, function() { return args[ i++ ]; } );
+		};
+
 	// The performance-wizard-terminal div will be used to display all communications with the agent.
 	const terminal = document.getElementById( 'performance-wizard-terminal' );
 
@@ -281,6 +294,17 @@
 					// recommendations and follow-up Q&A are not persisted
 					// server-side.
 					archiveSession( selectedModel, dataSources, currentTranscript );
+
+					// Offer export controls for the freshly completed run. The
+					// session is read lazily so any follow-up Q&A added after
+					// completion is included in the export.
+					renderExportControls( terminal, function() {
+						return {
+							model       : selectedModel,
+							data_sources: dataSources,
+							transcript  : currentTranscript
+						};
+					} );
 
 					// Output the input field so users can ask follow up questions.
 					addFollowUpQuestion();
@@ -673,6 +697,11 @@
 		);
 		terminal.appendChild( header );
 
+		// Offer export controls for the loaded historical session.
+		renderExportControls( terminal, function() {
+			return session;
+		} );
+
 		const transcript = Array.isArray( session.transcript ) ? session.transcript : [];
 		transcript.forEach( function( entry ) {
 			if ( entry.title ) {
@@ -685,5 +714,267 @@
 			body.innerHTML = marked.marked( String( entry.content || '' ) );
 			terminal.appendChild( body );
 		} );
+	}
+
+	/**
+	 * Render an export-controls toolbar into the given container.
+	 *
+	 * Each button reads the latest session via the supplied getter so a live
+	 * run's transcript is captured at click time, not at render time.
+	 *
+	 * @param {HTMLElement} container     The element to append the toolbar to.
+	 * @param {Function}    sessionGetter A function returning the session-shaped object to export.
+	 */
+	function renderExportControls( container, sessionGetter ) {
+		if ( ! container || 'function' !== typeof sessionGetter ) {
+			return;
+		}
+
+		const bar = document.createElement( 'div' );
+		bar.className = 'performance-wizard-export-bar';
+
+		const label = document.createElement( 'span' );
+		label.className = 'performance-wizard-export-label';
+		label.textContent = __( 'Export report:', 'wp-performance-wizard' ) + ' ';
+		bar.appendChild( label );
+
+		const formats = [
+			{ key: 'md',   label: __( 'Markdown', 'wp-performance-wizard' ) },
+			{ key: 'html', label: __( 'HTML', 'wp-performance-wizard' ) }
+		];
+
+		formats.forEach( function( format ) {
+			const btn = document.createElement( 'button' );
+			btn.type = 'button';
+			btn.className = 'button performance-wizard-export-button';
+			btn.textContent = format.label;
+			btn.addEventListener( 'click', function() {
+				try {
+					exportSession( format.key, sessionGetter() || {} );
+				} catch ( e ) {
+					console.error( 'Performance Wizard export failed:', e );
+				}
+			} );
+			bar.appendChild( btn );
+		} );
+
+		container.appendChild( bar );
+	}
+
+	/**
+	 * Build and trigger a download of the report in the requested format.
+	 *
+	 * @param {string} format      Either 'md' or 'html'.
+	 * @param {Object} sessionData An object with model, data_sources, transcript, and optional created/timestamp.
+	 */
+	function exportSession( format, sessionData ) {
+		const transcript = Array.isArray( sessionData.transcript ) ? sessionData.transcript : [];
+		if ( ! transcript.length ) {
+			console.warn( 'Performance Wizard export: nothing to export.' );
+			return;
+		}
+
+		const markdown = buildExportMarkdown( sessionData, transcript );
+		const filename = buildExportFilename( sessionData, format );
+
+		if ( 'md' === format ) {
+			downloadBlob( filename, 'text/markdown;charset=utf-8', markdown );
+			return;
+		}
+
+		const html = buildExportHtml( sessionData, markdown );
+		downloadBlob( filename, 'text/html;charset=utf-8', html );
+	}
+
+	/**
+	 * Build the report body as a Markdown string.
+	 *
+	 * @param {Object} sessionData The session metadata.
+	 * @param {Array}  transcript  The transcript entries.
+	 * @returns {string} Markdown source.
+	 */
+	function buildExportMarkdown( sessionData, transcript ) {
+		const siteUrl  = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteUrl ) || '';
+		const siteName = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteName ) || '';
+		const created  = sessionData.created || new Date().toISOString();
+		const model    = sessionData.model || __( 'Unknown', 'wp-performance-wizard' );
+		const sources  = Array.isArray( sessionData.data_sources ) ? sessionData.data_sources : [];
+
+		const lines = [];
+		lines.push( '# ' + __( 'Performance Wizard Report', 'wp-performance-wizard' ) );
+		lines.push( '' );
+		if ( siteName ) {
+			lines.push( '- **' + __( 'Site:', 'wp-performance-wizard' ) + '** ' + siteName + ( siteUrl ? ' (' + siteUrl + ')' : '' ) );
+		} else if ( siteUrl ) {
+			lines.push( '- **' + __( 'Site:', 'wp-performance-wizard' ) + '** ' + siteUrl );
+		}
+		lines.push( '- **' + __( 'Date:', 'wp-performance-wizard' ) + '** ' + created );
+		lines.push( '- **' + __( 'Model:', 'wp-performance-wizard' ) + '** ' + model );
+		if ( sources.length ) {
+			lines.push( '- **' + __( 'Data sources:', 'wp-performance-wizard' ) + '** ' + sources.join( ', ' ) );
+		}
+		lines.push( '' );
+		lines.push( '---' );
+		lines.push( '' );
+
+		transcript.forEach( function( entry ) {
+			const title = String( entry.title || '' ).trim();
+			if ( title ) {
+				lines.push( '## ' + title );
+				lines.push( '' );
+			}
+			lines.push( String( entry.content || '' ).trim() );
+			lines.push( '' );
+		} );
+
+		return lines.join( '\n' );
+	}
+
+	/**
+	 * Build a self-contained HTML document for the report.
+	 *
+	 * The Markdown is rendered through the same marked() pipeline used by the
+	 * live terminal so styling is consistent. A small print-friendly stylesheet
+	 * is inlined so users can also use the browser's "Print to PDF" path.
+	 *
+	 * @param {Object} sessionData The session metadata.
+	 * @param {string} markdown    The report body as Markdown.
+	 * @returns {string} A complete HTML document.
+	 */
+	function buildExportHtml( sessionData, markdown ) {
+		const siteName  = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteName ) || '';
+		const titleBits = [ __( 'Performance Wizard Report', 'wp-performance-wizard' ) ];
+		if ( siteName ) {
+			titleBits.push( siteName );
+		}
+		const docTitle = titleBits.join( ' - ' );
+
+		// Render to HTML with raw HTML pass-through disabled and javascript:
+		// links neutralised. The exported file may be shared, so AI-generated
+		// content cannot be trusted to be free of script payloads.
+		const body = renderSafeMarkdown( markdown );
+
+		const styles = [
+			'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;max-width:780px;margin:2em auto;padding:0 1em;color:#1d2327;line-height:1.55;}',
+			'h1{font-size:1.9em;margin-top:0;}',
+			'h2{border-bottom:1px solid #ddd;padding-bottom:.3em;margin-top:1.8em;}',
+			'h3{margin-top:1.4em;}',
+			'pre,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}',
+			'pre{background:#f6f7f8;padding:1em;overflow:auto;border-radius:4px;}',
+			'code{background:#f6f7f8;padding:.1em .3em;border-radius:3px;}',
+			'pre code{background:transparent;padding:0;}',
+			'hr{border:none;border-top:1px solid #ddd;margin:1.5em 0;}',
+			'button.wp-wizard-follow-up-question{display:none;}',
+			'@media print{body{margin:0;}h2,h3{break-after:avoid;}pre{white-space:pre-wrap;word-break:break-word;}}'
+		].join( '' );
+
+		return [
+			'<!DOCTYPE html>',
+			'<html lang="en">',
+			'<head>',
+			'<meta charset="utf-8">',
+			'<meta name="viewport" content="width=device-width,initial-scale=1">',
+			'<title>' + escapeHtmlAttr( docTitle ) + '</title>',
+			'<style>' + styles + '</style>',
+			'</head>',
+			'<body>',
+			body,
+			'</body>',
+			'</html>'
+		].join( '\n' );
+	}
+
+	/**
+	 * Build a filesystem-safe filename for the export based on date and format.
+	 *
+	 * @param {Object} sessionData The session metadata.
+	 * @param {string} format      Either 'md' or 'html'.
+	 * @returns {string} The filename including extension.
+	 */
+	function buildExportFilename( sessionData, format ) {
+		let stamp = '';
+		if ( sessionData.created ) {
+			stamp = String( sessionData.created );
+		} else {
+			const now = new Date();
+			stamp = now.getFullYear() + '-' +
+				pad2( now.getMonth() + 1 ) + '-' +
+				pad2( now.getDate() ) + '_' +
+				pad2( now.getHours() ) + '-' +
+				pad2( now.getMinutes() );
+		}
+		// Reduce to filesystem-safe characters.
+		stamp = stamp.replace( /[^0-9A-Za-z]+/g, '-' ).replace( /^-+|-+$/g, '' );
+		const ext = ( 'md' === format ) ? 'md' : 'html';
+		return 'wp-performance-wizard-report-' + ( stamp || 'report' ) + '.' + ext;
+	}
+
+	function pad2( n ) {
+		return ( n < 10 ? '0' : '' ) + n;
+	}
+
+	/**
+	 * Trigger a browser download for the given content.
+	 *
+	 * @param {string} filename The download filename.
+	 * @param {string} mime     The MIME type (with optional charset).
+	 * @param {string} content  The file contents.
+	 */
+	function downloadBlob( filename, mime, content ) {
+		const blob = new Blob( [ content ], { type: mime } );
+		const url  = URL.createObjectURL( blob );
+		const a    = document.createElement( 'a' );
+		a.href     = url;
+		a.download = filename;
+		a.rel      = 'noopener';
+		document.body.appendChild( a );
+		a.click();
+		document.body.removeChild( a );
+		// Revoke the URL on the next tick so Safari has time to start the download.
+		setTimeout( function() { URL.revokeObjectURL( url ); }, 1000 );
+	}
+
+	/**
+	 * Escape a string for safe interpolation into an HTML attribute or title.
+	 *
+	 * @param {string} value The input string.
+	 * @returns {string} The escaped string.
+	 */
+	function escapeHtmlAttr( value ) {
+		return String( value ).replace( /[&<>"']/g, function( c ) {
+			switch ( c ) {
+				case '&': return '&amp;';
+				case '<': return '&lt;';
+				case '>': return '&gt;';
+				case '"': return '&quot;';
+				case "'": return '&#39;';
+			}
+			return c;
+		} );
+	}
+
+	// Render Markdown to HTML for an exported, potentially-shared document.
+	// Drops raw HTML pass-through and unsafe link/image protocols so
+	// AI-generated content cannot inject scripts when the file is opened.
+	function renderSafeMarkdown( markdown ) {
+		const renderer = new marked.Renderer();
+		renderer.html = function() { return ''; };
+
+		return marked.marked( String( markdown || '' ), {
+			renderer: renderer,
+			walkTokens: function( token ) {
+				if ( ( 'link' === token.type || 'image' === token.type ) && ! isSafeUrl( token.href ) ) {
+					token.href = '';
+				}
+			}
+		} );
+	}
+
+	function isSafeUrl( href ) {
+		const trimmed = String( href || '' ).trim().toLowerCase();
+		if ( ! trimmed ) {
+			return false;
+		}
+		return ! /^(javascript|data|vbscript|file):/i.test( trimmed );
 	}
 } )();
