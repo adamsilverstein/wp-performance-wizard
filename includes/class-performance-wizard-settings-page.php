@@ -158,29 +158,40 @@ class Performance_Wizard_Settings_Page {
 	 * @return string The URL, or an empty string when unresolved.
 	 */
 	public static function get_page_type_url( string $page_type ): string {
+		$url = '';
+
 		switch ( $page_type ) {
 			case 'home':
-				/**
-				 * Filter the site URL used for performance wizard analysis.
-				 *
-				 * @param string $site_url The site URL.
-				 * @return string The filtered site URL.
-				 */
-				return apply_filters( 'wp_performance_wizard_site_url', get_site_url() );
+				$url = get_site_url();
+				break;
 
 			case 'post':
 				$posts = get_posts( array( 'numberposts' => 1 ) );
-				if ( 0 === count( $posts ) ) {
-					return '';
+				if ( count( $posts ) > 0 ) {
+					$permalink = get_permalink( $posts[0]->ID );
+					$url       = is_string( $permalink ) ? $permalink : '';
 				}
-				$permalink = get_permalink( $posts[0]->ID );
-				return is_string( $permalink ) ? $permalink : '';
+				break;
 
 			case 'archive':
-				$url = get_post_type_archive_link( 'post' );
-				return is_string( $url ) ? $url : '';
+				$archive = get_post_type_archive_link( 'post' );
+				$url     = is_string( $archive ) ? $archive : '';
+				break;
 		}
-		return '';
+
+		/**
+		 * Filter the URL used for performance wizard analysis.
+		 *
+		 * Use this to point the wizard at a staging URL or override the URL
+		 * resolved for a specific page type before it is fetched. The filter
+		 * runs for every supported page type so staging-site overrides cover
+		 * the home page, the posts archive, and individual post permalinks.
+		 *
+		 * @param string $url       The resolved URL, or an empty string when none could be resolved.
+		 * @param string $page_type The page type slug being resolved (one of the SUPPORTED_PAGE_TYPES keys).
+		 * @return string The filtered URL.
+		 */
+		return apply_filters( 'wp_performance_wizard_site_url', $url, $page_type );
 	}
 
 	/**

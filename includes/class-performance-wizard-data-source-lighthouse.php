@@ -28,8 +28,17 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 		 * @return string JSON encoded string of the multi-page Lighthouse data.
 		 */
 	public function get_data(): string {
+		// Each PSI call can take up to 3 minutes, so when several page types
+		// are configured the total runtime can easily exceed PHP's default
+		// max execution time. set_time_limit() silently returns false when
+		// disabled by the host, which is the desired no-op behaviour there.
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
 		$page_types = Performance_Wizard_Settings_Page::page_types();
 		$collected  = array();
+		$cache      = array();
 
 		foreach ( $page_types as $page_type ) {
 			$url   = Performance_Wizard_Settings_Page::get_page_type_url( $page_type );
@@ -37,12 +46,19 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 				? Performance_Wizard_Settings_Page::SUPPORTED_PAGE_TYPES[ $page_type ]
 				: $page_type;
 
+			if ( '' === $url ) {
+				$result = array( 'error' => 'No URL could be resolved for this page type.' );
+			} elseif ( array_key_exists( $url, $cache ) ) {
+				$result = $cache[ $url ];
+			} else {
+				$result        = $this->fetch_lighthouse_for_url( $url );
+				$cache[ $url ] = $result;
+			}
+
 			$collected[ $page_type ] = array(
 				'url'    => $url,
 				'label'  => $label,
-				'result' => '' === $url
-					? array( 'error' => 'No URL could be resolved for this page type.' )
-					: $this->fetch_lighthouse_for_url( $url ),
+				'result' => $result,
 			);
 		}
 

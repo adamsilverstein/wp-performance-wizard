@@ -33,6 +33,7 @@ class Performance_Wizard_Data_Source_HTML extends Performance_Wizard_Data_Source
 	public function get_data(): string {
 		$page_types = Performance_Wizard_Settings_Page::page_types();
 		$to_return  = array();
+		$cache      = array();
 
 		foreach ( $page_types as $page_type ) {
 			$url   = Performance_Wizard_Settings_Page::get_page_type_url( $page_type );
@@ -42,9 +43,14 @@ class Performance_Wizard_Data_Source_HTML extends Performance_Wizard_Data_Source
 			$body  = '';
 
 			if ( '' !== $url ) {
-				$response = wp_remote_get( $url, array( 'timeout' => 30 ) );
-				if ( ! is_wp_error( $response ) ) {
-					$body = wp_remote_retrieve_body( $response );
+				if ( array_key_exists( $url, $cache ) ) {
+					$body = $cache[ $url ];
+				} else {
+					$response = wp_remote_get( $url, array( 'timeout' => 30 ) );
+					if ( ! is_wp_error( $response ) ) {
+						$body = wp_remote_retrieve_body( $response );
+					}
+					$cache[ $url ] = $body;
 				}
 			}
 
