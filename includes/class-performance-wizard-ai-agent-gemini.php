@@ -2,16 +2,13 @@
 /**
  * A class that enables connections to Gemini AI.
  *
- * Requests go through the WordPress 7.0 AI Client API (wp_ai_client_prompt) so credentials
- * resolved by the Connectors API are applied automatically and model selection is delegated
- * to the registry instead of being hardcoded.
+ * Requests go through the WordPress 7.0 AI Client API via the shared
+ * Performance_Wizard_AI_Agent_Base::send_via_ai_client() helper, which adds an
+ * extended request timeout and exponential-backoff retries for transient
+ * failures. Credentials are resolved by the Connectors API.
  *
  * @package wp-performance-wizard
  */
-
-use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
  * The Gemini class.
@@ -31,7 +28,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	}
 
 	/**
-	 * Send a single prompt to Gemini via the WordPress AI Client API.
+	 * Send a single prompt to Gemini.
 	 *
 	 * @param string   $prompt               The prompt to pass to the agent.
 	 * @param int      $current_step         The current step in the process.
@@ -48,7 +45,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	}
 
 	/**
-	 * Send prompts to Gemini via the WordPress AI Client API.
+	 * Send prompts to Gemini.
 	 *
 	 * @param array $prompts              The prompts to pass to the agent.
 	 * @param int   $current_step         The current step in the process.
@@ -57,47 +54,6 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	 * @return string The response from the API.
 	 */
 	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.';
-		}
-
-		$history = array();
-		for ( $i = 1; $i < $current_step; $i++ ) {
-			if ( ! isset( $previous_steps[ $i ] ) ) {
-				continue;
-			}
-			$step = $previous_steps[ $i ];
-			if ( isset( $step['prompts'] ) && '' !== $step['prompts'] ) {
-				$history[] = new Message(
-					MessageRoleEnum::user(),
-					array( new MessagePart( (string) $step['prompts'] ) )
-				);
-			}
-			if ( isset( $step['response'] ) && '' !== $step['response'] ) {
-				$history[] = new Message(
-					MessageRoleEnum::model(),
-					array( new MessagePart( (string) $step['response'] ) )
-				);
-			}
-		}
-
-		$current_prompt = implode( PHP_EOL, $prompts );
-
-		$builder = wp_ai_client_prompt( $current_prompt )
-			->using_provider( $this->get_connector_id() )
-			->using_system_instruction( $this->get_system_instructions() );
-
-		if ( count( $history ) > 0 ) {
-			$builder = $builder->with_history( ...$history );
-		}
-
-		$result = $builder->generate_text();
-
-		if ( is_wp_error( $result ) ) {
-			error_log( '[WP Performance Wizard][Gemini] generate_text WP_Error: ' . $result->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return 'Gemini API error: ' . $result->get_error_message();
-		}
-
-		return $result;
+		return $this->send_via_ai_client( $prompts, $current_step, $previous_steps );
 	}
 }

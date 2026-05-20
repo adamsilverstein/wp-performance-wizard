@@ -39,6 +39,28 @@ namespace WordPress\AiClient\Messages\DTO {
 	}
 }
 
+namespace WordPress\AiClient\Providers\Http\DTO {
+
+	/**
+	 * Minimal RequestOptions DTO stub.
+	 */
+	class RequestOptions {
+		public const KEY_TIMEOUT         = 'timeout';
+		public const KEY_CONNECT_TIMEOUT = 'connectTimeout';
+		public const KEY_MAX_REDIRECTS   = 'maxRedirects';
+
+		/**
+		 * Build from array.
+		 *
+		 * @param array<string,mixed> $array Options.
+		 * @return self
+		 */
+		public static function fromArray( array $array ): self {
+			return new self();
+		}
+	}
+}
+
 namespace WordPress\AiClient\Messages\Enums {
 
 	/**
@@ -119,6 +141,16 @@ namespace {
 			 * @return self
 			 */
 			public function with_history( ...$messages ): self {
+				return $this;
+			}
+
+			/**
+			 * Request options (timeout, redirects, etc.).
+			 *
+			 * @param mixed $options RequestOptions instance.
+			 * @return self
+			 */
+			public function using_request_options( $options ): self {
 				return $this;
 			}
 
