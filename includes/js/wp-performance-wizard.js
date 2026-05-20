@@ -279,7 +279,16 @@
 		}
 
 		while ( ! complete && step <= maxSteps ) {
-			const nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
+			let nextStep;
+			try {
+				nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
+			} catch ( error ) {
+				const data = error && ( error.data || error );
+				const message = ( data && data.error ) ? data.error : ( error && error.message ) || 'Request failed.';
+				const link = ( data && data.connectors_url ) ? ' <a href="' + data.connectors_url + '">Open Connectors</a>' : '';
+				echoToTerminal( '<r>' + message + '</r>' + link );
+				return;
+			}
 			let results;
 			// If the next step isn't in the checked data sources, skip it.
 			if ( ! dataSources.includes( nextStep.title ) ) {
