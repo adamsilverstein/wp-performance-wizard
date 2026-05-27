@@ -9,6 +9,7 @@ parameters:
 		- wp-performance-wizard.php
 	scanFiles:
 		- stubs/wp-connectors.php
+		- stubs/wp-ai-client.php
 	excludePaths:
 		- includes/js/
 		- includes/css/

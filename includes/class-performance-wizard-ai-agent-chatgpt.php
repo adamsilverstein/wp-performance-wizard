@@ -2,11 +2,10 @@
 /**
  * Performance Wizard AI Agent for ChatGPT.
  *
- * This file contains the ChatGPT AI agent implementation for the WordPress Performance Wizard.
- * It handles API connections to OpenAI's ChatGPT/GPT service.
- *
- * Credentials are supplied through the WordPress 7.0 Connectors API. Users
- * configure their key from the core Connectors admin screen.
+ * Requests go through the WordPress 7.0 AI Client API via the shared
+ * Performance_Wizard_AI_Agent_Base::send_via_ai_client() helper, which adds an
+ * extended request timeout and exponential-backoff retries for transient
+ * failures. Credentials are resolved by the Connectors API.
  *
  * @package wp-performance-wizard
  */
@@ -29,11 +28,11 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 	}
 
 	/**
-	 * Send a single prompt to the ChatGPT API.
+	 * Send a single prompt to ChatGPT.
 	 *
-	 * @param string $prompt The prompt to pass to the agent.
-	 * @param int    $current_step The current step in the process.
-	 * @param array  $previous_steps The previous steps in the process.
+	 * @param string $prompt               The prompt to pass to the agent.
+	 * @param int    $current_step         The current step in the process.
+	 * @param array  $previous_steps       The previous steps in the process.
 	 * @param bool   $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
@@ -45,95 +44,23 @@ class Performance_Wizard_AI_Agent_ChatGPT extends Performance_Wizard_AI_Agent_Ba
 	}
 
 	/**
-	 * Send prompts to the ChatGPT API.
+	 * Send prompts to ChatGPT.
 	 *
-	 * @param array $prompts The prompts to pass to the agent.
-	 * @param int   $current_step The current step in the process.
-	 * @param array $previous_steps The previous steps in the process.
+	 * @param array $prompts              The prompts to pass to the agent.
+	 * @param int   $current_step         The current step in the process.
+	 * @param array $previous_steps       The previous steps in the process.
 	 * @param bool  $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
 	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
-		$api_url            = 'https://api.openai.com/v1/chat/completions';
-		$api_key            = $this->get_api_key();
-		$system_instruction = $this->get_system_instructions();
-
-		$messages = array();
-
-		// Add system instruction as the first message.
-		if ( '' !== $system_instruction ) {
-			$messages[] = array(
-				'role'    => 'system',
-				'content' => $system_instruction,
-			);
-		}
-
-		// Add previous conversation history.
-		$max_steps = $current_step;
-		for ( $i = 1; $i < $max_steps; $i++ ) {
-			if ( ! isset( $previous_steps[ $i ] ) ) {
-				continue;
-			}
-			$step = $previous_steps[ $i ];
-			if ( isset( $step['prompts'] ) ) {
-				$messages[] = array(
-					'role'    => 'user',
-					'content' => $step['prompts'],
-				);
-			}
-			if ( isset( $step['response'] ) ) {
-				$messages[] = array(
-					'role'    => 'assistant',
-					'content' => $step['response'],
-				);
-			}
-		}
-
-		// Add current prompts.
-		$messages[] = array(
-			'role'    => 'user',
-			'content' => implode( PHP_EOL, $prompts ),
-		);
-
-		$data = array(
-			'model'       => 'gpt-3.5-turbo', // Use the latest free model.
-			'messages'    => $messages,
-			'temperature' => 0.7,
-			'max_tokens'  => 4000,
-		);
-
-		// Log the size of the data payload for reference.
-		error_log( 'ChatGPT data payload size: ' . strlen( wp_json_encode( $data ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-
-		$response = wp_remote_post(
-			$api_url,
+		return $this->send_via_ai_client(
+			$prompts,
+			$current_step,
+			$previous_steps,
 			array(
-				'body'    => wp_json_encode( $data ),
-				'timeout' => 180, // Allow up to 3 minutes.
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'max_tokens'  => 4000,
+				'temperature' => 0.7,
 			)
 		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response->get_error_message();
-		}
-
-		// Check for errors, then return the response parameters.
-		if ( 200 !== $response['response']['code'] ) {
-			return $response['response']['message'];
-		}
-
-		$response_body = wp_remote_retrieve_body( $response );
-		$response_data = json_decode( $response_body, true );
-
-		// Check if we have a valid response structure.
-		if ( isset( $response_data['choices'][0]['message']['content'] ) ) {
-			return $response_data['choices'][0]['message']['content'];
-		}
-
-		return 'No response from ChatGPT.';
 	}
 }

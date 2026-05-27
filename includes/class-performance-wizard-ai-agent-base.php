@@ -202,6 +202,141 @@ class Performance_Wizard_AI_Agent_Base {
 	}
 
 	/**
+	 * Send prompts via the WordPress 7.0 AI Client API with retry-on-transient.
+	 *
+	 * Builds the prompt builder with the agent's connector ID as the provider,
+	 * the cached system instructions, prior conversation history as Message
+	 * DTOs, and an extended request timeout suitable for our large analysis
+	 * prompts. Retries up to three times with exponential backoff when the
+	 * underlying request fails with a transient error (timeouts, network
+	 * blips, rate limits, or 5xx upstream errors).
+	 *
+	 * @param array<int, string>                $prompts        Current prompts to send.
+	 * @param int                               $current_step   The current step index.
+	 * @param array<int, array<string, string>> $previous_steps Prior steps to replay as history.
+	 * @param array<string, mixed>              $options        Optional per-agent tuning:
+	 *                                                          'max_tokens'  int   default 2048,
+	 *                                                          'temperature' float omitted unless set,
+	 *                                                          'timeout'     float seconds, default 180.
+	 * @return string The model output, or a user-facing error string.
+	 */
+	protected function send_via_ai_client( array $prompts, int $current_step, array $previous_steps, array $options = array() ): string {
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return __( 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.', 'wp-performance-wizard' );
+		}
+
+		$history = array();
+		for ( $i = 1; $i < $current_step; $i++ ) {
+			if ( ! isset( $previous_steps[ $i ] ) ) {
+				continue;
+			}
+			$step = $previous_steps[ $i ];
+			if ( isset( $step['prompts'] ) && '' !== $step['prompts'] ) {
+				$history[] = new \WordPress\AiClient\Messages\DTO\Message(
+					\WordPress\AiClient\Messages\Enums\MessageRoleEnum::user(),
+					array( new \WordPress\AiClient\Messages\DTO\MessagePart( $step['prompts'] ) )
+				);
+			}
+			if ( isset( $step['response'] ) && '' !== $step['response'] ) {
+				$history[] = new \WordPress\AiClient\Messages\DTO\Message(
+					\WordPress\AiClient\Messages\Enums\MessageRoleEnum::model(),
+					array( new \WordPress\AiClient\Messages\DTO\MessagePart( $step['response'] ) )
+				);
+			}
+		}
+
+		$current_prompt = implode( PHP_EOL, $prompts );
+		$max_tokens     = isset( $options['max_tokens'] ) ? (int) $options['max_tokens'] : 2048;
+		$timeout        = isset( $options['timeout'] ) ? (float) $options['timeout'] : 180.0;
+		$max_attempts   = 3;
+
+		for ( $attempt = 1; $attempt <= $max_attempts; $attempt++ ) {
+			$builder = wp_ai_client_prompt( $current_prompt )
+				->using_provider( $this->get_connector_id() )
+				->using_system_instruction( $this->get_system_instructions() )
+				->using_max_tokens( $max_tokens )
+				->using_request_options(
+					\WordPress\AiClient\Providers\Http\DTO\RequestOptions::fromArray(
+						array( \WordPress\AiClient\Providers\Http\DTO\RequestOptions::KEY_TIMEOUT => $timeout )
+					)
+				);
+
+			if ( isset( $options['temperature'] ) ) {
+				$builder = $builder->using_temperature( (float) $options['temperature'] );
+			}
+
+			if ( count( $history ) > 0 ) {
+				$builder = $builder->with_history( ...$history );
+			}
+
+			$result = $builder->generate_text();
+
+			if ( ! is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$error_message = $result->get_error_message();
+
+			if ( ! self::is_transient_error( $error_message ) || $attempt === $max_attempts ) {
+				error_log( sprintf( '[WP Performance Wizard][%s] generate_text failed (attempt %d/%d): %s', $this->get_name(), $attempt, $max_attempts, $error_message ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				/* translators: 1: AI agent name (e.g. Claude), 2: error message from the AI Client. */
+				return sprintf( __( '%1$s API error: %2$s', 'wp-performance-wizard' ), $this->get_name(), $error_message );
+			}
+
+			$delay = min( 2 ** ( $attempt - 1 ), 8 );
+			error_log( sprintf( '[WP Performance Wizard][%s] transient error on attempt %d/%d, retrying in %ds: %s', $this->get_name(), $attempt, $max_attempts, $delay, $error_message ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			sleep( $delay );
+		}
+
+		/* translators: %s: AI agent name (e.g. Claude). */
+		return sprintf( __( '%s API error: maximum retries exceeded.', 'wp-performance-wizard' ), $this->get_name() );
+	}
+
+	/**
+	 * Decide whether an AI Client error message represents a transient failure
+	 * that is worth retrying.
+	 *
+	 * @param string $message The error message returned by the AI Client.
+	 * @return bool Whether the request should be retried.
+	 */
+	private static function is_transient_error( string $message ): bool {
+		$lower = strtolower( $message );
+
+		$transient_markers = array(
+			'timed out',
+			'timeout',
+			'curl error 28',
+			'curl error 6',
+			'curl error 7',
+			'curl error 35',
+			'curl error 52',
+			'curl error 56',
+			'could not resolve',
+			'connection reset',
+			'connection refused',
+			'temporarily unavailable',
+			'rate limit',
+			'too many requests',
+			'overloaded',
+			' 429',
+			' 500',
+			' 502',
+			' 503',
+			' 504',
+			'http/1.1 5',
+			'http/2 5',
+		);
+
+		foreach ( $transient_markers as $marker ) {
+			if ( false !== strpos( $lower, $marker ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Load the API key for this agent from the Connectors API.
 	 *
 	 * Resolution order matches the Connectors API contract:

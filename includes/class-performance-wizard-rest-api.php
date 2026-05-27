@@ -96,7 +96,7 @@ class Performance_Wizard_Rest_API {
 		$response             = '';
 
 		// Set the AI agent based on the selected model if provided.
-		if ( '' !== $model ) {
+		if ( is_string( $model ) && '' !== $model ) {
 			$model_set = $this->wizard->set_ai_agent( $model );
 			if ( ! $model_set ) {
 				return new WP_REST_Response(
@@ -104,6 +104,21 @@ class Performance_Wizard_Rest_API {
 					400
 				);
 			}
+		}
+
+		// Commands that require a configured AI agent. Fail early with a clear
+		// message instead of crashing downstream when no provider is connected.
+		$ai_required = array( '_get_next_action_', '_start_', '_run_action_', '_prompt_' );
+		if ( in_array( $command, $ai_required, true ) && null === $this->wizard->get_ai_agent() ) {
+			/** This filter is documented in includes/class-performance-wizard-admin-page.php */
+			$connectors_url = apply_filters( 'wp_performance_wizard_connectors_screen_url', admin_url( 'admin.php?page=options-connectors' ) );
+			return new WP_REST_Response(
+				array(
+					'error'          => __( 'No AI provider is connected. Configure an AI connector (Anthropic, Google Gemini, or OpenAI) to run an analysis.', 'wp-performance-wizard' ),
+					'connectors_url' => $connectors_url,
+				),
+				503
+			);
 		}
 
 		switch ( $command ) {

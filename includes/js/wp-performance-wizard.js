@@ -279,7 +279,16 @@
 		}
 
 		while ( ! complete && step <= maxSteps ) {
-			const nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
+			let nextStep;
+			try {
+				nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
+			} catch ( error ) {
+				const data = error && ( error.data || error );
+				const message = ( data && data.error ) ? data.error : ( error && error.message ) || __( 'Request failed.', 'wp-performance-wizard' );
+				const link = ( data && data.connectors_url ) ? ' <a href="' + data.connectors_url + '">' + __( 'Open Connectors', 'wp-performance-wizard' ) + '</a>' : '';
+				echoToTerminal( '<r>' + message + '</r>' + link );
+				return;
+			}
 			let results;
 			// If the next step isn't in the checked data sources, skip it.
 			if ( ! dataSources.includes( nextStep.title ) ) {
@@ -432,26 +441,37 @@
 	/**
 	 * Simulate a streaming text effect while keeping Markdown rendering intact.
 	 *
-	 * The accumulated substring is passed through the same Markdown renderer
-	 * used for non-streamed replies on each tick, so formatting (headings,
-	 * lists, links, code) matches the non-streamed path exactly.
+	 * The animation is capped at ~500ms total regardless of response length, so
+	 * long responses still feel snappy. The accumulated substring is passed
+	 * through the same Markdown renderer used for non-streamed replies on each
+	 * tick, so formatting (headings, lists, links, code) matches the
+	 * non-streamed path exactly.
 	 *
 	 * @param {HTMLElement} element  Target element to render into.
 	 * @param {string}      markdown Raw Markdown source to stream.
-	 * @param {number}      speed    Milliseconds between characters.
+	 * @param {number}      speed    (Unused, kept for backward compatibility.)
 	 */
-	function streamText( element, markdown, speed = 30 ) {
+	function streamText( element, markdown, speed = 0 ) { // eslint-disable-line no-unused-vars
 		return new Promise( ( resolve ) => {
 			const source = String( markdown || '' );
-			const chunk  = 5; // Re-render every N chars to avoid O(n^2) full Markdown parses on long responses.
-			let index    = 0;
-			element.innerHTML = '';
+			if ( source.length === 0 ) {
+				element.innerHTML = '';
+				resolve();
+				return;
+			}
+
+			const totalDurationMs = 500;
+			const tickIntervalMs  = 25;
+			const ticks           = Math.max( 1, Math.round( totalDurationMs / tickIntervalMs ) );
+			const chunkSize       = Math.max( 1, Math.ceil( source.length / ticks ) );
+			let index             = 0;
+			element.innerHTML     = '';
 
 			const typeChar = () => {
 				if ( index < source.length ) {
-					index = Math.min( index + chunk, source.length );
+					index = Math.min( index + chunkSize, source.length );
 					element.innerHTML = marked.marked( source.substring( 0, index ) );
-					setTimeout( typeChar, speed * chunk );
+					setTimeout( typeChar, tickIntervalMs );
 				} else {
 					element.innerHTML = marked.marked( source );
 					resolve();

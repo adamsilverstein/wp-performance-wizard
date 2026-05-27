@@ -2,11 +2,10 @@
 /**
  * Performance Wizard AI Agent for Claude.
  *
- * This file contains the Claude AI agent implementation for the WordPress Performance Wizard.
- * It handles API connections to Anthropic's Claude AI service.
- *
- * Credentials are supplied through the WordPress 7.0 Connectors API. Users
- * configure their key from the core Connectors admin screen.
+ * Requests go through the WordPress 7.0 AI Client API via the shared
+ * Performance_Wizard_AI_Agent_Base::send_via_ai_client() helper, which adds an
+ * extended request timeout and exponential-backoff retries for transient
+ * failures. Credentials are resolved by the Connectors API.
  *
  * @package wp-performance-wizard
  */
@@ -29,11 +28,11 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	}
 
 	/**
-	 * Send a single prompt to the Claude API.
+	 * Send a single prompt to Claude.
 	 *
-	 * @param string $prompt The prompt to pass to the agent.
-	 * @param int    $current_step The current step in the process.
-	 * @param array  $previous_steps The previous steps in the process.
+	 * @param string $prompt               The prompt to pass to the agent.
+	 * @param int    $current_step         The current step in the process.
+	 * @param array  $previous_steps       The previous steps in the process.
 	 * @param bool   $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
@@ -45,75 +44,15 @@ class Performance_Wizard_AI_Agent_Claude extends Performance_Wizard_AI_Agent_Bas
 	}
 
 	/**
-	 * Send prompts to the Claude API.
+	 * Send prompts to Claude.
 	 *
-	 * @param array $prompts The prompts to pass to the agent.
-	 * @param int   $current_step The current step in the process.
-	 * @param array $previous_steps The previous steps in the process.
+	 * @param array $prompts              The prompts to pass to the agent.
+	 * @param int   $current_step         The current step in the process.
+	 * @param array $previous_steps       The previous steps in the process.
 	 * @param bool  $additional_questions Whether to ask additional questions.
 	 * @return string The response from the API.
 	 */
 	public function send_prompts( array $prompts, int $current_step, array $previous_steps, bool $additional_questions ): string {
-		$api_url            = 'https://api.anthropic.com/v1/messages';
-		$api_key            = $this->get_api_key();
-		$system_instruction = $this->get_system_instructions();
-
-		$messages  = array();
-		$max_steps = $current_step;
-		for ( $i = 1; $i < $max_steps; $i++ ) {
-			if ( ! isset( $previous_steps[ $i ] ) ) {
-				continue;
-			}
-			$step = $previous_steps[ $i ];
-			if ( isset( $step['prompts'] ) ) {
-				$messages[] = array(
-					'role'    => 'user',
-					'content' => $step['prompts'],
-				);
-			}
-			if ( isset( $step['response'] ) ) {
-				$messages[] = array(
-					'role'    => 'assistant',
-					'content' => $step['response'],
-				);
-			}
-		}
-		$messages[] = array(
-			'role'    => 'user',
-			'content' => implode( PHP_EOL, $prompts ),
-		);
-
-		$data = array(
-			'model'      => 'claude-3-7-sonnet-latest',
-			'system'     => $system_instruction,
-			'messages'   => $messages,
-			'max_tokens' => 2048,
-		);
-
-		$response = wp_remote_post(
-			$api_url,
-			array(
-				'body'    => wp_json_encode( $data ),
-				'headers' => array(
-					'Content-Type'      => 'application/json',
-					'X-API-Key'         => $api_key,
-					'Anthropic-Version' => '2023-06-01',
-				),
-				'timeout' => 180,
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response->get_error_message();
-		}
-		if ( 200 !== $response['response']['code'] ) {
-			return $response['response']['message'];
-		}
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-		if ( isset( $data['content'][0]['text'] ) ) {
-			return $data['content'][0]['text'];
-		}
-		return 'No response from Claude.';
+		return $this->send_via_ai_client( $prompts, $current_step, $previous_steps );
 	}
 }

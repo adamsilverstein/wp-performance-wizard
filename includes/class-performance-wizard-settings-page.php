@@ -242,7 +242,7 @@ class Performance_Wizard_Settings_Page {
 		echo '<legend class="screen-reader-text">' . esc_html__( 'File types to include', 'wp-performance-wizard' ) . '</legend>';
 		foreach ( self::SUPPORTED_LANGUAGES as $language ) {
 			$checked = in_array( $language, $selected_languages, true );
-			echo '<label style="margin-right:1em;"><input type="checkbox" name="plugin_source_languages[]" value="' . esc_attr( $language ) . '"' . checked( $checked, true, false ) . '> ';
+			echo '<label style="display:inline-block;margin-right:1em;"><input type="checkbox" name="plugin_source_languages[]" value="' . esc_attr( $language ) . '"' . checked( $checked, true, false ) . '> ';
 			echo esc_html( strtoupper( $language ) );
 			echo '</label>';
 		}
@@ -258,7 +258,7 @@ class Performance_Wizard_Settings_Page {
 		echo '<legend class="screen-reader-text">' . esc_html__( 'Page types', 'wp-performance-wizard' ) . '</legend>';
 		foreach ( self::SUPPORTED_PAGE_TYPES as $page_type => $label ) {
 			$checked = in_array( $page_type, $selected_page_types, true );
-			echo '<label style="margin-right:1em;"><input type="checkbox" name="page_types[]" value="' . esc_attr( $page_type ) . '"' . checked( $checked, true, false ) . '> ';
+			echo '<label style="display:inline-block;margin-right:1em;"><input type="checkbox" name="page_types[]" value="' . esc_attr( $page_type ) . '"' . checked( $checked, true, false ) . '> ';
 			echo esc_html( $label );
 			echo '</label>';
 		}
