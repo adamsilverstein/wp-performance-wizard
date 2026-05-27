@@ -23,7 +23,7 @@ class Performance_Wizard_AI_Agent_Gemini extends Performance_Wizard_AI_Agent_Bas
 	public function __construct( WP_Performance_Wizard $wizard ) {
 		$this->set_name( 'Gemini' );
 		$this->set_wizard( $wizard );
-		$this->set_description( 'Gemini is a is a generative artificial intelligence chatbot developed by Google.' );
+		$this->set_description( 'Gemini is a generative artificial intelligence chatbot developed by Google.' );
 		$this->set_connector_id( 'gemini' );
 	}
 
