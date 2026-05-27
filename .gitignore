@@ -2,3 +2,5 @@ node_modules/
 .keys/
 /vendor/
 
+# Locally-built plugin zips - the deploy workflow produces these on release.
+/releases/wp-performance-wizard-*.zip
