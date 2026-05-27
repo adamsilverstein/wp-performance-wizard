@@ -741,7 +741,7 @@
 			// If this entry is the final recommendations block and embeds a
 			// structured JSON list, render a checklist below it.
 			if ( 'recommendations' === entry.type ) {
-				renderRecommendationsChecklist( terminal, String( entry.content || '' ) );
+				renderRecommendationsChecklist( terminal, String( entry.content || '' ), { readOnly: true } );
 			}
 		} );
 	}
@@ -1122,12 +1122,20 @@
 	 *
 	 * @param {HTMLElement} container       The element to append the checklist to.
 	 * @param {string}      responseMarkdown The full AI response Markdown.
+	 * @param {Object}      [options]        Render options. Pass { readOnly: true }
+	 *                                       from the history view so checkboxes
+	 *                                       and the Re-test button are inert
+	 *                                       (archived sessions cannot mutate
+	 *                                       completion state or trigger live
+	 *                                       follow-up questions).
 	 */
-	function renderRecommendationsChecklist( container, responseMarkdown ) {
+	function renderRecommendationsChecklist( container, responseMarkdown, options ) {
 		const items = extractRecommendationsJson( responseMarkdown );
 		if ( ! container || 0 === items.length ) {
 			return;
 		}
+
+		const readOnly = !! ( options && options.readOnly );
 
 		const state = readChecklistState();
 
@@ -1161,6 +1169,9 @@
 			checkbox.type = 'checkbox';
 			checkbox.className = 'performance-wizard-checklist-checkbox';
 			checkbox.checked = done;
+			if ( readOnly ) {
+				checkbox.disabled = true;
+			}
 			label.appendChild( checkbox );
 
 			const titleSpan = document.createElement( 'span' );
@@ -1199,29 +1210,32 @@
 				li.appendChild( metaEl );
 			}
 
-			const retest = document.createElement( 'button' );
-			retest.type = 'button';
-			retest.className = 'button button-secondary performance-wizard-checklist-retest';
-			retest.textContent = __( 'Re-test', 'wp-performance-wizard' );
-			retest.style.display = done ? 'inline-block' : 'none';
-			retest.addEventListener( 'click', function() {
-				askChecklistFollowUp( item );
-			} );
-			li.appendChild( retest );
+			let retest = null;
+			if ( ! readOnly ) {
+				retest = document.createElement( 'button' );
+				retest.type = 'button';
+				retest.className = 'button button-secondary performance-wizard-checklist-retest';
+				retest.textContent = __( 'Re-test', 'wp-performance-wizard' );
+				retest.style.display = done ? 'inline-block' : 'none';
+				retest.addEventListener( 'click', function() {
+					askChecklistFollowUp( item );
+				} );
+				li.appendChild( retest );
 
-			checkbox.addEventListener( 'change', function() {
-				const newState = readChecklistState();
-				if ( checkbox.checked ) {
-					newState[ key ] = true;
-					li.classList.add( 'is-done' );
-					retest.style.display = 'inline-block';
-				} else {
-					delete newState[ key ];
-					li.classList.remove( 'is-done' );
-					retest.style.display = 'none';
-				}
-				writeChecklistState( newState );
-			} );
+				checkbox.addEventListener( 'change', function() {
+					const newState = readChecklistState();
+					if ( checkbox.checked ) {
+						newState[ key ] = true;
+						li.classList.add( 'is-done' );
+						retest.style.display = 'inline-block';
+					} else {
+						delete newState[ key ];
+						li.classList.remove( 'is-done' );
+						retest.style.display = 'none';
+					}
+					writeChecklistState( newState );
+				} );
+			}
 
 			list.appendChild( li );
 		} );
