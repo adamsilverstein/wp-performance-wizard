@@ -53,6 +53,31 @@ composer run format
 
 See [docs/github-actions.md](docs/github-actions.md) for detailed information about the CI/CD setup.
 
+## Releasing to WordPress.org
+
+The plugin ships to the [WordPress.org plugin directory](https://wordpress.org/plugins/) via the [10up plugin deploy action](https://github.com/10up/action-wordpress-plugin-deploy).
+
+### One-time setup (after initial wp.org approval)
+1. Add two secrets to the GitHub repo: `SVN_USERNAME` and `SVN_PASSWORD` (your wordpress.org credentials).
+
+### Cutting a release
+1. Bump the `Version:` header in [`wp-performance-wizard.php`](wp-performance-wizard.php) and the matching `Stable tag` in [`readme.txt`](readme.txt). Add a changelog entry to `readme.txt`.
+2. Commit and merge to `main`.
+3. Publish a [GitHub Release](https://github.com/adamsilverstein/wp-performance-wizard/releases/new) with a tag like `v2.0.1`. The [`Deploy to WordPress.org` workflow](.github/workflows/deploy.yml) will push the tag to SVN and attach the built zip to the release.
+
+### Building a zip locally
+Used for the initial wp.org submission (before SVN access exists) or for local testing:
+
+```bash
+npm install
+npm run build:release-zip
+```
+
+The zip is written to `releases/wp-performance-wizard-<version>.zip`. The build honors [`.distignore`](.distignore), which is the same exclude list the deploy action uses.
+
+### Graphical assets
+Icon and banner PNGs for the wp.org listing live in [`.wordpress-org/`](.wordpress-org/). The deploy action syncs that directory to the SVN `assets/` folder automatically.
+
 ## Versions
 * 2.0.0 - Require WordPress 7.0. Removed built-in API key UI; credentials are now supplied via the core Connectors API.
 * 1.3.1 - Added Gemini key entry in admin.
