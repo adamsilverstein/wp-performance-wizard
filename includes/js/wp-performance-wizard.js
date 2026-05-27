@@ -391,6 +391,10 @@
 						echoToTerminal( '<div class="dc">' + ( result || '' ) + '</div>' );
 					}
 
+					// If the response includes a structured recommendations
+					// block, render it as a checklist below the prose.
+					renderRecommendationsChecklist( terminal, result || '' );
+
 					break;
 				case 'continue':
 					step++;
@@ -733,6 +737,12 @@
 			body.className = 'dc';
 			body.innerHTML = marked.marked( String( entry.content || '' ) );
 			terminal.appendChild( body );
+
+			// If this entry is the final recommendations block and embeds a
+			// structured JSON list, render a checklist below it.
+			if ( 'recommendations' === entry.type ) {
+				renderRecommendationsChecklist( terminal, String( entry.content || '' ), { readOnly: true } );
+			}
 		} );
 	}
 
@@ -996,5 +1006,264 @@
 			return false;
 		}
 		return ! /^(javascript|data|vbscript|file):/i.test( trimmed );
+	}
+
+	/**
+	 * The localStorage key used to persist completed recommendation state.
+	 *
+	 * The shape is { "<site-url>": { "<lowercased trimmed title>": true } } so
+	 * different WP installs viewed from the same browser do not collide.
+	 *
+	 * @constant {string}
+	 */
+	const CHECKLIST_STORAGE_KEY = 'wp-performance-wizard-recommendations-checklist';
+
+	/**
+	 * Read the stored "done" state map for the current site.
+	 *
+	 * @returns {Object<string,boolean>} Title-keyed completion state.
+	 */
+	function readChecklistState() {
+		try {
+			const raw = window.localStorage.getItem( CHECKLIST_STORAGE_KEY );
+			if ( ! raw ) {
+				return {};
+			}
+			const parsed = JSON.parse( raw );
+			const siteKey = checklistSiteKey();
+			if ( parsed && 'object' === typeof parsed && parsed[ siteKey ] && 'object' === typeof parsed[ siteKey ] ) {
+				return parsed[ siteKey ];
+			}
+		} catch ( e ) {
+			// Storage may be unavailable (private mode, quota); start fresh.
+		}
+		return {};
+	}
+
+	/**
+	 * Persist the "done" state map for the current site.
+	 *
+	 * @param {Object<string,boolean>} state Title-keyed completion state.
+	 */
+	function writeChecklistState( state ) {
+		try {
+			const raw = window.localStorage.getItem( CHECKLIST_STORAGE_KEY );
+			let parsed = {};
+			if ( raw ) {
+				try {
+					const candidate = JSON.parse( raw );
+					if ( candidate && 'object' === typeof candidate ) {
+						parsed = candidate;
+					}
+				} catch ( e ) {
+					parsed = {};
+				}
+			}
+			parsed[ checklistSiteKey() ] = state;
+			window.localStorage.setItem( CHECKLIST_STORAGE_KEY, JSON.stringify( parsed ) );
+		} catch ( e ) {
+			// Storage write failed; tolerate silently.
+		}
+	}
+
+	/**
+	 * Stable per-site key for checklist state. Falls back to a sentinel when no
+	 * site URL is available (older configurations or test environments).
+	 *
+	 * @returns {string} The site key.
+	 */
+	function checklistSiteKey() {
+		const siteUrl = ( 'undefined' !== typeof wpPerformanceWizard && wpPerformanceWizard.siteUrl ) || '';
+		return siteUrl || '__no_site_url__';
+	}
+
+	/**
+	 * Normalize a recommendation title so the same recommendation matches across runs.
+	 *
+	 * @param {string} title The raw title.
+	 * @returns {string} A normalized key.
+	 */
+	function normalizeChecklistTitle( title ) {
+		return String( title || '' ).trim().toLowerCase();
+	}
+
+	/**
+	 * Extract the structured recommendations from a Markdown response.
+	 *
+	 * Looks for a fenced JSON code block (```json ... ```) anywhere in the
+	 * response and returns the `recommendations` array from it. Returns an
+	 * empty array when the block is missing or unparsable.
+	 *
+	 * @param {string} markdown The raw response Markdown.
+	 * @returns {Array<{title:string,rationale:string,audit:string,plugin:string}>}
+	 */
+	function extractRecommendationsJson( markdown ) {
+		const source = String( markdown || '' );
+		const match = source.match( /```\s*json\s*([\s\S]*?)```/i );
+		if ( ! match ) {
+			return [];
+		}
+		try {
+			const parsed = JSON.parse( match[1] );
+			if ( parsed && Array.isArray( parsed.recommendations ) ) {
+				return parsed.recommendations.filter( function( item ) {
+					return item && 'object' === typeof item && item.title;
+				} );
+			}
+		} catch ( e ) {
+			// JSON block was present but invalid; skip the checklist UI.
+		}
+		return [];
+	}
+
+	/**
+	 * Render a checkable list of recommendations into the given container if
+	 * the response includes a structured JSON block. No-op otherwise.
+	 *
+	 * @param {HTMLElement} container       The element to append the checklist to.
+	 * @param {string}      responseMarkdown The full AI response Markdown.
+	 * @param {Object}      [options]        Render options. Pass { readOnly: true }
+	 *                                       from the history view so checkboxes
+	 *                                       and the Re-test button are inert
+	 *                                       (archived sessions cannot mutate
+	 *                                       completion state or trigger live
+	 *                                       follow-up questions).
+	 */
+	function renderRecommendationsChecklist( container, responseMarkdown, options ) {
+		const items = extractRecommendationsJson( responseMarkdown );
+		if ( ! container || 0 === items.length ) {
+			return;
+		}
+
+		const readOnly = !! ( options && options.readOnly );
+
+		const state = readChecklistState();
+
+		const wrap = document.createElement( 'div' );
+		wrap.className = 'performance-wizard-checklist';
+
+		const heading = document.createElement( 'h3' );
+		heading.className = 'performance-wizard-checklist-title';
+		heading.textContent = __( 'Recommendations checklist', 'wp-performance-wizard' );
+		wrap.appendChild( heading );
+
+		const help = document.createElement( 'p' );
+		help.className = 'performance-wizard-checklist-help';
+		help.textContent = __( 'Track which recommendations you have applied. Completion state is saved locally in your browser for this site.', 'wp-performance-wizard' );
+		wrap.appendChild( help );
+
+		const list = document.createElement( 'ul' );
+		list.className = 'performance-wizard-checklist-list';
+
+		items.forEach( function( item ) {
+			const key = normalizeChecklistTitle( item.title );
+			const done = !! state[ key ];
+
+			const li = document.createElement( 'li' );
+			li.className = 'performance-wizard-checklist-item' + ( done ? ' is-done' : '' );
+
+			const label = document.createElement( 'label' );
+			label.className = 'performance-wizard-checklist-label';
+
+			const checkbox = document.createElement( 'input' );
+			checkbox.type = 'checkbox';
+			checkbox.className = 'performance-wizard-checklist-checkbox';
+			checkbox.checked = done;
+			if ( readOnly ) {
+				checkbox.disabled = true;
+			}
+			label.appendChild( checkbox );
+
+			const titleSpan = document.createElement( 'span' );
+			titleSpan.className = 'performance-wizard-checklist-item-title';
+			titleSpan.textContent = String( item.title );
+			label.appendChild( titleSpan );
+
+			li.appendChild( label );
+
+			if ( item.rationale ) {
+				const rationale = document.createElement( 'p' );
+				rationale.className = 'performance-wizard-checklist-rationale';
+				rationale.textContent = String( item.rationale );
+				li.appendChild( rationale );
+			}
+
+			const meta = [];
+			if ( item.audit ) {
+				meta.push( sprintf(
+					/* translators: %s: Lighthouse audit name. */
+					__( 'Audit: %s', 'wp-performance-wizard' ),
+					String( item.audit )
+				) );
+			}
+			if ( item.plugin ) {
+				meta.push( sprintf(
+					/* translators: %s: plugin or theme slug. */
+					__( 'Plugin/theme: %s', 'wp-performance-wizard' ),
+					String( item.plugin )
+				) );
+			}
+			if ( meta.length ) {
+				const metaEl = document.createElement( 'p' );
+				metaEl.className = 'performance-wizard-checklist-meta';
+				metaEl.textContent = meta.join( ' · ' );
+				li.appendChild( metaEl );
+			}
+
+			let retest = null;
+			if ( ! readOnly ) {
+				retest = document.createElement( 'button' );
+				retest.type = 'button';
+				retest.className = 'button button-secondary performance-wizard-checklist-retest';
+				retest.textContent = __( 'Re-test', 'wp-performance-wizard' );
+				retest.style.display = done ? 'inline-block' : 'none';
+				retest.addEventListener( 'click', function() {
+					askChecklistFollowUp( item );
+				} );
+				li.appendChild( retest );
+
+				checkbox.addEventListener( 'change', function() {
+					const newState = readChecklistState();
+					if ( checkbox.checked ) {
+						newState[ key ] = true;
+						li.classList.add( 'is-done' );
+						retest.style.display = 'inline-block';
+					} else {
+						delete newState[ key ];
+						li.classList.remove( 'is-done' );
+						retest.style.display = 'none';
+					}
+					writeChecklistState( newState );
+				} );
+			}
+
+			list.appendChild( li );
+		} );
+
+		wrap.appendChild( list );
+		container.appendChild( wrap );
+	}
+
+	/**
+	 * Fill the follow-up question input with a re-test prompt and click Ask.
+	 *
+	 * No-op when the analysis is not yet in its Q&A phase (the input is only
+	 * added once the run has reached the 'complete' step).
+	 *
+	 * @param {Object} item The recommendation item being re-tested.
+	 */
+	function askChecklistFollowUp( item ) {
+		const input = document.getElementById( 'performance-wizard-question' );
+		const askBtn = document.getElementById( 'performance-wizard-ask' );
+		if ( ! input || ! askBtn ) {
+			return;
+		}
+		const title = String( item.title || '' );
+		input.value = sprintf(
+			/* translators: %s: the recommendation title. */
+			__( 'I implemented this recommendation: "%s". Based on the data already gathered, how should I verify the change is working and what specific metrics should improve?', 'wp-performance-wizard' ),
+			title
+		);
+		askBtn.click();
 	}
 } )();
