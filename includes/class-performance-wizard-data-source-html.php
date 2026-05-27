@@ -46,14 +46,18 @@ class Performance_Wizard_Data_Source_HTML extends Performance_Wizard_Data_Source
 				if ( array_key_exists( $url, $cache ) ) {
 					$body = $cache[ $url ];
 				} else {
-					// The plugin fetches the site's own URL, so disabling SSL
-					// verification is safe and necessary for local dev setups
-					// (*.localhost, *.test, *.local) using self-signed certs.
-					$args     = array(
+					// Only relax SSL verification on local/development
+					// environments where self-signed certs are common
+					// (*.localhost, *.test, *.local). In production the
+					// plugin fetches the site's own URL, so SSL verification
+					// must remain enabled to prevent MITM tampering of the
+					// markup that is sent to the AI agent.
+					$is_dev_env = in_array( wp_get_environment_type(), array( 'local', 'development' ), true );
+					$args       = array(
 						'timeout'   => 30,
-						'sslverify' => false,
+						'sslverify' => ! $is_dev_env,
 					);
-					$response = wp_remote_get( $url, $args );
+					$response   = wp_remote_get( $url, $args );
 					if ( is_wp_error( $response ) ) {
 						error_log( '[WP Performance Wizard][HTML] wp_remote_get failed for ' . $url . ': ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 					} else {
