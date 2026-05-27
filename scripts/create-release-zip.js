@@ -9,11 +9,12 @@
 
 const fs = require( 'fs-extra' );
 const path = require( 'path' );
+const os = require( 'os' );
 const archiver = require( 'archiver' );
 
 const PLUGIN_SLUG = 'wp-performance-wizard';
 const repoDir = path.resolve( __dirname, '..' );
-const stagingDir = path.join( '/tmp', `plugin-release-${ PLUGIN_SLUG }`, PLUGIN_SLUG );
+const stagingDir = path.join( os.tmpdir(), `plugin-release-${ PLUGIN_SLUG }`, PLUGIN_SLUG );
 const stagingParent = path.dirname( stagingDir );
 const releasesDir = path.join( repoDir, 'releases' );
 const distignorePath = path.join( repoDir, '.distignore' );
@@ -42,24 +43,24 @@ function readDistignore() {
 /**
  * Returns true if the given repo-relative path matches any .distignore pattern.
  *
- * Patterns are matched against either the basename of the path or any path
- * segment. This mirrors the behavior the 10up action uses for excludes: an
- * entry like `tests` excludes a top-level `tests/` directory and any nested
- * `tests/` directory; an entry like `composer.json` excludes that file
- * anywhere it appears.
+ * Patterns are matched against either the basename of the path, any path
+ * segment, or - when the pattern contains a slash - the full path (exact
+ * match or directory prefix). This mirrors the behavior the 10up action
+ * uses for excludes: `tests` excludes a `tests/` directory anywhere,
+ * `composer.json` excludes that file anywhere, and `foo/bar` excludes that
+ * specific path and everything under it.
  */
 function makeExcludeMatcher( patterns ) {
+	const normalizedPatterns = patterns.map( ( p ) => p.replace( /\\/g, '/' ).replace( /^\/+|\/+$/g, '' ) );
 	return ( relPath ) => {
-		const segments = relPath.split( path.sep );
+		const normalizedPath = relPath.split( path.sep ).join( '/' );
+		const segments = normalizedPath.split( '/' );
 		const basename = segments[ segments.length - 1 ];
-		return patterns.some( ( pattern ) => {
-			if ( pattern === basename ) {
-				return true;
+		return normalizedPatterns.some( ( pattern ) => {
+			if ( pattern.includes( '/' ) ) {
+				return normalizedPath === pattern || normalizedPath.startsWith( pattern + '/' );
 			}
-			if ( segments.includes( pattern ) ) {
-				return true;
-			}
-			return false;
+			return pattern === basename || segments.includes( pattern );
 		} );
 	};
 }
