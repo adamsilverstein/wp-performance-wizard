@@ -58,7 +58,7 @@ See [docs/github-actions.md](docs/github-actions.md) for detailed information ab
 The plugin ships to the [WordPress.org plugin directory](https://wordpress.org/plugins/) via the [10up plugin deploy action](https://github.com/10up/action-wordpress-plugin-deploy).
 
 ### One-time setup (after initial wp.org approval)
-1. Add two secrets to the GitHub repo: `SVN_USERNAME` and `SVN_PASSWORD` (your wordpress.org credentials).
+1. Add two secrets to the GitHub repo: `SVN_USERNAME` and `SVN_PASSWORD` (your WordPress.org credentials).
 
 ### Cutting a release
 1. Bump the `Version:` header in [`wp-performance-wizard.php`](wp-performance-wizard.php) and the matching `Stable tag` in [`readme.txt`](readme.txt). Add a changelog entry to `readme.txt`.
