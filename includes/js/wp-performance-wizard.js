@@ -284,8 +284,8 @@
 				nextStep = await getPerfomanceWizardNextStep( step, selectedModel );
 			} catch ( error ) {
 				const data = error && ( error.data || error );
-				const message = ( data && data.error ) ? data.error : ( error && error.message ) || 'Request failed.';
-				const link = ( data && data.connectors_url ) ? ' <a href="' + data.connectors_url + '">Open Connectors</a>' : '';
+				const message = ( data && data.error ) ? data.error : ( error && error.message ) || __( 'Request failed.', 'wp-performance-wizard' );
+				const link = ( data && data.connectors_url ) ? ' <a href="' + data.connectors_url + '">' + __( 'Open Connectors', 'wp-performance-wizard' ) + '</a>' : '';
 				echoToTerminal( '<r>' + message + '</r>' + link );
 				return;
 			}

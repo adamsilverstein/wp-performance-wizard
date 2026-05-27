@@ -222,7 +222,7 @@ class Performance_Wizard_AI_Agent_Base {
 	 */
 	protected function send_via_ai_client( array $prompts, int $current_step, array $previous_steps, array $options = array() ): string {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.';
+			return __( 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.', 'wp-performance-wizard' );
 		}
 
 		$history = array();
@@ -279,7 +279,8 @@ class Performance_Wizard_AI_Agent_Base {
 
 			if ( ! self::is_transient_error( $error_message ) || $attempt === $max_attempts ) {
 				error_log( sprintf( '[WP Performance Wizard][%s] generate_text failed (attempt %d/%d): %s', $this->get_name(), $attempt, $max_attempts, $error_message ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				return $this->get_name() . ' API error: ' . $error_message;
+				/* translators: 1: AI agent name (e.g. Claude), 2: error message from the AI Client. */
+				return sprintf( __( '%1$s API error: %2$s', 'wp-performance-wizard' ), $this->get_name(), $error_message );
 			}
 
 			$delay = min( 2 ** ( $attempt - 1 ), 8 );
@@ -287,7 +288,8 @@ class Performance_Wizard_AI_Agent_Base {
 			sleep( $delay );
 		}
 
-		return $this->get_name() . ' API error: maximum retries exceeded.';
+		/* translators: %s: AI agent name (e.g. Claude). */
+		return sprintf( __( '%s API error: maximum retries exceeded.', 'wp-performance-wizard' ), $this->get_name() );
 	}
 
 	/**
