@@ -125,6 +125,17 @@ namespace {
 			}
 
 			/**
+			 * Model preference (ordered list of model IDs; falls back to a
+			 * compatible model when none of them are available).
+			 *
+			 * @param string ...$model_ids Preferred model IDs.
+			 * @return self
+			 */
+			public function using_model_preference( string ...$model_ids ): self {
+				return $this;
+			}
+
+			/**
 			 * Temperature.
 			 *
 			 * @param float $temperature Temperature.
