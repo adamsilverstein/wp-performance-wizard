@@ -1,0 +1,39 @@
+# Files and directories listed here are excluded from the WordPress.org
+# plugin deploy (10up/action-wordpress-plugin-deploy) and from the
+# release zip built by scripts/create-release-zip.js.
+
+# Directories
+.git
+.github
+.husky
+.vscode
+.claude
+.wordpress-org
+docs
+tests
+scripts
+stubs
+tools
+node_modules
+vendor
+releases
+
+# Dotfiles / config not needed in the distributed plugin
+.gitignore
+.gitattributes
+.DS_Store
+.editorconfig
+.cursor-rules
+.clinerules
+
+# Build / dev tooling
+phpcs.xml.dist
+phpstan.neon.dist
+composer.json
+composer.lock
+package.json
+package-lock.json
+
+# Repo-facing docs (the wp.org listing uses readme.txt)
+README.md
+CLAUDE.md
