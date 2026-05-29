@@ -27,6 +27,19 @@ Credentials can also be supplied via environment variable or PHP constant using 
 
 After installing and activating the plugin and connecting at least one AI provider, navigate to **Performance Wizard** in your WordPress admin dashboard. Choose the data sources to include, pick a configured AI model if more than one is available, and run the analysis. Results and recommendations are rendered inline.
 
+## Managing cost
+
+Each analysis step sends data to your chosen AI provider, so a run consumes tokens and incurs provider cost. Several settings let you control that cost, all under **Performance Wizard → Settings** unless noted:
+
+* **Choose a lower-cost model** (*Model Selection*). Each provider offers cheaper tiers - for example Claude Haiku, Gemini Flash, or a GPT mini model - that can reduce the cost of a run substantially compared with the provider's default. "Provider default" leaves the choice to the AI Client.
+* **Analyze fewer page types** (*Page Types to Analyze*). Each selected page type (home page, posts archive, most recent post) adds a full Lighthouse and HTML pass, so analyzing only the home page is the cheapest option.
+* **Leave plugin source collection off** (*Plugin Source Collection*). Including plugin source code can dramatically increase prompt size; keep it disabled unless you specifically need source-level analysis.
+* **Toggle expert reference skills** (*Expert Reference Skills*). The bundled reference material adds context tokens to every step. Disable it to trade some grounding for lower cost.
+
+The plugin also compacts conversation history automatically: the large raw data payloads (Lighthouse JSON, page HTML, and so on) are sent once, for the step that analyzes them, and are not re-sent on later steps - so cost grows roughly linearly with the number of steps rather than quadratically.
+
+For the lowest-cost run: select a low-cost model, analyze only the home page, leave plugin source collection off, and optionally disable expert reference skills.
+
 ## Development
 
 ### Code Quality

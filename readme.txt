@@ -57,6 +57,17 @@ This plugin sends data about your site (HTML, script attribution, theme/plugin m
 
 You need an API key for at least one of the supported providers (Google Gemini, OpenAI, or Anthropic Claude). Pricing depends on the provider and the number of analyses you run.
 
+= How can I reduce the cost of an analysis run? =
+
+A few settings under **Performance Wizard → Settings** control how many tokens a run uses:
+
+* Pick a lower-cost model under **Model Selection** (for example Claude Haiku, Gemini Flash, or a GPT mini model).
+* Analyze fewer page types - each page type adds a full Lighthouse and HTML pass, so analyzing only the home page is cheapest.
+* Leave **Plugin Source Collection** off; including plugin source code greatly increases prompt size.
+* Optionally disable **Expert Reference Skills** to drop the bundled reference tokens added to each step.
+
+The plugin also compacts conversation history automatically, so the large raw data payloads are sent only once rather than re-sent on every later step.
+
 = Where are my API keys stored? =
 
 This plugin does not store API keys. Credentials live in the core Connectors API and can be supplied via the wp-admin Connectors screen, environment variables, or PHP constants.
