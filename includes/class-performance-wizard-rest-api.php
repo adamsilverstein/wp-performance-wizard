@@ -123,7 +123,15 @@ class Performance_Wizard_Rest_API {
 
 		switch ( $command ) {
 			case '_get_next_action_':
+				// The first call of a run (step 0) marks a fresh start, so clear
+				// the estimated usage accumulated by any previous run.
+				if ( 0 === $step ) {
+					Performance_Wizard_Usage::reset();
+				}
 				$response = $this->wizard->get_analysis_plan()->get_next_action( $step );
+				break;
+			case '_get_usage_':
+				$response = Performance_Wizard_Usage::get();
 				break;
 			case '_start_':
 				$response = $this->wizard->get_analysis_plan()->start();
@@ -252,6 +260,9 @@ class Performance_Wizard_Rest_API {
 
 		// Delete the stored conversation so the next analysis starts clean.
 		delete_option( $this->wizard->get_option_name() );
+
+		// Clear the estimated token usage for the run as well.
+		Performance_Wizard_Usage::reset();
 
 		return new WP_REST_Response(
 			array(

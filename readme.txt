@@ -20,6 +20,7 @@ WP Performance Wizard employs an AI agent to analyze your site's performance and
 * **Choose your AI provider** - works with Google Gemini, OpenAI, or Anthropic Claude via the core Connectors API (no API keys stored in this plugin).
 * **Expert playbooks** - bundled performance, Core Web Vitals, WordPress, and best-practice skills augment each analysis step.
 * **Actionable checklist** - recommendations are tracked as a checklist so you can mark progress and re-test.
+* **Cost transparency** - an estimated token-usage and cost indicator is shown after each analysis step.
 * **History** - past analysis runs are saved so you can compare runs over time.
 
 = Connecting an AI provider =

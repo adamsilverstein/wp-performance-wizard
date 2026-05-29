@@ -25,7 +25,7 @@ Credentials can also be supplied via environment variable or PHP constant using 
 
 ## Usage
 
-After installing and activating the plugin and connecting at least one AI provider, navigate to **Performance Wizard** in your WordPress admin dashboard. Choose the data sources to include, pick a configured AI model if more than one is available, and run the analysis. Results and recommendations are rendered inline.
+After installing and activating the plugin and connecting at least one AI provider, navigate to **Performance Wizard** in your WordPress admin dashboard. Choose the data sources to include, pick a configured AI model if more than one is available, and run the analysis. Results and recommendations are rendered inline. As the analysis runs, an estimated token-usage and cost indicator is shown after each step so you can see what a run is consuming.
 
 ## Development
 
