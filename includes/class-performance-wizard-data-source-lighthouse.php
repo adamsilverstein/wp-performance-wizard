@@ -84,6 +84,14 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 			'category' => 'performance',
 		);
 
+		// Authenticate the request when a key is configured. Anonymous requests
+		// share a near-zero global quota and fail with an HTTP 429
+		// "rateLimitExceeded" error; a key grants the free per-project quota.
+		$api_key = Performance_Wizard_Settings_Page::pagespeed_api_key();
+		if ( '' !== $api_key ) {
+			$query_params['key'] = $api_key;
+		}
+
 		$response = wp_remote_get(
 			add_query_arg( $query_params, $api_base ),
 			array(
@@ -93,6 +101,14 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 
 		if ( is_wp_error( $response ) ) {
 			return array( 'error' => $response->get_error_message() );
+		}
+
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 429 === $response_code ) {
+			$message = '' === $api_key
+				? 'The PageSpeed Insights API returned an HTTP 429 quota error. Anonymous (unauthenticated) requests share a near-zero daily quota. Add a free PageSpeed Insights API key under Performance Wizard > Settings to get the standard 25,000 requests/day allowance.'
+				: 'The PageSpeed Insights API returned an HTTP 429 quota error for the configured API key. The key has exhausted its daily quota, or the PageSpeed Insights API is not enabled for its Google Cloud project. Verify the key in the Google Cloud console and try again later.';
+			return array( 'error' => $message );
 		}
 
 		$body = wp_remote_retrieve_body( $response );

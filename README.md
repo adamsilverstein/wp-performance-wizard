@@ -97,7 +97,7 @@ We welcome contributions! Please follow these steps:
 
 ## Analysis
 The performance wizard will analyze the following data sources to make its recommendations:
-* **PageSpeed Insights API / Lighthouse:** This uses the PageSpeed Insights API to run Lighthouse audits against the site's front end.  Lighthouse provides a comprehensive performance analysis, including metrics like First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift.
+* **PageSpeed Insights API / Lighthouse:** This uses the PageSpeed Insights API to run Lighthouse audits against the site's front end.  Lighthouse provides a comprehensive performance analysis, including metrics like First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift. Anonymous requests share a near-zero quota and fail with an HTTP 429 error, so add a free [PageSpeed Insights API key](https://developers.google.com/speed/docs/insights/v5/get-started) under **Performance Wizard → Settings** (or via the `wp_performance_wizard_pagespeed_api_key` filter) to get the standard 25,000 requests/day allowance.
 * **Site HTML:** This analyzes the source code of front-end page loads for the home page, a single post, and an archive page, looking for potential performance bottlenecks in the HTML structure itself, such as excessive DOM size or render-blocking resources.
 * **Script Attribution:** This identifies all scripts loaded on the site and attributes them to their source (plugin, theme, or core). This helps pinpoint scripts that might be contributing to slow page load times.
 * **Plugins / Theme:** This gathers information about active plugins and the active theme, including metadata. This data can help identify potential performance issues related to specific plugins or themes.
