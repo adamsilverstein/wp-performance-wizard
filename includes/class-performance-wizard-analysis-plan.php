@@ -369,6 +369,15 @@ Finally, based on the data collected and recommendations so far, provide two uni
 		$data_source  = isset( $action['source'] ) ? $action['source'] : '';
 		$conversation = array();
 
+		// Steps without a data source (for example "prompt"-only or "complete"
+		// steps) are dispatched through other REST commands and never reach this
+		// method in normal flow. Guard against a non-source action slipping
+		// through so the get_prompt()/get_description()/get_data() calls below
+		// cannot fatal on a non-object.
+		if ( ! ( $data_source instanceof Performance_Wizard_Data_Source_Base ) ) {
+			return $conversation;
+		}
+
 		// All of these prompts need to be combined into a single request to theAPI.
 		//
 		// $prompts is what we send to the model for THIS step (it includes the
@@ -395,10 +404,8 @@ Finally, based on the data collected and recommendations so far, provide two uni
 
 		// Inject expert skill reference material so recommendations are grounded in
 		// well-known patterns (Core Web Vitals, WP-CLI diagnostics, 10up best practices, etc.).
-		$step_key = '';
-		if ( is_object( $data_source ) && method_exists( $data_source, 'get_name' ) ) {
-			$step_key = $data_source->get_name();
-		} elseif ( isset( $action['title'] ) ) {
+		$step_key = $data_source->get_name();
+		if ( '' === $step_key && isset( $action['title'] ) ) {
 			$step_key = (string) $action['title'];
 		}
 		if ( '' !== $step_key ) {
@@ -440,7 +447,7 @@ Finally, based on the data collected and recommendations so far, provide two uni
 
 			// The compacted copy stored for history keeps the small, descriptive
 			// data shape and analysis strategy but drops the large raw payload.
-			$source_label = ( is_object( $data_source ) && method_exists( $data_source, 'get_name' ) && '' !== $data_source->get_name() )
+			$source_label = '' !== $data_source->get_name()
 				? $data_source->get_name()
 				: 'this step';
 			$for_storage  = 'The ' . $source_label . ' data for this step was analyzed live; the raw payload is omitted from the conversation history to reduce token usage, and the analysis in the response below reflects it.<br>';
