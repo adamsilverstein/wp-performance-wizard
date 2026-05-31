@@ -454,9 +454,13 @@ class Performance_Wizard_Settings_Page {
 
 		// Accept a model selection per provider, but only when the submitted
 		// value is a recognized choice for that connector. An empty value means
-		// "use the provider default" and is stored as such.
+		// "use the provider default" and is stored as such. Seed from the
+		// existing saved selections so a provider that is filtered out of
+		// get_supported_models() (and therefore not rendered or submitted) keeps
+		// its stored selection instead of being silently dropped.
 		$supported_models = self::get_supported_models();
-		$submitted_models = array();
+		$current_options  = self::get_options();
+		$submitted_models = isset( $current_options['ai_models'] ) && is_array( $current_options['ai_models'] ) ? $current_options['ai_models'] : array();
 		if ( isset( $_POST['ai_models'] ) && is_array( $_POST['ai_models'] ) ) {
 			foreach ( wp_unslash( $_POST['ai_models'] ) as $connector_id => $model_id ) {
 				$connector_id = sanitize_key( (string) $connector_id );
