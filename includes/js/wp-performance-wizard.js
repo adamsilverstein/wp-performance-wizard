@@ -635,7 +635,7 @@
 			costStr
 		);
 
-		echoToTerminal( '<div class="info-chip usage-chip" aria-label="' + __( 'Estimated token usage', 'wp-performance-wizard' ) + '">' + message + '</div>' );
+		echoToTerminal( '<div class="info-chip usage-chip" aria-label="' + escapeHtmlAttr( __( 'Estimated token usage', 'wp-performance-wizard' ) ) + '">' + message + '</div>' );
 	}
 
 	/**
