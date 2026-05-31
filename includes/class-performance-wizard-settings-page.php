@@ -168,9 +168,10 @@ class Performance_Wizard_Settings_Page {
 		/**
 		 * Filters the PageSpeed Insights API key used for Lighthouse requests.
 		 *
-		 * @param string $key The API key from settings, or an empty string.
+		 * @param mixed $key The API key from settings, or an empty string. Cast to
+		 *                   a string before use, so any value type is tolerated.
 		 */
-		$key = apply_filters( 'wp_performance_wizard_pagespeed_api_key', $key );
+		$key = (string) apply_filters( 'wp_performance_wizard_pagespeed_api_key', $key );
 		return trim( $key );
 	}
 
@@ -297,8 +298,17 @@ class Performance_Wizard_Settings_Page {
 		echo '<h2>' . esc_html__( 'PageSpeed Insights API Key', 'wp-performance-wizard' ) . '</h2>';
 		echo '<p>';
 		printf(
-			/* translators: 1: link to the Google PageSpeed Insights API key page. */
-			esc_html__( 'The Lighthouse data source fetches results from the Google PageSpeed Insights API. Without an API key, requests are anonymous and share a near-zero quota, so they fail with a "Queries per day" quota error even on the first run. Provide a free key from %1$s (the project must have the PageSpeed Insights API enabled) to get the free 25,000 requests/day allowance.', 'wp-performance-wizard' ),
+			wp_kses(
+				/* translators: 1: link to the Google PageSpeed Insights API key page. */
+				__( 'The Lighthouse data source fetches results from the Google PageSpeed Insights API. Without an API key, requests are anonymous and share a near-zero quota, so they fail with a "Queries per day" quota error even on the first run. Provide a free key from %1$s (the project must have the PageSpeed Insights API enabled) to get the free 25,000 requests/day allowance.', 'wp-performance-wizard' ),
+				array(
+					'a' => array(
+						'href'   => array(),
+						'target' => array(),
+						'rel'    => array(),
+					),
+				)
+			),
 			'<a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank" rel="noreferrer noopener">developers.google.com</a>'
 		);
 		echo '</p>';
