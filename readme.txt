@@ -61,6 +61,10 @@ You need an API key for at least one of the supported providers (Google Gemini, 
 
 This plugin does not store API keys. Credentials live in the core Connectors API and can be supplied via the wp-admin Connectors screen, environment variables, or PHP constants.
 
+= The Lighthouse step fails with a "Queries per day" / HTTP 429 quota error. How do I fix it? =
+
+The Lighthouse data source uses the Google PageSpeed Insights API. Without an API key, requests are anonymous and share a near-zero global quota, so they can fail with an HTTP 429 "rateLimitExceeded" error even on the first run. Get a free PageSpeed Insights API key (see https://developers.google.com/speed/docs/insights/v5/get-started), make sure the PageSpeed Insights API is enabled for its Google Cloud project, then add it under **Performance Wizard > Settings > PageSpeed Insights API Key**. A key grants the standard 25,000 requests/day allowance. The key can also be supplied in code via the `wp_performance_wizard_pagespeed_api_key` filter.
+
 = What WordPress version do I need? =
 
 WordPress 7.0 or later. This plugin depends on the core Connectors API, which ships in WordPress 7.0.
@@ -81,6 +85,7 @@ No. The plugin only analyzes and recommends. Any changes are up to you.
 == Changelog ==
 
 = 2.0.0 =
+* Added a PageSpeed Insights API key setting to avoid anonymous-request quota (HTTP 429) errors on the Lighthouse data source.
 * Require WordPress 7.0.
 * Removed built-in API key UI - credentials are now supplied via the core Connectors API.
 * Migrated all AI agents to the WordPress 7.0 AI Client API.

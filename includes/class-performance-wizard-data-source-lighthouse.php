@@ -84,6 +84,14 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 			'category' => 'performance',
 		);
 
+		// Authenticate the request when a key is configured. Anonymous requests
+		// share a near-zero global quota and fail with an HTTP 429
+		// "rateLimitExceeded" error; a key grants the free per-project quota.
+		$api_key = Performance_Wizard_Settings_Page::pagespeed_api_key();
+		if ( '' !== $api_key ) {
+			$query_params['key'] = $api_key;
+		}
+
 		$response = wp_remote_get(
 			add_query_arg( $query_params, $api_base ),
 			array(
@@ -93,6 +101,27 @@ class Performance_Wizard_Data_Source_Lighthouse extends Performance_Wizard_Data_
 
 		if ( is_wp_error( $response ) ) {
 			return array( 'error' => $response->get_error_message() );
+		}
+
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 429 === $response_code ) {
+			$message = '' === $api_key
+				? __( 'The PageSpeed Insights API returned an HTTP 429 quota error. Anonymous (unauthenticated) requests share a near-zero daily quota. Add a free PageSpeed Insights API key under Performance Wizard > Settings to get the standard 25,000 requests/day allowance.', 'wp-performance-wizard' )
+				: __( 'The PageSpeed Insights API returned an HTTP 429 quota error for the configured API key. The key has exhausted its daily quota, or the PageSpeed Insights API is not enabled for its Google Cloud project. Verify the key in the Google Cloud console and try again later.', 'wp-performance-wizard' );
+			return array( 'error' => $message );
+		}
+
+		// Normalize any other non-2xx response into an error so a failed request
+		// is not mistaken for a valid result object once JSON-decoded below.
+		if ( $response_code < 200 || $response_code >= 300 ) {
+			return array(
+				'error' => sprintf(
+					/* translators: 1: HTTP status code, 2: requested URL. */
+					__( 'The PageSpeed Insights API request for %2$s failed with HTTP %1$d.', 'wp-performance-wizard' ),
+					$response_code,
+					$url
+				),
+			);
 		}
 
 		$body = wp_remote_retrieve_body( $response );
