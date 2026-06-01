@@ -57,9 +57,24 @@ This plugin sends data about your site (HTML, script attribution, theme/plugin m
 
 You need an API key for at least one of the supported providers (Google Gemini, OpenAI, or Anthropic Claude). Pricing depends on the provider and the number of analyses you run.
 
+= How can I reduce the cost of an analysis run? =
+
+A few settings under **Performance Wizard → Settings** control how many tokens a run uses:
+
+* Pick a lower-cost model under **Model Selection** (for example Claude Haiku, Gemini Flash, or a GPT mini model).
+* Analyze fewer page types - each page type adds a full Lighthouse and HTML pass, so analyzing only the home page is cheapest.
+* Leave **Plugin Source Collection** off; including plugin source code greatly increases prompt size.
+* Optionally disable **Expert Reference Skills** to drop the bundled reference tokens added to each step.
+
+The plugin also compacts conversation history automatically, so the large raw data payloads are sent only once rather than re-sent on every later step.
+
 = Where are my API keys stored? =
 
 This plugin does not store API keys. Credentials live in the core Connectors API and can be supplied via the wp-admin Connectors screen, environment variables, or PHP constants.
+
+= The Lighthouse step fails with a "Queries per day" / HTTP 429 quota error. How do I fix it? =
+
+The Lighthouse data source uses the Google PageSpeed Insights API. Without an API key, requests are anonymous and share a near-zero global quota, so they can fail with an HTTP 429 "rateLimitExceeded" error even on the first run. Get a free PageSpeed Insights API key (see https://developers.google.com/speed/docs/insights/v5/get-started), make sure the PageSpeed Insights API is enabled for its Google Cloud project, then add it under **Performance Wizard > Settings > PageSpeed Insights API Key**. A key grants the standard 25,000 requests/day allowance. The key can also be supplied in code via the `wp_performance_wizard_pagespeed_api_key` filter.
 
 = What WordPress version do I need? =
 
@@ -81,6 +96,7 @@ No. The plugin only analyzes and recommends. Any changes are up to you.
 == Changelog ==
 
 = 2.0.0 =
+* Added a PageSpeed Insights API key setting to avoid anonymous-request quota (HTTP 429) errors on the Lighthouse data source.
 * Require WordPress 7.0.
 * Removed built-in API key UI - credentials are now supplied via the core Connectors API.
 * Migrated all AI agents to the WordPress 7.0 AI Client API.

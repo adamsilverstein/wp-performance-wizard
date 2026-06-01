@@ -27,6 +27,19 @@ Credentials can also be supplied via environment variable or PHP constant using 
 
 After installing and activating the plugin and connecting at least one AI provider, navigate to **Performance Wizard** in your WordPress admin dashboard. Choose the data sources to include, pick a configured AI model if more than one is available, and run the analysis. Results and recommendations are rendered inline.
 
+## Managing cost
+
+Each analysis step sends data to your chosen AI provider, so a run consumes tokens and incurs provider cost. Several settings let you control that cost, all under **Performance Wizard → Settings** unless noted:
+
+* **Choose a lower-cost model** (*Model Selection*). Each provider offers cheaper tiers - for example Claude Haiku, Gemini Flash, or a GPT mini model - that can reduce the cost of a run substantially compared with the provider's default. "Provider default" leaves the choice to the AI Client.
+* **Analyze fewer page types** (*Page Types to Analyze*). Each selected page type (home page, posts archive, most recent post) adds a full Lighthouse and HTML pass, so analyzing only the home page is the cheapest option.
+* **Leave plugin source collection off** (*Plugin Source Collection*). Including plugin source code can dramatically increase prompt size; keep it disabled unless you specifically need source-level analysis.
+* **Toggle expert reference skills** (*Expert Reference Skills*). The bundled reference material adds context tokens to every step. Disable it to trade some grounding for lower cost.
+
+The plugin also compacts conversation history automatically: the large raw data payloads (Lighthouse JSON, page HTML, and so on) are sent once, for the step that analyzes them, and are not re-sent on later steps - so cost grows roughly linearly with the number of steps rather than quadratically.
+
+For the lowest-cost run: select a low-cost model, analyze only the home page, leave plugin source collection off, and optionally disable expert reference skills.
+
 ## Development
 
 ### Code Quality
@@ -97,7 +110,7 @@ We welcome contributions! Please follow these steps:
 
 ## Analysis
 The performance wizard will analyze the following data sources to make its recommendations:
-* **PageSpeed Insights API / Lighthouse:** This uses the PageSpeed Insights API to run Lighthouse audits against the site's front end.  Lighthouse provides a comprehensive performance analysis, including metrics like First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift.
+* **PageSpeed Insights API / Lighthouse:** This uses the PageSpeed Insights API to run Lighthouse audits against the site's front end.  Lighthouse provides a comprehensive performance analysis, including metrics like First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift. Anonymous requests share a near-zero quota and fail with an HTTP 429 error, so add a free [PageSpeed Insights API key](https://developers.google.com/speed/docs/insights/v5/get-started) under **Performance Wizard → Settings** (or via the `wp_performance_wizard_pagespeed_api_key` filter) to get the standard 25,000 requests/day allowance.
 * **Site HTML:** This analyzes the source code of front-end page loads for the home page, a single post, and an archive page, looking for potential performance bottlenecks in the HTML structure itself, such as excessive DOM size or render-blocking resources.
 * **Script Attribution:** This identifies all scripts loaded on the site and attributes them to their source (plugin, theme, or core). This helps pinpoint scripts that might be contributing to slow page load times.
 * **Plugins / Theme:** This gathers information about active plugins and the active theme, including metadata. This data can help identify potential performance issues related to specific plugins or themes.

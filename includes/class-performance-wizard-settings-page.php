@@ -73,6 +73,7 @@ class Performance_Wizard_Settings_Page {
 			'use_expert_skills'       => true,
 			'page_types'              => array( 'home' ),
 			'ai_models'               => array(),
+			'pagespeed_api_key'       => '',
 		);
 		if ( ! is_array( $stored ) ) {
 			$stored = array();
@@ -240,6 +241,33 @@ class Performance_Wizard_Settings_Page {
 	}
 
 	/**
+	 * The Google PageSpeed Insights API key used for Lighthouse requests.
+	 *
+	 * Without a key, requests are anonymous and share a near-zero global
+	 * quota, so they fail with an HTTP 429 "rateLimitExceeded" error. A key
+	 * tied to a Google Cloud project with the PageSpeed Insights API enabled
+	 * grants the free 25,000 requests/day quota.
+	 *
+	 * Filterable via `wp_performance_wizard_pagespeed_api_key` so the key can
+	 * be supplied in code (for example, from an environment variable or
+	 * constant) instead of being stored in the database.
+	 *
+	 * @return string The API key, or an empty string when none is configured.
+	 */
+	public static function pagespeed_api_key(): string {
+		$options = self::get_options();
+		$key     = isset( $options['pagespeed_api_key'] ) ? (string) $options['pagespeed_api_key'] : '';
+		/**
+		 * Filters the PageSpeed Insights API key used for Lighthouse requests.
+		 *
+		 * @param mixed $key The API key from settings, or an empty string. Cast to
+		 *                   a string before use, so any value type is tolerated.
+		 */
+		$key = (string) apply_filters( 'wp_performance_wizard_pagespeed_api_key', $key );
+		return trim( $key );
+	}
+
+	/**
 	 * Resolve the URL to fetch for a given page type slug.
 	 *
 	 * Returns an empty string when a representative URL cannot be resolved
@@ -300,6 +328,7 @@ class Performance_Wizard_Settings_Page {
 		$skills_enabled      = (bool) $options['use_expert_skills'];
 		$selected_page_types = (array) $options['page_types'];
 		$selected_models     = isset( $options['ai_models'] ) && is_array( $options['ai_models'] ) ? $options['ai_models'] : array();
+		$pagespeed_api_key   = isset( $options['pagespeed_api_key'] ) ? (string) $options['pagespeed_api_key'] : '';
 
 		$notice = isset( $_GET['info'] ) ? sanitize_key( wp_unslash( $_GET['info'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
@@ -381,6 +410,30 @@ class Performance_Wizard_Settings_Page {
 			echo '</td></tr>';
 		}
 		echo '<tr><td colspan="2"><p class="description">' . esc_html__( 'Model IDs can be kept current or extended in code via the wp_performance_wizard_models filter. Unavailable models fall back to a compatible one automatically.', 'wp-performance-wizard' ) . '</p></td></tr>';
+		echo '</tbody></table>';
+
+		echo '<h2>' . esc_html__( 'PageSpeed Insights API Key', 'wp-performance-wizard' ) . '</h2>';
+		echo '<p>';
+		printf(
+			wp_kses(
+				/* translators: 1: link to the Google PageSpeed Insights API key page. */
+				__( 'The Lighthouse data source fetches results from the Google PageSpeed Insights API. Without an API key, requests are anonymous and share a near-zero quota, so they fail with a "Queries per day" quota error even on the first run. Provide a free key from %1$s (the project must have the PageSpeed Insights API enabled) to get the free 25,000 requests/day allowance.', 'wp-performance-wizard' ),
+				array(
+					'a' => array(
+						'href'   => array(),
+						'target' => array(),
+						'rel'    => array(),
+					),
+				)
+			),
+			'<a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank" rel="noreferrer noopener">developers.google.com</a>'
+		);
+		echo '</p>';
+		echo '<table class="form-table" role="presentation"><tbody>';
+		echo '<tr><th scope="row"><label for="wp-perf-wizard-pagespeed-api-key">' . esc_html__( 'API key', 'wp-performance-wizard' ) . '</label></th><td>';
+		echo '<input type="password" autocomplete="off" id="wp-perf-wizard-pagespeed-api-key" name="pagespeed_api_key" class="regular-text" value="' . esc_attr( $pagespeed_api_key ) . '">';
+		echo '<p class="description">' . esc_html__( 'Stored in the site database. Leave blank to make anonymous (unauthenticated) requests, which are heavily rate limited. Can also be set in code via the wp_performance_wizard_pagespeed_api_key filter.', 'wp-performance-wizard' ) . '</p>';
+		echo '</td></tr>';
 		echo '</tbody></table>';
 
 		echo '<h2>' . esc_html__( 'Expert Reference Skills', 'wp-performance-wizard' ) . '</h2>';
@@ -474,12 +527,18 @@ class Performance_Wizard_Settings_Page {
 			}
 		}
 
+		$pagespeed_api_key = '';
+		if ( isset( $_POST['pagespeed_api_key'] ) ) {
+			$pagespeed_api_key = trim( sanitize_text_field( wp_unslash( $_POST['pagespeed_api_key'] ) ) );
+		}
+
 		$options                            = self::get_options();
 		$options['collect_plugin_sources']  = $collect;
 		$options['plugin_source_languages'] = array_values( array_unique( $submitted_languages ) );
 		$options['use_expert_skills']       = $skills_enabled;
 		$options['page_types']              = array_values( array_unique( $submitted_page_types ) );
 		$options['ai_models']               = $submitted_models;
+		$options['pagespeed_api_key']       = $pagespeed_api_key;
 
 		update_option( self::OPTION_NAME, $options );
 
