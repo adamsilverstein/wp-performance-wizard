@@ -53,7 +53,7 @@ class Performance_Wizard_Admin_Page {
 	 * @return string Admin URL to the Connectors screen.
 	 */
 	private function get_connectors_screen_url(): string {
-		$default = admin_url( 'admin.php?page=options-connectors' );
+		$default = admin_url( 'options-general.php?page=options-connectors-wp-admin' );
 		/**
 		 * Filters the URL of the core Connectors admin screen.
 		 *
