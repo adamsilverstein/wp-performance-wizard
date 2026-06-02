@@ -110,8 +110,7 @@ class Performance_Wizard_Rest_API {
 		// message instead of crashing downstream when no provider is connected.
 		$ai_required = array( '_get_next_action_', '_start_', '_run_action_', '_prompt_' );
 		if ( in_array( $command, $ai_required, true ) && null === $this->wizard->get_ai_agent() ) {
-			/** This filter is documented in includes/class-performance-wizard-admin-page.php */
-			$connectors_url = apply_filters( 'wp_performance_wizard_connectors_screen_url', admin_url( 'admin.php?page=options-connectors' ) );
+			$connectors_url = Performance_Wizard_Admin_Page::get_connectors_screen_url();
 			return new WP_REST_Response(
 				array(
 					'error'          => __( 'No AI provider is connected. Configure an AI connector (Anthropic, Google Gemini, or OpenAI) to run an analysis.', 'wp-performance-wizard' ),

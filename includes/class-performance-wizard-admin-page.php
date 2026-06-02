@@ -50,10 +50,13 @@ class Performance_Wizard_Admin_Page {
 	 * The precise slug is filterable so sites can point users at whatever
 	 * screen their WordPress install exposes the Connectors API on.
 	 *
+	 * Exposed as a static method so other classes (such as the REST API
+	 * handler) can reuse the same default and filter without duplicating it.
+	 *
 	 * @return string Admin URL to the Connectors screen.
 	 */
-	private function get_connectors_screen_url(): string {
-		$default = admin_url( 'admin.php?page=options-connectors' );
+	public static function get_connectors_screen_url(): string {
+		$default = admin_url( 'options-general.php?page=options-connectors-wp-admin' );
 		/**
 		 * Filters the URL of the core Connectors admin screen.
 		 *
@@ -142,7 +145,7 @@ class Performance_Wizard_Admin_Page {
 		if ( 0 === $model_count ) {
 			echo '<div class="notice notice-warning"><p>';
 			echo esc_html__( 'No AI models are configured. Connect an AI provider from the core Connectors screen to use the Performance Wizard.', 'wp-performance-wizard' );
-			echo ' <a href="' . esc_url( $this->get_connectors_screen_url() ) . '">' . esc_html__( 'Open Connectors', 'wp-performance-wizard' ) . '</a>';
+			echo ' <a href="' . esc_url( self::get_connectors_screen_url() ) . '">' . esc_html__( 'Open Connectors', 'wp-performance-wizard' ) . '</a>';
 			echo '</p></div>';
 			return;
 		}
