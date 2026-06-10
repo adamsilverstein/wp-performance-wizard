@@ -723,7 +723,8 @@
 		const header = document.createElement( 'div' );
 		header.innerHTML = renderTerminalMarkdown(
 			'## Viewing past analysis (' + ( session.created || '' ) + ')\n\n' +
-			'_Model: ' + ( session.model || 'Unknown' ) + ' — read-only_'
+			'_Model: ' + ( session.model || 'Unknown' ) + ' — read-only_',
+			{ allowFollowUps: false }
 		);
 		terminal.appendChild( header );
 
@@ -736,12 +737,12 @@
 		transcript.forEach( function( entry ) {
 			if ( entry.title ) {
 				const heading = document.createElement( 'div' );
-				heading.innerHTML = renderTerminalMarkdown( '### ' + String( entry.title ) );
+				heading.innerHTML = renderTerminalMarkdown( '### ' + String( entry.title ), { allowFollowUps: false } );
 				terminal.appendChild( heading );
 			}
 			const body = document.createElement( 'div' );
 			body.className = 'dc';
-			body.innerHTML = renderTerminalMarkdown( String( entry.content || '' ) );
+			body.innerHTML = renderTerminalMarkdown( String( entry.content || '' ), { allowFollowUps: false } );
 			terminal.appendChild( body );
 
 			// If this entry is the final recommendations block and embeds a
@@ -1027,30 +1028,34 @@
 	 * relies on - the follow-up question buttons - as a narrow, sanitized
 	 * allow-list with their labels escaped as plain text.
 	 *
-	 * @param {string} markdown Raw Markdown (potentially containing model HTML).
+	 * @param {string} markdown   Raw Markdown (potentially containing model HTML).
+	 * @param {Object} [options]  Render options. Pass { allowFollowUps: false }
+	 *                            from the read-only history view so archived
+	 *                            content does not re-inject live follow-up
+	 *                            buttons (there is no question input to drive
+	 *                            them there, and the live click handler would
+	 *                            throw once the terminal has been cleared).
 	 * @returns {string} Safe HTML.
 	 */
-	function renderTerminalMarkdown( markdown ) {
+	function renderTerminalMarkdown( markdown, options ) {
 		const source = String( markdown || '' );
-
-		// Extract follow-up question button labels before raw HTML is stripped.
-		const followUps = [];
-		const buttonRe = /<button\b[^>]*\bwp-wizard-follow-up-question\b[^>]*>([\s\S]*?)<\/button>/gi;
-		let match;
-		while ( null !== ( match = buttonRe.exec( source ) ) ) {
-			const label = String( match[1] || '' ).replace( /<[^>]*>/g, '' ).trim();
-			if ( label ) {
-				followUps.push( label );
-			}
-		}
+		const allowFollowUps = ! ( options && false === options.allowFollowUps );
 
 		let html = renderSafeMarkdown( source );
 
-		// Re-add the follow-up questions as safe, allow-listed buttons with the
-		// label escaped so it can only ever render as text.
-		followUps.forEach( function( label ) {
-			html += '<button class="wp-wizard-follow-up-question">' + escapeHtmlAttr( label ) + '</button>';
-		} );
+		if ( allowFollowUps ) {
+			// Extract follow-up question button labels (raw HTML was stripped by
+			// renderSafeMarkdown) and re-add them as safe, allow-listed buttons
+			// with the label escaped so it can only ever render as text.
+			const buttonRe = /<button\b[^>]*\bwp-wizard-follow-up-question\b[^>]*>([\s\S]*?)<\/button>/gi;
+			let match;
+			while ( null !== ( match = buttonRe.exec( source ) ) ) {
+				const label = String( match[1] || '' ).replace( /<[^>]*>/g, '' ).trim();
+				if ( label ) {
+					html += '<button class="wp-wizard-follow-up-question">' + escapeHtmlAttr( label ) + '</button>';
+				}
+			}
+		}
 
 		return html;
 	}
