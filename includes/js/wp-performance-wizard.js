@@ -273,7 +273,10 @@
 					terminal.appendChild( responseDiv );
 					await streamText( responseDiv, responseContent, 25 );
 				} else {
-					echoToTerminal( '<div class="dc"><br>' + responseContent + '</div>' );
+					const responseDiv = document.createElement( 'div' );
+					responseDiv.className = 'dc';
+					responseDiv.innerHTML = renderTerminalMarkdown( responseContent );
+					terminal.appendChild( responseDiv );
 				}
 			}
 		}
@@ -388,7 +391,10 @@
 						terminal.appendChild( responseDiv );
 						await streamText( responseDiv, result, 20 );
 					} else {
-						echoToTerminal( '<div class="dc">' + ( result || '' ) + '</div>' );
+						const responseDiv = document.createElement( 'div' );
+						responseDiv.className = 'dc';
+						responseDiv.innerHTML = renderTerminalMarkdown( result || '' );
+						terminal.appendChild( responseDiv );
 					}
 
 					// If the response includes a structured recommendations
@@ -474,10 +480,10 @@
 			const typeChar = () => {
 				if ( index < source.length ) {
 					index = Math.min( index + chunkSize, source.length );
-					element.innerHTML = marked.marked( source.substring( 0, index ) );
+					element.innerHTML = renderTerminalMarkdown( source.substring( 0, index ) );
 					setTimeout( typeChar, tickIntervalMs );
 				} else {
-					element.innerHTML = marked.marked( source );
+					element.innerHTML = renderTerminalMarkdown( source );
 					resolve();
 				}
 			};
@@ -715,9 +721,10 @@
 		terminal.innerHTML = '';
 
 		const header = document.createElement( 'div' );
-		header.innerHTML = marked.marked(
+		header.innerHTML = renderTerminalMarkdown(
 			'## Viewing past analysis (' + ( session.created || '' ) + ')\n\n' +
-			'_Model: ' + ( session.model || 'Unknown' ) + ' — read-only_'
+			'_Model: ' + ( session.model || 'Unknown' ) + ' — read-only_',
+			{ allowFollowUps: false }
 		);
 		terminal.appendChild( header );
 
@@ -730,12 +737,12 @@
 		transcript.forEach( function( entry ) {
 			if ( entry.title ) {
 				const heading = document.createElement( 'div' );
-				heading.innerHTML = marked.marked( '### ' + String( entry.title ) );
+				heading.innerHTML = renderTerminalMarkdown( '### ' + String( entry.title ), { allowFollowUps: false } );
 				terminal.appendChild( heading );
 			}
 			const body = document.createElement( 'div' );
 			body.className = 'dc';
-			body.innerHTML = marked.marked( String( entry.content || '' ) );
+			body.innerHTML = renderTerminalMarkdown( String( entry.content || '' ), { allowFollowUps: false } );
 			terminal.appendChild( body );
 
 			// If this entry is the final recommendations block and embeds a
@@ -1006,6 +1013,51 @@
 			return false;
 		}
 		return ! /^(javascript|data|vbscript|file):/i.test( trimmed );
+	}
+
+	/**
+	 * Render Markdown for display in the live terminal and history view.
+	 *
+	 * AI responses (and the analyzed site content that informs them) are
+	 * untrusted: a prompt-injection payload, a malicious plugin description, or
+	 * the model itself could emit raw HTML/script. The marked() default passes
+	 * raw HTML straight through, so rendering model output with it would execute
+	 * that markup in the admin's authenticated session. This routes everything
+	 * through renderSafeMarkdown() (raw HTML dropped, unsafe link/image
+	 * protocols neutralised), then re-adds only the one HTML feature the wizard
+	 * relies on - the follow-up question buttons - as a narrow, sanitized
+	 * allow-list with their labels escaped as plain text.
+	 *
+	 * @param {string} markdown   Raw Markdown (potentially containing model HTML).
+	 * @param {Object} [options]  Render options. Pass { allowFollowUps: false }
+	 *                            from the read-only history view so archived
+	 *                            content does not re-inject live follow-up
+	 *                            buttons (there is no question input to drive
+	 *                            them there, and the live click handler would
+	 *                            throw once the terminal has been cleared).
+	 * @returns {string} Safe HTML.
+	 */
+	function renderTerminalMarkdown( markdown, options ) {
+		const source = String( markdown || '' );
+		const allowFollowUps = ! ( options && false === options.allowFollowUps );
+
+		let html = renderSafeMarkdown( source );
+
+		if ( allowFollowUps ) {
+			// Extract follow-up question button labels (raw HTML was stripped by
+			// renderSafeMarkdown) and re-add them as safe, allow-listed buttons
+			// with the label escaped so it can only ever render as text.
+			const buttonRe = /<button\b[^>]*\bwp-wizard-follow-up-question\b[^>]*>([\s\S]*?)<\/button>/gi;
+			let match;
+			while ( null !== ( match = buttonRe.exec( source ) ) ) {
+				const label = String( match[1] || '' ).replace( /<[^>]*>/g, '' ).trim();
+				if ( label ) {
+					html += '<button class="wp-wizard-follow-up-question">' + escapeHtmlAttr( label ) + '</button>';
+				}
+			}
+		}
+
+		return html;
 	}
 
 	/**
