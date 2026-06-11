@@ -190,6 +190,7 @@ class WP_Performance_Wizard {
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-skills.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-analysis-plan.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-history.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-usage.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-rest-api.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-base.php';
 		require_once plugin_dir_path( __FILE__ ) . 'class-performance-wizard-ai-agent-gemini.php';
