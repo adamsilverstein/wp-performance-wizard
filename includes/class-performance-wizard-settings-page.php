@@ -72,6 +72,7 @@ class Performance_Wizard_Settings_Page {
 			'plugin_source_languages' => array( 'php' ),
 			'use_expert_skills'       => true,
 			'page_types'              => array( 'home' ),
+			'ai_models'               => array(),
 			'pagespeed_api_key'       => '',
 		);
 		if ( ! is_array( $stored ) ) {
@@ -146,6 +147,97 @@ class Performance_Wizard_Settings_Page {
 		$page_types = array_map( 'sanitize_key', $page_types );
 		$page_types = array_values( array_intersect( array_keys( self::SUPPORTED_PAGE_TYPES ), $page_types ) );
 		return 0 === count( $page_types ) ? array( 'home' ) : $page_types;
+	}
+
+	/**
+	 * The models that can be selected for each AI provider, keyed by connector ID.
+	 *
+	 * Each provider maps to a label and an ordered list of model choices (model
+	 * ID => human-readable label), cheapest first, with an empty model ID
+	 * meaning "use the provider's default model" (the AI Client's behavior when
+	 * no model preference is given). Model IDs are passed to the AI Client's
+	 * using_model_preference(), which falls back to a compatible model when the
+	 * exact ID is unavailable, so a slightly outdated ID degrades gracefully.
+	 *
+	 * Filterable via `wp_performance_wizard_models` so the list can be kept
+	 * current or extended without a plugin update.
+	 *
+	 * @return array<string,mixed> Map keyed by connector ID; each value is an
+	 *                             array with 'label' and 'models' (model ID => label).
+	 */
+	public static function get_supported_models(): array {
+		$models = array(
+			'anthropic' => array(
+				'label'  => __( 'Anthropic Claude', 'wp-performance-wizard' ),
+				'models' => array(
+					''                  => __( 'Provider default', 'wp-performance-wizard' ),
+					'claude-haiku-4-5'  => __( 'Claude Haiku (lowest cost)', 'wp-performance-wizard' ),
+					'claude-sonnet-4-6' => __( 'Claude Sonnet (balanced cost and quality)', 'wp-performance-wizard' ),
+					'claude-opus-4-8'   => __( 'Claude Opus (highest quality, highest cost)', 'wp-performance-wizard' ),
+				),
+			),
+			'gemini'    => array(
+				'label'  => __( 'Google Gemini', 'wp-performance-wizard' ),
+				'models' => array(
+					''                 => __( 'Provider default', 'wp-performance-wizard' ),
+					'gemini-2.5-flash' => __( 'Gemini Flash (lowest cost)', 'wp-performance-wizard' ),
+					'gemini-2.5-pro'   => __( 'Gemini Pro (higher cost)', 'wp-performance-wizard' ),
+				),
+			),
+			'openai'    => array(
+				'label'  => __( 'OpenAI ChatGPT', 'wp-performance-wizard' ),
+				'models' => array(
+					''           => __( 'Provider default', 'wp-performance-wizard' ),
+					'gpt-5-mini' => __( 'GPT-5 mini (lower cost)', 'wp-performance-wizard' ),
+					'gpt-5'      => __( 'GPT-5 (higher cost)', 'wp-performance-wizard' ),
+				),
+			),
+		);
+
+		/**
+		 * Filters the selectable models for each AI provider connector.
+		 *
+		 * @param mixed $models Map keyed by connector ID; each value is an array
+		 *                      with 'label' and 'models' (model ID => label).
+		 */
+		$models = apply_filters( 'wp_performance_wizard_models', $models );
+		return is_array( $models ) ? $models : array();
+	}
+
+	/**
+	 * The model ID selected for a given provider connector.
+	 *
+	 * Returns an empty string (meaning "use the provider default model") when
+	 * nothing is selected or the stored value is not a recognized choice for
+	 * that connector.
+	 *
+	 * Filterable via `wp_performance_wizard_selected_model` so the model can be
+	 * forced in code (for example, from a constant) per connector.
+	 *
+	 * @param string $connector_id The provider connector ID (e.g. 'anthropic').
+	 *
+	 * @return string The selected model ID, or an empty string for the default.
+	 */
+	public static function selected_model( string $connector_id ): string {
+		$options   = self::get_options();
+		$selected  = isset( $options['ai_models'] ) && is_array( $options['ai_models'] ) ? $options['ai_models'] : array();
+		$model     = isset( $selected[ $connector_id ] ) ? (string) $selected[ $connector_id ] : '';
+		$supported = self::get_supported_models();
+
+		// Only honor a stored value that is a recognized choice for the connector.
+		if ( '' !== $model
+			&& ( ! isset( $supported[ $connector_id ]['models'][ $model ] ) ) ) {
+			$model = '';
+		}
+
+		/**
+		 * Filters the model ID used for a given provider connector.
+		 *
+		 * @param mixed  $model        The selected model ID, or an empty string for the provider default.
+		 * @param string $connector_id The provider connector ID.
+		 */
+		$model = apply_filters( 'wp_performance_wizard_selected_model', $model, $connector_id );
+		return is_string( $model ) ? $model : '';
 	}
 
 	/**
@@ -235,6 +327,7 @@ class Performance_Wizard_Settings_Page {
 		$selected_languages  = (array) $options['plugin_source_languages'];
 		$skills_enabled      = (bool) $options['use_expert_skills'];
 		$selected_page_types = (array) $options['page_types'];
+		$selected_models     = isset( $options['ai_models'] ) && is_array( $options['ai_models'] ) ? $options['ai_models'] : array();
 		$pagespeed_api_key   = isset( $options['pagespeed_api_key'] ) ? (string) $options['pagespeed_api_key'] : '';
 
 		$notice = isset( $_GET['info'] ) ? sanitize_key( wp_unslash( $_GET['info'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -293,6 +386,30 @@ class Performance_Wizard_Settings_Page {
 		}
 		echo '<p class="description">' . esc_html__( 'Home page is selected by default. Archive and Most recent post may not resolve to a URL on a brand-new site with no published posts.', 'wp-performance-wizard' ) . '</p>';
 		echo '</fieldset></td></tr>';
+		echo '</tbody></table>';
+
+		echo '<h2>' . esc_html__( 'Model Selection', 'wp-performance-wizard' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Choose which model each AI provider uses for the analysis. Lower-cost models (such as Claude Haiku or Gemini Flash) can reduce the cost of a run substantially. "Provider default" leaves the choice to the AI Client. The selection only applies to whichever provider you run the analysis with.', 'wp-performance-wizard' ) . '</p>';
+		echo '<table class="form-table" role="presentation"><tbody>';
+		foreach ( self::get_supported_models() as $connector_id => $provider ) {
+			if ( ! isset( $provider['models'] ) || ! is_array( $provider['models'] ) ) {
+				continue;
+			}
+			$field_id = 'wp-perf-wizard-model-' . sanitize_key( $connector_id );
+			$current  = isset( $selected_models[ $connector_id ] ) ? (string) $selected_models[ $connector_id ] : '';
+			$label    = isset( $provider['label'] ) ? (string) $provider['label'] : $connector_id;
+
+			echo '<tr><th scope="row"><label for="' . esc_attr( $field_id ) . '">' . esc_html( $label ) . '</label></th><td>';
+			echo '<select id="' . esc_attr( $field_id ) . '" name="ai_models[' . esc_attr( $connector_id ) . ']">';
+			foreach ( $provider['models'] as $model_id => $model_label ) {
+				$model_id    = (string) $model_id;
+				$model_label = (string) $model_label;
+				echo '<option value="' . esc_attr( $model_id ) . '"' . selected( $current, $model_id, false ) . '>' . esc_html( $model_label ) . '</option>';
+			}
+			echo '</select>';
+			echo '</td></tr>';
+		}
+		echo '<tr><td colspan="2"><p class="description">' . esc_html__( 'Model IDs can be kept current or extended in code via the wp_performance_wizard_models filter. Unavailable models fall back to a compatible one automatically.', 'wp-performance-wizard' ) . '</p></td></tr>';
 		echo '</tbody></table>';
 
 		echo '<h2>' . esc_html__( 'PageSpeed Insights API Key', 'wp-performance-wizard' ) . '</h2>';
@@ -388,6 +505,28 @@ class Performance_Wizard_Settings_Page {
 			$submitted_page_types = array( 'home' );
 		}
 
+		// Accept a model selection per provider, but only when the submitted
+		// value is a recognized choice for that connector. An empty value means
+		// "use the provider default" and is stored as such. Seed from the
+		// existing saved selections so a provider that is filtered out of
+		// get_supported_models() (and therefore not rendered or submitted) keeps
+		// its stored selection instead of being silently dropped.
+		$supported_models = self::get_supported_models();
+		$current_options  = self::get_options();
+		$submitted_models = isset( $current_options['ai_models'] ) && is_array( $current_options['ai_models'] ) ? $current_options['ai_models'] : array();
+		if ( isset( $_POST['ai_models'] ) && is_array( $_POST['ai_models'] ) ) {
+			foreach ( wp_unslash( $_POST['ai_models'] ) as $connector_id => $model_id ) {
+				$connector_id = sanitize_key( (string) $connector_id );
+				$model_id     = sanitize_text_field( (string) $model_id );
+				if ( ! isset( $supported_models[ $connector_id ]['models'] ) ) {
+					continue;
+				}
+				if ( '' === $model_id || isset( $supported_models[ $connector_id ]['models'][ $model_id ] ) ) {
+					$submitted_models[ $connector_id ] = $model_id;
+				}
+			}
+		}
+
 		$pagespeed_api_key = '';
 		if ( isset( $_POST['pagespeed_api_key'] ) ) {
 			$pagespeed_api_key = trim( sanitize_text_field( wp_unslash( $_POST['pagespeed_api_key'] ) ) );
@@ -398,6 +537,7 @@ class Performance_Wizard_Settings_Page {
 		$options['plugin_source_languages'] = array_values( array_unique( $submitted_languages ) );
 		$options['use_expert_skills']       = $skills_enabled;
 		$options['page_types']              = array_values( array_unique( $submitted_page_types ) );
+		$options['ai_models']               = $submitted_models;
 		$options['pagespeed_api_key']       = $pagespeed_api_key;
 
 		update_option( self::OPTION_NAME, $options );

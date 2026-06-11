@@ -250,6 +250,11 @@ class Performance_Wizard_AI_Agent_Base {
 		$timeout        = isset( $options['timeout'] ) ? (float) $options['timeout'] : 180.0;
 		$max_attempts   = 3;
 
+		// A site admin can choose a specific (often lower-cost) model per
+		// provider. An empty value means "use the provider default model", which
+		// is the AI Client's behavior when no preference is given.
+		$model = Performance_Wizard_Settings_Page::selected_model( $this->get_connector_id() );
+
 		for ( $attempt = 1; $attempt <= $max_attempts; $attempt++ ) {
 			$builder = wp_ai_client_prompt( $current_prompt )
 				->using_provider( $this->get_connector_id() )
@@ -260,6 +265,10 @@ class Performance_Wizard_AI_Agent_Base {
 						array( \WordPress\AiClient\Providers\Http\DTO\RequestOptions::KEY_TIMEOUT => $timeout )
 					)
 				);
+
+			if ( '' !== $model ) {
+				$builder = $builder->using_model_preference( $model );
+			}
 
 			if ( isset( $options['temperature'] ) ) {
 				$builder = $builder->using_temperature( (float) $options['temperature'] );
