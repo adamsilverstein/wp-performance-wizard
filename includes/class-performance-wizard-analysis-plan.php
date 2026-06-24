@@ -369,8 +369,27 @@ Finally, based on the data collected and recommendations so far, provide two uni
 		$data_source  = isset( $action['source'] ) ? $action['source'] : '';
 		$conversation = array();
 
+		// Steps without a data source (for example "prompt"-only or "complete"
+		// steps) are dispatched through other REST commands and never reach this
+		// method in normal flow. Guard against a non-source action slipping
+		// through so the get_prompt()/get_description()/get_data() calls below
+		// cannot fatal on a non-object.
+		if ( ! ( $data_source instanceof Performance_Wizard_Data_Source_Base ) ) {
+			return $conversation;
+		}
+
 		// All of these prompts need to be combined into a single request to theAPI.
+		//
+		// $prompts is what we send to the model for THIS step (it includes the
+		// full raw data payload). $storage_prompts is a compacted copy kept for
+		// conversation history: it mirrors $prompts but replaces the large raw
+		// data payload with a short placeholder. Because send_via_ai_client()
+		// replays the stored prompts of every previous step on each subsequent
+		// step, storing the full data would re-send it O(n^2) times - the single
+		// largest token-cost driver in a run. The model's retained response
+		// already summarizes the data, so the placeholder is sufficient context.
 		$prompts             = array();
+		$storage_prompts     = array();
 		$prompts_for_display = array();
 
 		// Send the before data analysis prompt.
@@ -380,20 +399,20 @@ Finally, based on the data collected and recommendations so far, provide two uni
 			$prompt = $this->data_point_prompt;
 		}
 		array_push( $prompts, $prompt );
+		array_push( $storage_prompts, $prompt );
 		array_push( $prompts_for_display, $prompt );
 
 		// Inject expert skill reference material so recommendations are grounded in
 		// well-known patterns (Core Web Vitals, WP-CLI diagnostics, 10up best practices, etc.).
-		$step_key = '';
-		if ( is_object( $data_source ) && method_exists( $data_source, 'get_name' ) ) {
-			$step_key = $data_source->get_name();
-		} elseif ( isset( $action['title'] ) ) {
+		$step_key = $data_source->get_name();
+		if ( '' === $step_key && isset( $action['title'] ) ) {
 			$step_key = (string) $action['title'];
 		}
 		if ( '' !== $step_key ) {
 			$reference_prompt = $this->skills->build_reference_prompt( $step_key );
 			if ( '' !== $reference_prompt ) {
 				array_push( $prompts, $reference_prompt );
+				array_push( $storage_prompts, $reference_prompt );
 				array_push(
 					$prompts_for_display,
 					'<em>' . esc_html__( 'Reference guidance from bundled expert skills was included in the prompt.', 'wp-performance-wizard' ) . '</em>'
@@ -404,12 +423,14 @@ Finally, based on the data collected and recommendations so far, provide two uni
 		$prompt = $data_source->get_prompt();
 		if ( '' !== $prompt ) {
 			array_push( $prompts, $prompt );
+			array_push( $storage_prompts, $prompt );
 			array_push( $prompts_for_display, $prompt );
 		}
 
 		$description = $data_source->get_description();
 		if ( '' !== $description ) {
 			array_push( $prompts, $description );
+			array_push( $storage_prompts, $description );
 			array_push( $prompts_for_display, $description );
 		}
 		// Send the data to the AI agent.
@@ -418,29 +439,46 @@ Finally, based on the data collected and recommendations so far, provide two uni
 			sleep( 1 );
 		}
 		if ( '' !== $data ) {
-			$prompt            = '';
-			$prompt           .= 'Here is the data: ' . $data . '<br>';
-			$for_user          = 'Here is the data: {DATA} <br>'; // A string to show to the user.
 			$data_shape        = $data_source->get_data_shape();
 			$analysis_strategy = $data_source->get_analysis_strategy();
-			$prompt           .= '' !== $data_shape ? 'Here is the data shape: ' . $data_shape . '<br>' : '';
-			$for_user         .= '' !== $data_shape ? 'Here is the data shape: ' . $data_shape . '<br>' : '';
-			$prompt           .= '' !== $analysis_strategy ? 'Here is the analysis strategy: ' . $analysis_strategy . '<br>' : '';
-			$for_user         .= '' !== $analysis_strategy ? 'Here is the analysis strategy: ' . $analysis_strategy . '<br>' : '';
+
+			$prompt   = 'Here is the data: ' . $data . '<br>';
+			$for_user = 'Here is the data: {DATA} <br>'; // A string to show to the user.
+
+			// The compacted copy stored for history keeps the small, descriptive
+			// data shape and analysis strategy but drops the large raw payload.
+			$source_label = '' !== $data_source->get_name()
+				? $data_source->get_name()
+				: 'this step';
+			$for_storage  = 'The ' . $source_label . ' data for this step was analyzed live; the raw payload is omitted from the conversation history to reduce token usage, and the analysis in the response below reflects it.<br>';
+
+			if ( '' !== $data_shape ) {
+				$prompt      .= 'Here is the data shape: ' . $data_shape . '<br>';
+				$for_user    .= 'Here is the data shape: ' . $data_shape . '<br>';
+				$for_storage .= 'Here is the data shape: ' . $data_shape . '<br>';
+			}
+			if ( '' !== $analysis_strategy ) {
+				$prompt      .= 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
+				$for_user    .= 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
+				$for_storage .= 'Here is the analysis strategy: ' . $analysis_strategy . '<br>';
+			}
 
 			array_push( $prompts, $prompt );
+			array_push( $storage_prompts, $for_storage );
 			array_push( $prompts_for_display, $for_user );
 		}
 
 		// Send the post data analysis prompt.
 		$prompt = $this->data_point_summary_prompt;
 		array_push( $prompts, $prompt );
+		array_push( $storage_prompts, $prompt );
 		array_push( $prompts_for_display, '<strong>' . $prompt . '</strong>' );
 
 		$response = $this->send_prompts_with_conversation( $prompts, $conversation, $prompts_for_display );
 
-		// Store the prompt and response for subsequent steps.
-		$this->store_prompts_and_response( implode( PHP_EOL, $prompts ), $response );
+		// Store the compacted prompts (without the raw data payload) for replay
+		// as conversation history on subsequent steps.
+		$this->store_prompts_and_response( implode( PHP_EOL, $storage_prompts ), $response );
 
 		return $conversation;
 	}
@@ -448,7 +486,11 @@ Finally, based on the data collected and recommendations so far, provide two uni
 	/**
 	 * Store the prompt and response for future visits.
 	 *
-	 * @param string $prompts   The prompts to store.
+	 * The stored prompts are the compacted copy built in do_run_action(), with
+	 * the large raw data payload replaced by a placeholder, since this is what
+	 * gets replayed as conversation history on subsequent steps.
+	 *
+	 * @param string $prompts   The (compacted) prompts to store.
 	 * @param string $response  The response to store.
 	 */
 	private function store_prompts_and_response( string $prompts, string $response ): void {
