@@ -4,7 +4,7 @@ Tags: performance, ai, optimization, lighthouse, web-vitals
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -96,6 +96,14 @@ No. The plugin only analyzes and recommends. Any changes are up to you.
 
 == Changelog ==
 
+= 2.1.0 =
+* Compact conversation history so raw data is no longer replayed on every analysis step, substantially cutting token usage and cost on multi-step runs.
+* Added a per-provider model setting so you can choose a lower-cost model (or the provider default) for analysis.
+* Show estimated token usage and cost during analyzer runs so the impact of each run is visible as it happens.
+* Added documentation of the cost-management levers available for analyzer runs.
+* Security: fixed a stored XSS vulnerability in the analysis terminal and history view by sanitizing rendered AI output.
+* Fixed the link to the Connectors screen in the admin UI so it points to the correct location.
+
 = 2.0.0 =
 * Added a PageSpeed Insights API key setting to avoid anonymous-request quota (HTTP 429) errors on the Lighthouse data source.
 * Require WordPress 7.0.
@@ -120,6 +128,9 @@ No. The plugin only analyzes and recommends. Any changes are up to you.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Recommended security and cost update: fixes a stored XSS issue and substantially reduces token usage and cost during analysis. No configuration changes required.
 
 = 2.0.0 =
 Requires WordPress 7.0. API keys are no longer stored in this plugin - move them to the core Connectors screen before upgrading.
