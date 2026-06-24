@@ -225,6 +225,11 @@ class Performance_Wizard_AI_Agent_Base {
 			return __( 'WordPress AI Client API (wp_ai_client_prompt) is unavailable. WordPress 7.0+ is required.', 'wp-performance-wizard' );
 		}
 
+		// Track the request size as we build it so usage can be estimated for
+		// the cost indicator (the AI Client does not surface a uniform token
+		// count to the plugin).
+		$history_input_chars = 0;
+
 		$history = array();
 		for ( $i = 1; $i < $current_step; $i++ ) {
 			if ( ! isset( $previous_steps[ $i ] ) ) {
@@ -232,13 +237,15 @@ class Performance_Wizard_AI_Agent_Base {
 			}
 			$step = $previous_steps[ $i ];
 			if ( isset( $step['prompts'] ) && '' !== $step['prompts'] ) {
-				$history[] = new \WordPress\AiClient\Messages\DTO\Message(
+				$history_input_chars += mb_strlen( $step['prompts'] );
+				$history[]            = new \WordPress\AiClient\Messages\DTO\Message(
 					\WordPress\AiClient\Messages\Enums\MessageRoleEnum::user(),
 					array( new \WordPress\AiClient\Messages\DTO\MessagePart( $step['prompts'] ) )
 				);
 			}
 			if ( isset( $step['response'] ) && '' !== $step['response'] ) {
-				$history[] = new \WordPress\AiClient\Messages\DTO\Message(
+				$history_input_chars += mb_strlen( $step['response'] );
+				$history[]            = new \WordPress\AiClient\Messages\DTO\Message(
 					\WordPress\AiClient\Messages\Enums\MessageRoleEnum::model(),
 					array( new \WordPress\AiClient\Messages\DTO\MessagePart( $step['response'] ) )
 				);
@@ -249,6 +256,10 @@ class Performance_Wizard_AI_Agent_Base {
 		$max_tokens     = isset( $options['max_tokens'] ) ? (int) $options['max_tokens'] : 2048;
 		$timeout        = isset( $options['timeout'] ) ? (float) $options['timeout'] : 180.0;
 		$max_attempts   = 3;
+
+		// The full request is the system instruction plus the replayed history
+		// plus the current prompt.
+		$input_chars = $history_input_chars + mb_strlen( $this->get_system_instructions() ) + mb_strlen( $current_prompt );
 
 		for ( $attempt = 1; $attempt <= $max_attempts; $attempt++ ) {
 			$builder = wp_ai_client_prompt( $current_prompt )
@@ -272,6 +283,9 @@ class Performance_Wizard_AI_Agent_Base {
 			$result = $builder->generate_text();
 
 			if ( ! is_wp_error( $result ) ) {
+				// Record estimated usage for the successful generation so the UI
+				// can show per-step and per-run token consumption and cost.
+				Performance_Wizard_Usage::record( $this->get_connector_id(), $input_chars, mb_strlen( $result ) );
 				return $result;
 			}
 

@@ -246,6 +246,9 @@
 				// Record the follow-up question and answer as raw Markdown.
 				recordTranscript( 'qa', 'Q: ' + question, 'Q: ' + question + '\n\nA: ' + ( results || '' ) );
 
+				// Show the estimated token usage so far.
+				await renderUsage();
+
 				addFollowUpQuestion();
 			}
 		} );
@@ -360,6 +363,9 @@
 					// Record the concatenated raw Markdown for this data-source step.
 					recordTranscript( 'step', nextStep.title, stepResults.join( '\n\n' ) );
 
+					// Show the estimated token usage so far.
+					await renderUsage();
+
 					step++;
 					break;
 				case 'prompt':
@@ -400,6 +406,9 @@
 					// If the response includes a structured recommendations
 					// block, render it as a checklist below the prose.
 					renderRecommendationsChecklist( terminal, result || '' );
+
+					// Show the estimated token usage so far.
+					await renderUsage();
 
 					break;
 				case 'continue':
@@ -587,6 +596,52 @@
 			method: 'POST',
 			data  : params
 		} );
+	}
+
+	/**
+	 * Fetch the estimated token usage for the current run.
+	 *
+	 * @return {Promise<Object>} The usage totals from the server.
+	 */
+	function getPerformanceWizardUsage() {
+		return wp.apiFetch( {
+			path  : '/performance-wizard/v1/command/',
+			method: 'POST',
+			data  : { 'command': '_get_usage_' }
+		} );
+	}
+
+	/**
+	 * Fetch and display the estimated token usage for the run as a chip in the
+	 * terminal. Best-effort: failures never interrupt the analysis.
+	 */
+	async function renderUsage() {
+		let usage;
+		try {
+			usage = await getPerformanceWizardUsage();
+		} catch ( error ) {
+			return;
+		}
+		if ( ! usage || ! usage.total_tokens ) {
+			return;
+		}
+
+		const fmt     = ( n ) => Number( n || 0 ).toLocaleString();
+		const cost    = Number( usage.estimated_cost || 0 );
+		const costStr = cost < 1 ? cost.toFixed( 4 ) : cost.toFixed( 2 );
+		const stepTok = ( usage.last && usage.last.tokens ) ? usage.last.tokens : 0;
+
+		const message = sprintf(
+			/* translators: 1: tokens for this step, 2: run total tokens, 3: input tokens, 4: output tokens, 5: estimated cost in USD. */
+			__( 'Estimated usage — this step: ~%1$s tokens · run total: ~%2$s (in ~%3$s / out ~%4$s) · est. cost: ~$%5$s', 'wp-performance-wizard' ),
+			fmt( stepTok ),
+			fmt( usage.total_tokens ),
+			fmt( usage.total_input ),
+			fmt( usage.total_output ),
+			costStr
+		);
+
+		echoToTerminal( '<div class="info-chip usage-chip" aria-label="' + escapeHtmlAttr( __( 'Estimated token usage', 'wp-performance-wizard' ) ) + '">' + message + '</div>' );
 	}
 
 	/**
