@@ -4,7 +4,7 @@ Tags: performance, ai, optimization, lighthouse, web-vitals
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -96,6 +96,9 @@ No. The plugin only analyzes and recommends. Any changes are up to you.
 
 == Changelog ==
 
+= 2.1.1 =
+* Confirm compatibility with WordPress 7.1.
+
 = 2.1.0 =
 * Compact conversation history so raw data is no longer replayed on every analysis step, substantially cutting token usage and cost on multi-step runs.
 * Added a per-provider model setting so you can choose a lower-cost model (or the provider default) for analysis.
@@ -128,6 +131,9 @@ No. The plugin only analyzes and recommends. Any changes are up to you.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.1.1 =
+Compatibility update for WordPress 7.1. No configuration changes required.
 
 = 2.1.0 =
 Recommended security and cost update: fixes a stored XSS issue and substantially reduces token usage and cost during analysis. No configuration changes required.
